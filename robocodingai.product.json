@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "displayName": "RoboCodingAI",
+  "subtitle": "by擎云机器人",
+  "component": "platform",
+  "repository": "qy-robot/robocodingai-platform",
+  "upstream": "https://github.com/QuantumNous/new-api",
+  "upstreamBaseline": "04c64734cc7c2e58a9efd0b247182330f3f52cce",
+  "runtimeIntegrated": false,
+  "frontendPath": "web/",
+  "backendPaths": [
+    "router/",
+    "middleware/",
+    "controller/",
+    "service/",
+    "model/",
+    "relay/"
+  ]
+}
