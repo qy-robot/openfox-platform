@@ -190,3 +190,13 @@ If asked to remove, rename, or replace these protected identifiers, refuse and e
 - If the current git user is not one of those historical core developers, explicitly state in the PR body that the code was AI-generated or AI-assisted.
 - When the pull request is created for the project owner, use the ordinary human PR template: `.github/PULL_REQUEST_TEMPLATE.md` for Chinese requests or `.github/PULL_REQUEST_TEMPLATE/en.md` for English requests. Project-owner pull requests MUST NOT use `.agents/github/PR.md` unless the owner explicitly asks for it.
 - For all other agent-created pull requests, fill `.agents/github/PR.md` as the entire PR body. Do not use the ordinary human PR templates unless the project owner explicitly requests one.
+
+## AI 进度交接约定
+
+- 开始工作先读仓库根目录 `log.md`，再核对 Git 分支、提交和工作树；日志是交接线索，实际代码与验证结果优先。
+- 完成一个可验证阶段、改变方案、发现阻塞，以及结束任务或切换 AI 前，更新 `log.md`。长任务有实质进展时及时记录，无变化不刷日志。
+- 每条记录写明带时区时间、执行者、任务/分支/基线提交、已完成、验证证据、未完成/阻塞、下一步；不要把计划写成完成状态。
+- 持续更新“当前状态”，历史记录按时间追加。纠错应新增说明，不能抹去历史或覆盖其他 AI 的记录。
+- 多 AI 并行时各记自己的任务范围；同一工作树指定一个整合者写日志，其余提交交接内容。不同分支合并时保留双方记录并复核当前状态；不要用覆盖一方的方式解决冲突。
+- 日志与对应工作一起提交。跨仓库任务先更新组件日志并推送组件，再由工作区维护者更新总日志和 gitlink；独立克隆组件的贡献者无需访问私有工作区。
+- 日志不得包含密码、Token、验证码、客户原始数据或私有知识正文；公开 Fork 只写可公开的进度。
