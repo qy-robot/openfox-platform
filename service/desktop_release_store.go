@@ -19,7 +19,7 @@ import (
 const (
 	desktopReleaseCatalogSchema = 1
 	desktopReleaseRetention     = 3
-	defaultReleaseMaxFileBytes = int64(2 * 1024 * 1024 * 1024)
+	defaultReleaseMaxFileBytes  = int64(2 * 1024 * 1024 * 1024)
 )
 
 var (
@@ -76,7 +76,7 @@ type DesktopDownloadManifest struct {
 	SchemaVersion int                     `json:"schemaVersion"`
 	Product       string                  `json:"product"`
 	Version       *string                 `json:"version"`
-	PublishedAt   *time.Time               `json:"publishedAt"`
+	PublishedAt   *time.Time              `json:"publishedAt"`
 	Changelog     *string                 `json:"changelog"`
 	Downloads     []DesktopDownloadTarget `json:"downloads"`
 }
@@ -93,9 +93,9 @@ type desktopReleaseCatalog struct {
 }
 
 var (
-	ErrDesktopReleaseNotFound       = errors.New("desktop release not found")
+	ErrDesktopReleaseNotFound         = errors.New("desktop release not found")
 	ErrDesktopReleaseAlreadyPublished = errors.New("desktop release is already published")
-	ErrDesktopReleaseNoArtifacts    = errors.New("desktop release has no artifacts")
+	ErrDesktopReleaseNoArtifacts      = errors.New("desktop release has no artifacts")
 )
 
 func DesktopReleaseStorageDir() string {
@@ -393,7 +393,11 @@ func OpenDesktopReleaseArtifact(version, target string) (*os.File, DesktopReleas
 			if artifact.Target != target {
 				continue
 			}
-			file, err := os.Open(filepath.Join(desktopReleaseArtifactDir(DesktopReleaseStorageDir(), version), artifact.StoredAs))
+			storedAs := artifact.StoredAs
+			if storedAs == "" {
+				storedAs = desktopReleaseStoredName(artifact)
+			}
+			file, err := os.Open(filepath.Join(desktopReleaseArtifactDir(DesktopReleaseStorageDir(), version), storedAs))
 			return file, artifact, err
 		}
 	}
@@ -473,6 +477,10 @@ func writeDesktopReleaseCatalog(catalog desktopReleaseCatalog) error {
 func desktopReleaseArtifactDir(root, version string) string {
 	hash := sha256.Sum256([]byte(version))
 	return filepath.Join(root, "artifacts", fmt.Sprintf("%x", hash[:16]))
+}
+
+func desktopReleaseStoredName(artifact DesktopReleaseArtifact) string {
+	return artifact.Target + "-" + artifact.SHA256[:16] + strings.ToLower(filepath.Ext(artifact.FileName))
 }
 
 func formatDesktopReleaseSize(size int64) string {
