@@ -158,6 +158,62 @@ func TestUserSessionCacheTTLUsesShortCacheWindow(t *testing.T) {
 	assert.LessOrEqual(t, fallbackTTL, 60*time.Second, "non-positive cache frequency must use the existing 60-second fallback")
 }
 
+func TestUserSessionCacheRoundTripsCentralAuthorityAndRejectsOldSchema(t *testing.T) {
+	setupUserSessionTest(t)
+	server := useUserCacheMiniRedis(t)
+	now := time.Now().Unix()
+	entry := newTestUserSession("central-authority-cache", 1205, now).cacheEntry()
+	entry.LoginMethod = "account_sso"
+	entry.AuthorityIssuer = "https://account.example.com"
+	entry.AuthoritySubject = "acct_1"
+	entry.AuthoritySessionID = "account-session"
+	entry.AuthorityAuthVersion = 7
+
+	require.NoError(t, writeUserSessionCache(entry, userSessionCacheDeadline()))
+	cached, err := getUserSessionCache(entry.SID)
+	require.NoError(t, err)
+	assert.Equal(t, entry.AuthorityIssuer, cached.AuthorityIssuer)
+	assert.Equal(t, entry.AuthoritySubject, cached.AuthoritySubject)
+	assert.Equal(t, entry.AuthoritySessionID, cached.AuthoritySessionID)
+	assert.Equal(t, entry.AuthorityAuthVersion, cached.AuthorityAuthVersion)
+	assert.Equal(t, fmt.Sprint(userSessionCacheSchema), server.HGet(userSessionCacheKey(entry.SID), "CacheSchema"))
+
+	server.HSet(userSessionCacheKey(entry.SID), "CacheSchema", "2")
+	_, err = getUserSessionCache(entry.SID)
+	assert.ErrorContains(t, err, "cache schema is stale")
+}
+
+func TestCentralAuthorityCacheSurvivesRefreshRotationAndRevokeTombstone(t *testing.T) {
+	setupUserSessionTest(t)
+	server := useUserCacheMiniRedis(t)
+	now := time.Now().Unix()
+	createUserSessionTestUser(t, 1206, 1)
+	session := newTestUserSession("central-authority-mutations", 1206, now)
+	session.LoginMethod = "account_sso"
+	session.AuthorityIssuer = "https://account.example.com"
+	session.AuthoritySubject = "acct_1"
+	session.AuthoritySessionID = "account-session"
+	session.AuthorityAuthVersion = 7
+	require.NoError(t, CreateUserSession(session))
+
+	_, err := RotateUserSessionRefresh(session.UserID, session.SID, session.RefreshHash, "next-hash", now+1, 30*time.Second)
+	require.NoError(t, err)
+	cacheKey := userSessionCacheKey(session.SID)
+	assert.Equal(t, session.AuthorityIssuer, server.HGet(cacheKey, "AuthorityIssuer"))
+	assert.Equal(t, session.AuthoritySubject, server.HGet(cacheKey, "AuthoritySubject"))
+	assert.Equal(t, session.AuthoritySessionID, server.HGet(cacheKey, "AuthoritySessionID"))
+	assert.Equal(t, fmt.Sprint(session.AuthorityAuthVersion), server.HGet(cacheKey, "AuthorityAuthVersion"))
+
+	revoked, err := RevokeUserSession(session.UserID, session.SID, "account_logout")
+	require.NoError(t, err)
+	assert.True(t, revoked)
+	assert.Equal(t, UserSessionStatusRevoked, server.HGet(cacheKey, "Status"))
+	assert.Equal(t, session.AuthorityIssuer, server.HGet(cacheKey, "AuthorityIssuer"))
+	assert.Equal(t, session.AuthoritySubject, server.HGet(cacheKey, "AuthoritySubject"))
+	assert.Equal(t, session.AuthoritySessionID, server.HGet(cacheKey, "AuthoritySessionID"))
+	assert.Equal(t, fmt.Sprint(session.AuthorityAuthVersion), server.HGet(cacheKey, "AuthorityAuthVersion"))
+}
+
 func TestStaleActiveSessionCacheFillCannotRestartWindowAfterDenyExpires(t *testing.T) {
 	setupUserSessionTest(t)
 	server := useUserCacheMiniRedis(t)

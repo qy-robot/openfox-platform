@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-- 更新时间：2026-09-17T13:59:22+08:00
+- 更新时间：2026-09-17T14:22:00+08:00
 - 已完成：账号中心联邦登录与 New API 本地业务权限边界已形成可审查发布分支；本地角色、状态、团队、额度、余额、API Key 与计费仍由 New API 管理。
 - 未完成 / 阻塞：本提交尚未部署；生产切换、Account subject-status 端点联调与数据库备份验收由发布流程继续。
 - 下一步：审查并合并 `codex/account-federation-release`，再由发布负责人执行生产预检、备份与部署。
@@ -32,3 +32,12 @@
 - 验证：除本日志外，Git mode 与 blob 对候选树逐项比较，2536 项完全一致；许可证与第三方声明保留。等价候选已完成 Web 全量测试与构建、Go test/vet/build 和 Linux amd64 构建。
 - 未完成 / 阻塞：未部署生产，未更新工作区根 gitlink；生产 Account subject-status 联调和数据备份仍需发布负责人执行。
 - 下一步：远端审查通过后合并发布分支，再按受控发布流程执行部署。
+
+
+### 2026-09-17T14:22:00+08:00 | Codex | 修复中央会话 Redis Authority 热缓存
+
+- 分支 / 基线提交：`codex/account-federation-release` / `94e9b41872547cde03afc2921b5def64610ff5cc`。
+- 已完成：Redis 会话缓存写入完整 Account Authority 绑定并提升缓存 schema，使旧缓存回源；中央模式对浏览器和桌面联邦会话增加 Authority 缺失 fail-closed 防线。
+- 验证：miniredis 覆盖 roundtrip、旧 schema 回填、当前 schema 缺字段拒绝、refresh rotation、revoke tombstone 与全局退出热缓存拒绝；`go test ./... -count=1 -timeout=180s`、`go vet ./...` 及 Linux amd64 构建通过。
+- 未完成 / 阻塞：本提交未合并默认分支；生产验证由受控发布流程继续。
+- 下一步：发布负责人完成热修复 smoke 后，再审查合并本分支。

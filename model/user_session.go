@@ -18,7 +18,7 @@ const (
 	UserSessionStatusRevoking = "revoking"
 	UserSessionStatusRevoked  = "revoked"
 
-	userSessionCacheSchema      = 2
+	userSessionCacheSchema      = 3
 	userSessionListLimit        = 100
 	userSessionRevokeBatchSize  = 500
 	userSessionCleanupScanLimit = 1000
@@ -347,18 +347,22 @@ end
 redis.call('HSET', KEYS[1],
   'SID', ARGV[1], 'UserID', ARGV[2], 'Version', ARGV[3],
   'UserAuthVersion', ARGV[4], 'Status', ARGV[5],
-  'LoginMethod', ARGV[6], 'IP', ARGV[7], 'UserAgent', ARGV[8],
-  'CreatedAt', ARGV[9], 'LastActiveAt', ARGV[10], 'ExpiresAt', ARGV[11],
-  'RevokedAt', ARGV[12], 'RevokedReason', ARGV[13], 'CacheSchema', ARGV[14])
+  'LoginMethod', ARGV[6],
+  'AuthorityIssuer', ARGV[7], 'AuthoritySubject', ARGV[8],
+  'AuthoritySessionID', ARGV[9], 'AuthorityAuthVersion', ARGV[10],
+  'IP', ARGV[11], 'UserAgent', ARGV[12],
+  'CreatedAt', ARGV[13], 'LastActiveAt', ARGV[14], 'ExpiresAt', ARGV[15],
+  'RevokedAt', ARGV[16], 'RevokedReason', ARGV[17], 'CacheSchema', ARGV[18])
 if ARGV[5] == 'active' then
-  redis.call('PEXPIREAT', KEYS[1], ARGV[15])
+  redis.call('PEXPIREAT', KEYS[1], ARGV[19])
 else
-  redis.call('PEXPIRE', KEYS[1], ARGV[15])
+  redis.call('PEXPIRE', KEYS[1], ARGV[19])
 end
 return 1`
 	result, err := common.RDB.Eval(context.Background(), script, []string{userSessionCacheKey(entry.SID)},
 		entry.SID, entry.UserID, entry.Version, entry.UserAuthVersion, entry.Status,
-		entry.LoginMethod, entry.IP, entry.UserAgent, entry.CreatedAt, entry.LastActiveAt,
+		entry.LoginMethod, entry.AuthorityIssuer, entry.AuthoritySubject, entry.AuthoritySessionID,
+		entry.AuthorityAuthVersion, entry.IP, entry.UserAgent, entry.CreatedAt, entry.LastActiveAt,
 		entry.ExpiresAt, entry.RevokedAt, entry.RevokedReason, entry.CacheSchema, redisExpiration,
 	).Int()
 	if err != nil {

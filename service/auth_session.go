@@ -184,10 +184,13 @@ func ValidateLoginSession(identity AuthIdentity) (*model.UserSession, *model.Use
 }
 
 func validateCentralSessionAuthority(session *model.UserSession) error {
-	if session.AuthorityIssuer == "" && session.AuthoritySubject == "" && session.AuthoritySessionID == "" && session.AuthorityAuthVersion == 0 {
+	if !CentralAccountEnabled() {
 		return nil
 	}
-	if !CentralAccountEnabled() {
+	if session.AuthorityIssuer == "" && session.AuthoritySubject == "" && session.AuthoritySessionID == "" && session.AuthorityAuthVersion == 0 {
+		if session.LoginMethod == CentralBrowserLoginMethod || session.LoginMethod == DesktopLoginMethod {
+			return ErrLoginSessionRevoked
+		}
 		return nil
 	}
 	if session.AuthorityIssuer != CentralAccountIssuer() || session.AuthoritySubject == "" || session.AuthoritySessionID == "" || session.AuthorityAuthVersion <= 0 {
