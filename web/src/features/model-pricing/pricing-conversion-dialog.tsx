@@ -182,7 +182,7 @@ export function PricingConversionDialog(props: {
           <div className='space-y-2 border-t pt-3'>
             <div className='flex items-center justify-between gap-2'>
               <h4 className='text-sm font-medium'>
-                {t('Billing expression')} (USD)
+                {t('Billing expression')} (CNY)
               </h4>
               <CopyButton value={props.preview.expression} />
             </div>

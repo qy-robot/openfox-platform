@@ -1,0 +1,8 @@
+{
+  "{{count}} points available": "可用 {{count}} 点",
+  "{{used}} of {{max}} uses": "已使用 {{used}} / {{max}} 次",
+  "Transfer {{count}} points": "转入 {{count}} 点",
+  "Windows": "Windows",
+  "You can return to the robocoding desktop app.": "您可以返回 robocoding 桌面端。",
+  "Your personal account stays separate. You can choose team or personal payment for each API key.": "您的个人账号保持独立；每个 API Key 都可以选择团队或个人扣费。"
+}

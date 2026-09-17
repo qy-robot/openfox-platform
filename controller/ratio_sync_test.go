@@ -44,6 +44,32 @@ func TestPricingSyncExpressionPriority(t *testing.T) {
 	}
 }
 
+func TestPricingSyncRejectsForeignOrUnknownCurrency(t *testing.T) {
+	for _, currency := range []string{"", "USD"} {
+		t.Run(currency, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("X-Billing-Currency", currency)
+				w.Header().Set("X-Quota-Per-Unit", "500000")
+				_, _ = w.Write([]byte(`{"success":true,"data":{"model_ratio":{"foreign-model":10}}}`))
+			}))
+			defer server.Close()
+			var response struct {
+				Success bool
+				Data    struct {
+					Differences map[string]any
+					TestResults []dto.TestResult `json:"test_results"`
+				}
+			}
+			body := map[string]any{"upstreams": []map[string]any{{"name": "foreign", "base_url": server.URL}}}
+			modelManagementRequest(t, FetchUpstreamRatios, http.MethodPost, "/api/channel/fetch_upstream_ratios", body, &response)
+			require.True(t, response.Success)
+			require.Len(t, response.Data.TestResults, 1)
+			assert.Equal(t, "error", response.Data.TestResults[0].Status)
+			assert.Empty(t, response.Data.Differences)
+		})
+	}
+}
+
 func TestRatioConfigExportsEffectiveExpressions(t *testing.T) {
 	before := config.GlobalConfig.ExportAllConfigs()
 	expose := ratio_setting.IsExposeRatioEnabled()
@@ -105,6 +131,8 @@ func TestPricingSyncCompleteSourcesAndArrayFormats(t *testing.T) {
 		encoded, err := common.Marshal(map[string]any{"success": true, "data": data})
 		require.NoError(t, err)
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-Billing-Currency", "CNY")
+		w.Header().Set("X-Quota-Per-Unit", "500000")
 		_, _ = w.Write(encoded)
 	}))
 	defer server.Close()

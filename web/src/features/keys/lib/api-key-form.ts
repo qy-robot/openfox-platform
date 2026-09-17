@@ -45,6 +45,13 @@ export function getApiKeyFormSchema(t: TFunction, maxAutoGroups = 5) {
       auto_groups: z.array(z.string()),
       cross_group_retry: z.boolean().optional(),
       tokenCount: z.number().min(1).optional(),
+      funding_mode: z.enum([
+        'personal_only',
+        'team_only',
+        'team_first',
+        'personal_first',
+      ]),
+      team_id: z.number().int().nonnegative(),
     })
     .superRefine((data, ctx) => {
       if (data.group === 'auto') {
@@ -80,18 +87,22 @@ export function getApiKeyFormSchema(t: TFunction, maxAutoGroups = 5) {
         }
       }
 
-      if (data.unlimited_quota) {
-        return
-      }
-
       if (
-        data.remain_quota_dollars === undefined ||
-        data.remain_quota_dollars < 0
+        !data.unlimited_quota &&
+        (data.remain_quota_dollars === undefined ||
+          data.remain_quota_dollars < 0)
       ) {
         ctx.addIssue({
           code: 'custom',
           path: ['remain_quota_dollars'],
           message: t('Quota must be zero or greater'),
+        })
+      }
+      if (data.funding_mode !== 'personal_only' && data.team_id <= 0) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['team_id'],
+          message: t('Select a team for this payment mode'),
         })
       }
     })
@@ -115,6 +126,8 @@ export const API_KEY_FORM_DEFAULT_VALUES: ApiKeyFormValues = {
   auto_groups: [],
   cross_group_retry: true,
   tokenCount: 1,
+  funding_mode: 'personal_only',
+  team_id: 0,
 }
 
 export function getApiKeyFormDefaultValues(
@@ -157,6 +170,8 @@ export function transformFormDataToPayload(
         ? data.auto_groups
         : [],
     cross_group_retry: data.group === 'auto' ? !!data.cross_group_retry : false,
+    funding_mode: data.funding_mode,
+    team_id: data.funding_mode === 'personal_only' ? 0 : data.team_id,
   }
 }
 
@@ -194,5 +209,7 @@ export function transformApiKeyToFormDefaults(
     auto_groups: autoGroups,
     cross_group_retry: !!apiKey.cross_group_retry,
     tokenCount: 1,
+    funding_mode: apiKey.funding_mode ?? 'personal_only',
+    team_id: apiKey.team_id || 0,
   }
 }

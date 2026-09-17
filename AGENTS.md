@@ -124,7 +124,7 @@ Inside `relaykit/`, use `kitutil.*` from `relaykit/relayconvert/kitutil/json.go`
 
 **Billing expression system:** When working on tiered/dynamic billing (expression-based pricing), MUST read `pkg/billingexpr/expr.md` first. It documents the design philosophy, expression language, full architecture, token normalization rules, quota conversion, and expression versioning. All billing expression changes must follow that document.
 
-**Built-in model pricing:** New built-in model prices MUST be defined as self-contained billing expressions in `setting/billing_setting/builtin_billing.go`, using real USD per million tokens. Do not add new built-in prices to the legacy model/completion/cache ratio tables. Preserve explicit administrator pricing overrides. Existing legacy prices are migrated only when explicitly requested. Verify published prices and cover applicable context-length thresholds and cache categories.
+**Built-in model pricing:** Per the 2026-09-16 product decision, all retail prices and ledgers use CNY directly. New built-in model prices MUST be defined as self-contained billing expressions in `setting/billing_setting/builtin_billing.go`, using CNY per million tokens. Do not introduce runtime exchange-rate conversion or silently import foreign-currency prices. Do not add new built-in prices to the legacy model/completion/cache ratio tables. Preserve explicit administrator pricing overrides. Existing legacy prices and balances require the explicit, versioned offline CNY migration. Cover applicable context-length thresholds and cache categories.
 
 **Billing safety invariants:** Quota/billing code MUST never produce a negative charge (a credit) from arithmetic overflow or unvalidated input. Apply defense in depth:
 

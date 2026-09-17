@@ -67,10 +67,24 @@ export function useTopNavLinks(): TopNavLink[] {
     links.push({ title: t('Home'), href: '/' })
   }
 
+  links.push({ title: t('Download'), href: '/download' })
+
   // Console -> /dashboard (new console path)
   if (modules?.console !== false) {
     links.push({ title: t('Console'), href: '/dashboard' })
   }
+
+  links.push({
+    title: t('Workbench'),
+    href: 'https://dash.openzrob.com',
+    external: true,
+  })
+
+  links.push({
+    title: t('AI Station'),
+    href: 'https://ai.openzrob.com',
+    external: true,
+  })
 
   // Pricing
   const pricing = modules?.pricing
@@ -87,12 +101,16 @@ export function useTopNavLinks(): TopNavLink[] {
   }
 
   // Docs (supports external links)
-  if (modules?.docs !== false) {
-    if (docsLink) {
-      links.push({ title: t('Docs'), href: docsLink, external: true })
-    } else {
-      links.push({ title: t('Docs'), href: '/docs' })
-    }
+  if (
+    modules?.docs !== false &&
+    docsLink &&
+    !/^https?:\/\/(docs\.)?newapi\.(pro|ai)(?:[/:]|$)/i.test(docsLink)
+  ) {
+    links.push({
+      title: t('Docs'),
+      href: docsLink,
+      external: /^https?:\/\//i.test(docsLink),
+    })
   }
 
   // About

@@ -21,9 +21,12 @@ import { useTranslation } from 'react-i18next'
 
 import { Input } from '@/components/ui/input'
 import { InputGroupInput } from '@/components/ui/input-group'
-import { formatPricingNumber } from '@/features/system-settings/models/pricing-format'
+import {
+  formatPricingNumber,
+  serializePricingNumber,
+} from '@/features/system-settings/models/pricing-format'
 
-import { USD_PRICING_CURRENCY, type PricingCurrency } from './currency'
+import { CNY_PRICING_CURRENCY, type PricingCurrency } from './currency'
 
 type PricingAmountInputProps = Omit<
   ComponentProps<'input'>,
@@ -35,11 +38,11 @@ type PricingAmountInputProps = Omit<
   grouped?: boolean
 }
 
-/** The parent owns USD; only this input owns the uncommitted display string. */
+/** The parent owns CNY; only this input owns the uncommitted display string. */
 export function PricingAmountInput({
   value,
   onChange,
-  currency = USD_PRICING_CURRENCY,
+  currency = CNY_PRICING_CURRENCY,
   grouped,
   ...props
 }: PricingAmountInputProps) {
@@ -51,7 +54,7 @@ export function PricingAmountInput({
     source: string
     rate: number
   } | null>(null)
-  const displayAmount = Number(value) * currency.exchangeRate
+  const displayAmount = Number(value)
   let displayed = ''
   if (value !== '') {
     displayed = String(displayAmount)
@@ -70,12 +73,8 @@ export function PricingAmountInput({
       ? draft.text
       : displayed
   const amount = text === '' || text === '.' ? 0 : Number(text)
-  const usd = amount / currency.exchangeRate
   const invalid =
-    !Number.isFinite(amount) ||
-    amount < 0 ||
-    !Number.isFinite(usd) ||
-    !Number.isFinite(displayAmount)
+    !Number.isFinite(amount) || amount < 0 || !Number.isFinite(displayAmount)
   const error = invalid
     ? t('The converted price must be a finite, non-negative number.')
     : ''
@@ -104,13 +103,14 @@ export function PricingAmountInput({
           const next = event.target.value
           if (!/^(\d+(\.\d*)?|\.\d*)?$/.test(next)) return
           const nextAmount = next === '.' || next === '' ? 0 : Number(next)
-          const nextUSD = nextAmount / currency.exchangeRate
-          if (!Number.isFinite(nextUSD) || !Number.isFinite(nextAmount)) {
+          if (!Number.isFinite(nextAmount)) {
             setDraft({ text: next, source, rate: currency.exchangeRate })
             return
           }
           const canonical =
-            next === '' || next === '.' ? '' : formatPricingNumber(nextUSD)
+            next === '' || next === '.'
+              ? ''
+              : serializePricingNumber(nextAmount)
           const nextSource =
             typeof value === 'number' ? String(Number(canonical)) : canonical
           setDraft({

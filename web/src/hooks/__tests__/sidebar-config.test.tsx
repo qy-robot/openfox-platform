@@ -74,6 +74,30 @@ function sidebarFor(admin?: object, user?: object, canConfigure = true) {
 }
 
 describe('security sidebar visibility', () => {
+  it('replaces legacy identity pages with the central account entry', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) =>
+        key === 'status'
+          ? JSON.stringify({ account_auth_enabled: true })
+          : null,
+      setItem: () => undefined,
+      removeItem: () => undefined,
+    })
+
+    const { result } = sidebarFor()
+    const items =
+      result.current.find((group) => group.id === 'personal')?.items ?? []
+
+    expect(items.map((item) => item.title)).toEqual([
+      'Wallet',
+      'Teams',
+      'Account center',
+    ])
+    expect(items[2]).toMatchObject({
+      url: 'https://account.openzrob.com/account/profile',
+    })
+  })
+
   it('old configurations show Security & Access immediately after Profile and keep API Keys', () => {
     const { result } = sidebarFor(
       { personal: { enabled: true, personal: true, topup: true } },
@@ -83,7 +107,7 @@ describe('security sidebar visibility', () => {
       result.current
         .find((group) => group.id === 'personal')
         ?.items.map((item) => item.title)
-    ).toEqual(['Wallet', 'Profile', 'Security & Access'])
+    ).toEqual(['Wallet', 'Teams', 'Profile', 'Security & Access'])
     expect(
       result.current
         .flatMap((group) => group.items)

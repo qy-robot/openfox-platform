@@ -50,7 +50,6 @@ export const OPENROUTER_CHANNEL_TYPE = 20
 export const ENDPOINT_OPTIONS = [
   { label: 'pricing', value: '/api/pricing' },
   { label: 'ratio_config', value: '/api/ratio_config' },
-  { label: 'OpenRouter', value: OPENROUTER_ENDPOINT },
   { label: 'custom', value: 'custom' },
 ] as const
 

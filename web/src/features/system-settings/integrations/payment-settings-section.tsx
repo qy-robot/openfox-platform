@@ -903,36 +903,10 @@ export function PaymentSettingsSection({
                 <div className='grid gap-6 md:grid-cols-2'>
                   <FormField
                     control={form.control}
-                    name='Price'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {t('Price (local currency / USD)')}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type='number'
-                            step='0.01'
-                            min={0}
-                            {...safeNumberFieldProps(field)}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          {t(
-                            'How much to charge for each US dollar of balance (Epay)'
-                          )}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
                     name='MinTopUp'
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('Minimum top-up (USD)')}</FormLabel>
+                        <FormLabel>{t('Minimum top-up (CNY)')}</FormLabel>
                         <FormControl>
                           <Input
                             type='number'
@@ -942,7 +916,7 @@ export function PaymentSettingsSection({
                           />
                         </FormControl>
                         <FormDescription>
-                          {t('Smallest USD amount users can recharge (Epay)')}
+                          {t('Smallest CNY amount users can recharge (Epay)')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -1376,37 +1350,13 @@ export function PaymentSettingsSection({
                   />
                 </div>
 
-                <div className='grid gap-6 md:grid-cols-3'>
-                  <FormField
-                    control={form.control}
-                    name='StripeUnitPrice'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {t('Unit price (local currency / USD)')}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type='number'
-                            step='0.01'
-                            min={0}
-                            {...safeNumberFieldProps(field)}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          {t('e.g., 8 means 8 local currency per USD')}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
+                <div className='grid gap-6 md:grid-cols-2'>
                   <FormField
                     control={form.control}
                     name='StripeMinTopUp'
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('Minimum top-up (USD)')}</FormLabel>
+                        <FormLabel>{t('Minimum top-up (CNY)')}</FormLabel>
                         <FormControl>
                           <Input
                             type='number'
@@ -1416,7 +1366,7 @@ export function PaymentSettingsSection({
                           />
                         </FormControl>
                         <FormDescription>
-                          {t('Minimum recharge amount in USD')}
+                          {t('Minimum recharge amount in CNY')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

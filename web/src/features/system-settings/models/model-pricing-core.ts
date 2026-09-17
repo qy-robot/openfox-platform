@@ -20,7 +20,7 @@ import * as z from 'zod'
 
 import {
   formatPricingAmount,
-  USD_PRICING_CURRENCY,
+  CNY_PRICING_CURRENCY,
   type PricingCurrency,
 } from '@/features/model-pricing/currency'
 import type {
@@ -30,7 +30,7 @@ import type {
 import { combineBillingExpr } from '@/features/pricing/lib/billing-expr'
 import { formatBillingCondition } from '@/features/pricing/lib/billing-expression/condition-display'
 
-import { formatPricingNumber } from './pricing-format'
+import { serializePricingNumber } from './pricing-format'
 
 export const createModelPricingSchema = (t: (key: string) => string) =>
   z.object({
@@ -169,7 +169,7 @@ export function toNumberOrNull(value: unknown): number | null {
 function ratioToBasePrice(ratio: unknown): string {
   const num = toNumberOrNull(ratio)
   if (num === null) return ''
-  return formatPricingNumber(num * 2)
+  return serializePricingNumber(num * 2)
 }
 
 function deriveLanePrice(
@@ -180,7 +180,7 @@ function deriveLanePrice(
   const ratioNumber = toNumberOrNull(ratio)
   const denominatorNumber = toNumberOrNull(denominator)
   if (ratioNumber === null || denominatorNumber === null) return fallback
-  return formatPricingNumber(ratioNumber * denominatorNumber)
+  return serializePricingNumber(ratioNumber * denominatorNumber)
 }
 
 export function createInitialLaneState(data?: ModelRatioData | null) {
@@ -226,7 +226,7 @@ export function buildPreviewRows(
   lanePrices: Record<LaneKey, string>,
   laneEnabled: Record<LaneKey, boolean>,
   t: (key: string) => string,
-  currency: PricingCurrency = USD_PRICING_CURRENCY,
+  currency: PricingCurrency = CNY_PRICING_CURRENCY,
   cacheWriteMode?: CacheWriteMode,
   billingDetails?: LegacyBillingDetails
 ): PreviewRow[] {
@@ -236,7 +236,7 @@ export function buildPreviewRows(
       { key: 'mode', label: t('Pricing'), value: t('Expression') },
       {
         key: 'expr',
-        label: `${t('Expression')} (USD)`,
+        label: `${t('Expression')} (CNY)`,
         value: effectiveExpr || t('Empty'),
         multiline: true,
       },

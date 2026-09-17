@@ -46,6 +46,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { isCentralAccountMode } from '@/features/auth/sign-in/central-reauth'
 import { UserSubscriptionsDialog } from '@/features/subscriptions/components/dialogs/user-subscriptions-dialog'
 import { handleServerError } from '@/lib/handle-server-error'
 
@@ -73,6 +74,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const [resetTwoFAOpen, setResetTwoFAOpen] = useState(false)
   const [bindingDialogOpen, setBindingDialogOpen] = useState(false)
   const [subscriptionsDialogOpen, setSubscriptionsDialogOpen] = useState(false)
+  const centralIdentity = isCentralAccountMode()
 
   const handleEdit = () => {
     setCurrentRow(user)
@@ -197,17 +199,19 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           </DropdownMenuItem>
         )}
 
-        <DropdownMenuItem
-          onSelect={(event) => {
-            event.preventDefault()
-            setBindingDialogOpen(true)
-          }}
-        >
-          {t('Manage Bindings')}
-          <DropdownMenuShortcut>
-            <Link2 size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
+        {!centralIdentity && (
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault()
+              setBindingDialogOpen(true)
+            }}
+          >
+            {t('Manage Bindings')}
+            <DropdownMenuShortcut>
+              <Link2 size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+        )}
 
         <DropdownMenuItem
           onSelect={(event) => {
@@ -221,78 +225,90 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           </DropdownMenuShortcut>
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator />
+        {!centralIdentity && <DropdownMenuSeparator />}
 
-        <DropdownMenuItem
-          onSelect={(event) => {
-            event.preventDefault()
-            setResetPasskeyOpen(true)
-          }}
-          disabled={isRoot}
-        >
-          {t('Reset Passkey')}
-          <DropdownMenuShortcut>
-            <KeyRound size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
+        {!centralIdentity && (
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault()
+              setResetPasskeyOpen(true)
+            }}
+            disabled={isRoot}
+          >
+            {t('Reset Passkey')}
+            <DropdownMenuShortcut>
+              <KeyRound size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+        )}
 
-        <DropdownMenuItem
-          onSelect={(event) => {
-            event.preventDefault()
-            setResetTwoFAOpen(true)
-          }}
-          disabled={isRoot}
-        >
-          {t('Reset 2FA')}
-          <DropdownMenuShortcut>
-            <ShieldAlert size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
+        {!centralIdentity && (
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault()
+              setResetTwoFAOpen(true)
+            }}
+            disabled={isRoot}
+          >
+            {t('Reset 2FA')}
+            <DropdownMenuShortcut>
+              <ShieldAlert size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+        )}
 
-        <DropdownMenuSeparator />
+        {!centralIdentity && <DropdownMenuSeparator />}
 
-        <DropdownMenuItem
-          onClick={handleDelete}
-          className='text-destructive focus:text-destructive'
-          disabled={isRoot}
-        >
-          {t('Delete')}
-          <DropdownMenuShortcut>
-            <Trash2 size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
+        {!centralIdentity && (
+          <DropdownMenuItem
+            onClick={handleDelete}
+            className='text-destructive focus:text-destructive'
+            disabled={isRoot}
+          >
+            {t('Delete')}
+            <DropdownMenuShortcut>
+              <Trash2 size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+        )}
       </DataTableRowActionMenu>
 
-      <ConfirmDialog
-        open={resetPasskeyOpen}
-        onOpenChange={setResetPasskeyOpen}
-        title={t('Reset Passkey')}
-        desc={t(
-          'Reset Passkey for {{username}}? The user will need to register a new Passkey before using passwordless login.',
-          { username: user.username }
-        )}
-        confirmText={t('Reset Passkey')}
-        handleConfirm={handleResetPasskey}
-      />
+      {!centralIdentity && (
+        <ConfirmDialog
+          open={resetPasskeyOpen}
+          onOpenChange={setResetPasskeyOpen}
+          title={t('Reset Passkey')}
+          desc={t(
+            'Reset Passkey for {{username}}? The user will need to register a new Passkey before using passwordless login.',
+            { username: user.username }
+          )}
+          confirmText={t('Reset Passkey')}
+          handleConfirm={handleResetPasskey}
+        />
+      )}
 
-      <ConfirmDialog
-        open={resetTwoFAOpen}
-        onOpenChange={setResetTwoFAOpen}
-        title={t('Reset Two-Factor Authentication')}
-        desc={t(
-          'Reset 2FA for {{username}}? The user must set up 2FA again to continue using it.',
-          { username: user.username }
-        )}
-        confirmText={t('Reset 2FA')}
-        handleConfirm={handleResetTwoFA}
-      />
+      {!centralIdentity && (
+        <ConfirmDialog
+          open={resetTwoFAOpen}
+          onOpenChange={setResetTwoFAOpen}
+          title={t('Reset Two-Factor Authentication')}
+          desc={t(
+            'Reset 2FA for {{username}}? The user must set up 2FA again to continue using it.',
+            { username: user.username }
+          )}
+          confirmText={t('Reset 2FA')}
+          handleConfirm={handleResetTwoFA}
+        />
+      )}
 
-      <UserBindingDialog
-        open={bindingDialogOpen}
-        onOpenChange={setBindingDialogOpen}
-        userId={user.id}
-        onUnbindSuccess={triggerRefresh}
-      />
+      {!centralIdentity && (
+        <UserBindingDialog
+          open={bindingDialogOpen}
+          onOpenChange={setBindingDialogOpen}
+          userId={user.id}
+          onUnbindSuccess={triggerRefresh}
+        />
+      )}
 
       <UserSubscriptionsDialog
         open={subscriptionsDialogOpen}

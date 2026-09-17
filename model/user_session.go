@@ -18,7 +18,7 @@ const (
 	UserSessionStatusRevoking = "revoking"
 	UserSessionStatusRevoked  = "revoked"
 
-	userSessionCacheSchema      = 1
+	userSessionCacheSchema      = 2
 	userSessionListLimit        = 100
 	userSessionRevokeBatchSize  = 500
 	userSessionCleanupScanLimit = 1000
@@ -40,22 +40,26 @@ var (
 // RefreshHash values are HMAC digests supplied by the service layer; opaque
 // refresh secrets are never persisted.
 type UserSession struct {
-	SID                 string `json:"sid" gorm:"column:sid;type:varchar(64);primaryKey"`
-	UserID              int    `json:"user_id" gorm:"column:user_id;not null;index:idx_user_sessions_user_status_expiry,priority:1;index:idx_user_sessions_user_created,priority:1"`
-	Version             int64  `json:"version" gorm:"type:bigint;not null;default:1"`
-	UserAuthVersion     int64  `json:"user_auth_version" gorm:"type:bigint;not null"`
-	Status              string `json:"status" gorm:"type:varchar(16);not null;index:idx_user_sessions_user_status_expiry,priority:2;index:idx_user_sessions_status_revoked,priority:1"`
-	RefreshHash         string `json:"-" gorm:"type:char(64);not null"`
-	PreviousRefreshHash string `json:"-" gorm:"type:varchar(64)"`
-	PreviousValidUntil  int64  `json:"-" gorm:"type:bigint;not null;default:0"`
-	LoginMethod         string `json:"login_method" gorm:"type:varchar(32);not null"`
-	IP                  string `json:"ip" gorm:"type:varchar(64)"`
-	UserAgent           string `json:"user_agent" gorm:"type:text"`
-	CreatedAt           int64  `json:"created_at" gorm:"autoCreateTime;column:created_at;index:idx_user_sessions_user_created,priority:2"`
-	LastActiveAt        int64  `json:"last_active_at" gorm:"type:bigint;not null;column:last_active_at"`
-	ExpiresAt           int64  `json:"expires_at" gorm:"type:bigint;not null;column:expires_at;index:idx_user_sessions_user_status_expiry,priority:3;index:idx_user_sessions_expires_at"`
-	RevokedAt           int64  `json:"revoked_at,omitempty" gorm:"type:bigint;not null;default:0;column:revoked_at;index:idx_user_sessions_status_revoked,priority:2"`
-	RevokedReason       string `json:"revoked_reason,omitempty" gorm:"type:varchar(64);column:revoked_reason"`
+	SID                  string `json:"sid" gorm:"column:sid;type:varchar(64);primaryKey"`
+	UserID               int    `json:"user_id" gorm:"column:user_id;not null;index:idx_user_sessions_user_status_expiry,priority:1;index:idx_user_sessions_user_created,priority:1"`
+	Version              int64  `json:"version" gorm:"type:bigint;not null;default:1"`
+	UserAuthVersion      int64  `json:"user_auth_version" gorm:"type:bigint;not null"`
+	Status               string `json:"status" gorm:"type:varchar(16);not null;index:idx_user_sessions_user_status_expiry,priority:2;index:idx_user_sessions_status_revoked,priority:1"`
+	RefreshHash          string `json:"-" gorm:"type:char(64);not null"`
+	PreviousRefreshHash  string `json:"-" gorm:"type:varchar(64)"`
+	PreviousValidUntil   int64  `json:"-" gorm:"type:bigint;not null;default:0"`
+	LoginMethod          string `json:"login_method" gorm:"type:varchar(32);not null"`
+	AuthorityIssuer      string `json:"-" gorm:"type:varchar(255)"`
+	AuthoritySubject     string `json:"-" gorm:"type:varchar(64)"`
+	AuthoritySessionID   string `json:"-" gorm:"type:varchar(64)"`
+	AuthorityAuthVersion int64  `json:"-" gorm:"type:bigint;not null;default:0"`
+	IP                   string `json:"ip" gorm:"type:varchar(64)"`
+	UserAgent            string `json:"user_agent" gorm:"type:text"`
+	CreatedAt            int64  `json:"created_at" gorm:"autoCreateTime;column:created_at;index:idx_user_sessions_user_created,priority:2"`
+	LastActiveAt         int64  `json:"last_active_at" gorm:"type:bigint;not null;column:last_active_at"`
+	ExpiresAt            int64  `json:"expires_at" gorm:"type:bigint;not null;column:expires_at;index:idx_user_sessions_user_status_expiry,priority:3;index:idx_user_sessions_expires_at"`
+	RevokedAt            int64  `json:"revoked_at,omitempty" gorm:"type:bigint;not null;default:0;column:revoked_at;index:idx_user_sessions_status_revoked,priority:2"`
+	RevokedReason        string `json:"revoked_reason,omitempty" gorm:"type:varchar(64);column:revoked_reason"`
 }
 
 func (UserSession) TableName() string {
@@ -68,56 +72,68 @@ func (session *UserSession) AfterFind(_ *gorm.DB) error {
 }
 
 type userSessionCacheEntry struct {
-	SID             string
-	UserID          int
-	Version         int64
-	UserAuthVersion int64
-	Status          string
-	LoginMethod     string
-	IP              string
-	UserAgent       string
-	CreatedAt       int64
-	LastActiveAt    int64
-	ExpiresAt       int64
-	RevokedAt       int64
-	RevokedReason   string
-	CacheSchema     int
+	SID                  string
+	UserID               int
+	Version              int64
+	UserAuthVersion      int64
+	Status               string
+	LoginMethod          string
+	AuthorityIssuer      string
+	AuthoritySubject     string
+	AuthoritySessionID   string
+	AuthorityAuthVersion int64
+	IP                   string
+	UserAgent            string
+	CreatedAt            int64
+	LastActiveAt         int64
+	ExpiresAt            int64
+	RevokedAt            int64
+	RevokedReason        string
+	CacheSchema          int
 }
 
 func (session *UserSession) cacheEntry() *userSessionCacheEntry {
 	return &userSessionCacheEntry{
-		SID:             session.SID,
-		UserID:          session.UserID,
-		Version:         session.Version,
-		UserAuthVersion: session.UserAuthVersion,
-		Status:          session.Status,
-		LoginMethod:     session.LoginMethod,
-		IP:              session.IP,
-		UserAgent:       session.UserAgent,
-		CreatedAt:       session.CreatedAt,
-		LastActiveAt:    session.LastActiveAt,
-		ExpiresAt:       session.ExpiresAt,
-		RevokedAt:       session.RevokedAt,
-		RevokedReason:   session.RevokedReason,
-		CacheSchema:     userSessionCacheSchema,
+		SID:                  session.SID,
+		UserID:               session.UserID,
+		Version:              session.Version,
+		UserAuthVersion:      session.UserAuthVersion,
+		Status:               session.Status,
+		LoginMethod:          session.LoginMethod,
+		AuthorityIssuer:      session.AuthorityIssuer,
+		AuthoritySubject:     session.AuthoritySubject,
+		AuthoritySessionID:   session.AuthoritySessionID,
+		AuthorityAuthVersion: session.AuthorityAuthVersion,
+		IP:                   session.IP,
+		UserAgent:            session.UserAgent,
+		CreatedAt:            session.CreatedAt,
+		LastActiveAt:         session.LastActiveAt,
+		ExpiresAt:            session.ExpiresAt,
+		RevokedAt:            session.RevokedAt,
+		RevokedReason:        session.RevokedReason,
+		CacheSchema:          userSessionCacheSchema,
 	}
 }
 
 func (entry *userSessionCacheEntry) session() *UserSession {
 	return &UserSession{
-		SID:             entry.SID,
-		UserID:          entry.UserID,
-		Version:         entry.Version,
-		UserAuthVersion: entry.UserAuthVersion,
-		Status:          entry.Status,
-		LoginMethod:     entry.LoginMethod,
-		IP:              entry.IP,
-		UserAgent:       entry.UserAgent,
-		CreatedAt:       entry.CreatedAt,
-		LastActiveAt:    entry.LastActiveAt,
-		ExpiresAt:       entry.ExpiresAt,
-		RevokedAt:       entry.RevokedAt,
-		RevokedReason:   entry.RevokedReason,
+		SID:                  entry.SID,
+		UserID:               entry.UserID,
+		Version:              entry.Version,
+		UserAuthVersion:      entry.UserAuthVersion,
+		Status:               entry.Status,
+		LoginMethod:          entry.LoginMethod,
+		AuthorityIssuer:      entry.AuthorityIssuer,
+		AuthoritySubject:     entry.AuthoritySubject,
+		AuthoritySessionID:   entry.AuthoritySessionID,
+		AuthorityAuthVersion: entry.AuthorityAuthVersion,
+		IP:                   entry.IP,
+		UserAgent:            entry.UserAgent,
+		CreatedAt:            entry.CreatedAt,
+		LastActiveAt:         entry.LastActiveAt,
+		ExpiresAt:            entry.ExpiresAt,
+		RevokedAt:            entry.RevokedAt,
+		RevokedReason:        entry.RevokedReason,
 	}
 }
 

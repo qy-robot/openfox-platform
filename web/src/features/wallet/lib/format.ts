@@ -1,3 +1,5 @@
+import { formatQuotaWithCurrency } from '@/lib/currency'
+
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -22,15 +24,9 @@ import { DEFAULT_DISCOUNT_RATE } from '../constants'
 // Wallet-specific Formatting Functions
 // ============================================================================
 
-/**
- * Format Creem price with currency symbol (USD/EUR)
- */
-export function formatCreemPrice(
-  price: number,
-  currency: 'USD' | 'EUR'
-): string {
-  const symbol = currency === 'EUR' ? '€' : '$'
-  return `${symbol}${price.toFixed(2)}`
+/** Format a validated CNY Creem product price. */
+export function formatCreemPrice(price: number, _currency: 'CNY'): string {
+  return `¥${price.toFixed(2)}`
 }
 
 /**
@@ -56,9 +52,53 @@ export function formatCurrency(amount: number | string): string {
   if (!Number.isFinite(numeric)) return '-'
 
   return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'CNY',
+    currencyDisplay: 'narrowSymbol',
     minimumFractionDigits: 0,
     maximumFractionDigits: Math.abs(numeric) >= 1 ? 2 : 4,
   }).format(numeric)
+}
+
+/** Format an audited payment amount without reinterpreting its currency. */
+export function formatPaymentAmount(
+  amount: number,
+  currency?: string,
+  unknownCurrencyLabel = 'Currency unknown'
+): string {
+  if (!Number.isFinite(amount)) return '-'
+  const code = currency?.trim().toUpperCase()
+  if (!code) return `${amount} (${unknownCurrencyLabel})`
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: code,
+      currencyDisplay: 'narrowSymbol',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(amount)
+  } catch {
+    return `${amount} ${code}`
+  }
+}
+
+/**
+ * Prefer the exact credited quota for entitlement display. A legacy record's
+ * payment currency describes `money`, not its entitlement `amount`, so records
+ * without the snapshot keep an explicitly unknown legacy unit.
+ */
+export function formatTopupEntitlement(
+  input: {
+    amount: number
+    credited_quota?: number
+    currency?: string
+  },
+  unknownUnitLabel = 'Legacy entitlement unit unknown'
+): string {
+  if (Number.isFinite(input.credited_quota)) {
+    return formatQuotaWithCurrency(input.credited_quota)
+  }
+  return `${input.amount} (${unknownUnitLabel})`
 }
 
 /**
@@ -77,15 +117,15 @@ export function getDiscountLabel(discount: number): string {
  */
 export function calculatePresetPricing(
   presetValue: number,
-  priceRatio: number,
+  _priceRatio: number,
   discount: number,
-  usdExchangeRate: number = 1
+  _usdExchangeRate: number = 1
 ) {
-  const originalPrice = presetValue * priceRatio
+  const originalPrice = presetValue
   const actualPrice = originalPrice * discount
   const savedAmount = originalPrice - actualPrice
   const hasDiscount = discount < 1.0
-  const displayValue = presetValue * usdExchangeRate
+  const displayValue = presetValue
 
   return {
     displayValue,

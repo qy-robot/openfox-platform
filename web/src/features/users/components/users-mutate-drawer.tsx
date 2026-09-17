@@ -63,6 +63,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Textarea } from '@/components/ui/textarea'
+import { isCentralAccountMode } from '@/features/auth/sign-in/central-reauth'
 import {
   ADMIN_PERMISSION_ACTIONS,
   ADMIN_PERMISSION_RESOURCES,
@@ -114,6 +115,7 @@ export function UsersMutateDrawer({
   const currentUser = useAuthStore((s) => s.auth.user)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [quotaDialogOpen, setQuotaDialogOpen] = useState(false)
+  const centralIdentity = isCentralAccountMode()
 
   // Fetch groups
   const { data: groupsData } = useQuery({
@@ -253,23 +255,25 @@ export function UsersMutateDrawer({
                   {t('Basic Information')}
                 </h3>
 
-                <FormField
-                  control={form.control}
-                  name='username'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('Username')}</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder={t('Enter username')}
-                          disabled={isUpdate}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!centralIdentity && (
+                  <FormField
+                    control={form.control}
+                    name='username'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('Username')}</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder={t('Enter username')}
+                            disabled={isUpdate}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 {!isUpdate && (
                   <FormField
@@ -312,47 +316,51 @@ export function UsersMutateDrawer({
                   />
                 )}
 
-                <FormField
-                  control={form.control}
-                  name='display_name'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('Display Name')}</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder={t('Enter display name')}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {t('Leave empty to use username')}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!centralIdentity && (
+                  <FormField
+                    control={form.control}
+                    name='display_name'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('Display Name')}</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder={t('Enter display name')}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          {t('Leave empty to use username')}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
-                <FormField
-                  control={form.control}
-                  name='password'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('Password')}</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type='password'
-                          placeholder={
-                            isUpdate
-                              ? t('Leave empty to keep unchanged')
-                              : t('Enter password (8–128 characters)')
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!centralIdentity && (
+                  <FormField
+                    control={form.control}
+                    name='password'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('Password')}</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type='password'
+                            placeholder={
+                              isUpdate
+                                ? t('Leave empty to keep unchanged')
+                                : t('Enter password (8–128 characters)')
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </SideDrawerSection>
 
               {/* Group & Quota Settings (Update only) */}

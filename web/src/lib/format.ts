@@ -63,12 +63,12 @@ export function formatCurrencyUSD(value: number | null | undefined): string {
 }
 
 // ============================================================================
-// Quota Formatting (500,000 units = $1)
+// Quota Formatting (500,000 units = ¥1)
 // ============================================================================
 
 /**
  * Format quota into the configured display amount.
- * Quota is stored in units where `quotaPerUnit` equals 1 USD.
+ * Quota is stored in units where `quotaPerUnit` equals 1 CNY.
  */
 export function formatQuota(quota: number): string {
   return formatQuotaWithCurrency(quota, {
@@ -91,12 +91,7 @@ export function parseQuotaFromDollars(amount: number): number {
     return Math.round(amount)
   }
 
-  const exchangeRate =
-    meta.kind === 'currency' || meta.kind === 'custom' ? meta.exchangeRate : 1
-
-  const usdAmount = exchangeRate > 0 ? amount / exchangeRate : amount
-
-  return Math.round(usdAmount * config.quotaPerUnit)
+  return Math.round(amount * config.quotaPerUnit)
 }
 
 /**
@@ -117,7 +112,7 @@ function quotaUnitsToDisplayAmount(
     return units
   }
 
-  return (units / quotaPerUnit) * meta.exchangeRate
+  return units / quotaPerUnit
 }
 
 /**

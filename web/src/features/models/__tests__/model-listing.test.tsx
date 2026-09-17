@@ -52,6 +52,7 @@ import fr from '@/i18n/locales/fr.json'
 import zhCN from '@/i18n/locales/zh.json'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
+import { usePricingPreferencesStore } from '@/stores/pricing-preferences-store'
 import {
   DEFAULT_CURRENCY_CONFIG,
   useSystemConfigStore,
@@ -127,6 +128,17 @@ async function renderList(
 ) {
   useAuthStore.getState().auth.setUser({ id: 1, username: 'admin', role: 100 })
   const get = vi.spyOn(api, 'get').mockImplementation(async (url) => {
+    if (url === '/api/status') {
+      return {
+        data: {
+          success: true,
+          data: {
+            quota_display_type:
+              useSystemConfigStore.getState().config.currency.quotaDisplayType,
+          },
+        },
+      }
+    }
     if (url === '/api/models/' || url === '/api/models/search') {
       return {
         data: {
@@ -191,6 +203,7 @@ async function renderList(
 }
 
 beforeEach(() => {
+  usePricingPreferencesStore.setState({ currency: 'USD' })
   useSystemConfigStore.getState().setConfig({
     currency: { ...DEFAULT_CURRENCY_CONFIG, quotaDisplayType: 'USD' },
   })
@@ -203,6 +216,7 @@ afterEach(async () => {
   cleanup()
   clients.splice(0).forEach((client) => client.clear())
   useAuthStore.getState().auth.reset()
+  usePricingPreferencesStore.setState({ currency: 'site' })
   useSystemConfigStore
     .getState()
     .setConfig({ currency: { ...DEFAULT_CURRENCY_CONFIG } })
@@ -367,7 +381,7 @@ it('keeps prices and channel explanations readable in the mobile card and detail
     name: 'View pricing for catalog-only',
   })
   expect(within(price).getByText('1.25')).toHaveClass('whitespace-normal')
-  expect(within(price).getByText('USD / 1M tokens')).toHaveClass(
+  expect(within(price).getByText('CNY / 1M tokens')).toHaveClass(
     'whitespace-normal'
   )
   expect(screen.getByText('Channels 0 · Groups 0')).toHaveClass(
@@ -450,11 +464,11 @@ it('uses backend square states for success, warning, hidden, and partial rows in
   await act(async () => {
     await i18n.changeLanguage('zhCN')
   })
-  expect(screen.getByText('无法展示')).toBeVisible()
+  expect(screen.getByText('暂不可用')).toBeVisible()
   expect(screen.getByText('部分展示')).toBeVisible()
   expect(screen.getAllByText('正常展示')).toHaveLength(2)
   expect(screen.getAllByText('已隐藏')).toHaveLength(2)
-  for (const label of ['无法展示', '部分展示']) {
+  for (const label of ['暂不可用', '部分展示']) {
     expect(screen.getByText(label)).toHaveClass('truncate')
   }
 })
@@ -578,7 +592,7 @@ it.each([
     name: 'free-request',
     effective: { ModelPrice: 0 },
     catalog: { quota_type: 1, model_price: 0 },
-    text: 'Per-request0USD/request',
+    text: 'Per-request0CNY/request',
   },
   {
     name: 'free-tokens',
@@ -630,7 +644,7 @@ it.each([
   }
 )
 
-it('shows task tier ranges in the schema unit and converts site currency only once', async () => {
+it('shows task tier ranges in CNY and ignores legacy exchange-rate settings', async () => {
   useSystemConfigStore.getState().setConfig({
     currency: {
       ...DEFAULT_CURRENCY_CONFIG,
@@ -661,7 +675,7 @@ it('shows task tier ranges in the schema unit and converts site currency only on
   const button = screen.getByRole('button', {
     name: 'View pricing for channel-only',
   })
-  expect(button).toHaveTextContent(/2.8.*5.6/)
+  expect(button).toHaveTextContent(/0.4.*0.8/)
   expect(button).toHaveTextContent('/s')
   expect(button).toHaveTextContent('CNY')
   expect(button).not.toHaveTextContent('¥')
@@ -669,6 +683,10 @@ it('shows task tier ranges in the schema unit and converts site currency only on
 })
 
 it('opens the effective expression breakdown from the price without creating metadata', async () => {
+  usePricingPreferencesStore.setState({ currency: 'USD' })
+  useSystemConfigStore.getState().setConfig({
+    currency: { ...DEFAULT_CURRENCY_CONFIG, quotaDisplayType: 'USD' },
+  })
   const expression =
     '(len <= 200000 ? tier("standard", p * 3 + c * 15 + cr * 0.3) : tier("long", p * 6 + c * 22.5 + cr * 0.6)) * (header("x-priority") == "high" ? 2 : 1)'
   await renderList([channel], {
@@ -716,7 +734,7 @@ it('shows an unrecognized expression as special and retains its full source in p
     name: 'View pricing for channel-only',
   })
   expect(button).toHaveTextContent('Special billing expression')
-  expect(button).not.toHaveTextContent('$2')
+  expect(button).not.toHaveTextContent('¥2')
   expect(button).not.toHaveTextContent(expression)
   await userEvent.click(button)
   const preview = await screen.findByRole('region', { name: 'Current Billing' })
@@ -820,8 +838,8 @@ it('keeps an active visibility filter when its server result is empty', async ()
 })
 
 it.each([
-  { type: 'CUSTOM' as const, caption: '🐱 / 1M tokens' },
-  { type: 'TOKENS' as const, caption: 'USD / 1M tokens' },
+  { type: 'CUSTOM' as const, caption: 'CNY / 1M tokens' },
+  { type: 'TOKENS' as const, caption: 'CNY / 1M tokens' },
 ])(
   'uses one currency caption in $type mode without replacing prices with quota counts',
   async ({ type, caption }) => {
@@ -850,8 +868,6 @@ it.each([
       'Input0.5Output1'
     )
     expect(within(button).getByText(caption)).toBeVisible()
-    if (type === 'CUSTOM') {
-      expect(button.textContent?.match(/🐱/g)).toHaveLength(1)
-    }
+    expect(button).not.toHaveTextContent('🐱')
   }
 )

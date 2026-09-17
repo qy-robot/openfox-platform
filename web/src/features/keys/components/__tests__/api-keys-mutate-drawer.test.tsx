@@ -72,6 +72,8 @@ function installApiFixtures(createdPayloads: Array<Record<string, unknown>>) {
             data: { groups: ['vip', 'default'], max_count: 3 },
           },
         }
+      case '/api/teams/self':
+        return { data: { success: true, data: [] } }
       default:
         throw new Error(`Unexpected GET ${url}`)
     }
@@ -84,7 +86,7 @@ function installApiFixtures(createdPayloads: Array<Record<string, unknown>>) {
   }
 }
 
-async function renderCreateDrawer(): Promise<void> {
+async function renderCreateDrawer(seedTeams = true): Promise<void> {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
@@ -119,6 +121,9 @@ async function renderCreateDrawer(): Promise<void> {
     },
     { updatedAt: freshAt }
   )
+  if (seedTeams) {
+    queryClient.setQueryData(['teams', 'self'], [], { updatedAt: freshAt })
+  }
   renderedDrawer = { queryClient }
 
   render(
@@ -130,13 +135,15 @@ async function renderCreateDrawer(): Promise<void> {
       </I18nextProvider>
     </QueryClientProvider>
   )
-  await waitFor(
-    () => {
-      const saveButton = findButton('Save changes', false)
-      expect(saveButton).toBeEnabled()
-    },
-    { timeout: 1500 }
-  )
+  if (seedTeams) {
+    await waitFor(
+      () => {
+        const saveButton = findButton('Save changes', false)
+        expect(saveButton).toBeEnabled()
+      },
+      { timeout: 1500 }
+    )
+  }
 }
 
 function findButton(text: string, required: true): HTMLButtonElement
@@ -204,6 +211,26 @@ afterEach(() => {
 })
 
 describe('API keys mutate drawer Auto group integration', () => {
+  test('blocks creation and offers retry when teams cannot be loaded', async () => {
+    const createdPayloads: Array<Record<string, unknown>> = []
+    installApiFixtures(createdPayloads)
+    const getWithFixtures = apiClient.get
+    apiClient.get = async (url) => {
+      if (url === '/api/teams/self') throw new Error('teams unavailable')
+      return getWithFixtures(url)
+    }
+
+    await renderCreateDrawer(false)
+
+    const error = await screen.findByText(
+      'Could not load teams before creating the key.'
+    )
+    expect(error.closest('[role="alert"]')).toBeVisible()
+    expect(findButton('Retry', true)).toBeEnabled()
+    expect(findButton('Save changes', true)).toBeDisabled()
+    expect(createdPayloads).toHaveLength(0)
+  })
+
   test('inherits the root Auto order and sends an empty override for every batch-created key', async () => {
     const createdPayloads: Array<Record<string, unknown>> = []
     installApiFixtures(createdPayloads)

@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { Button } from '@/components/ui/button'
 import { useStatus } from '@/hooks/use-status'
 
 import { AuthLayout } from '../auth-layout'
@@ -48,7 +49,21 @@ export function SignUp() {
           </p>
         </div>
 
-        <SignUpForm />
+        {status?.account_auth_enabled === true ? (
+          <Button
+            className='w-full'
+            render={
+              <a
+                href={`${String(status.account_center_url || 'https://account.openzrob.com').replace(/\/$/, '')}/account/register`}
+              />
+            }
+            nativeButton={false}
+          >
+            {t('Continue to account center')}
+          </Button>
+        ) : (
+          <SignUpForm />
+        )}
 
         <TermsFooter
           variant='sign-up'

@@ -415,6 +415,30 @@ it('never refreshes or replays a failed single-use authorization request', async
   ])
 })
 
+it('sends an explicitly anonymous single-use exchange without refreshing platform auth', async () => {
+  const send = vi.spyOn(XMLHttpRequest.prototype, 'send')
+  const adapter = vi.fn<AxiosAdapter>(async (config) => ({
+    data: { success: true },
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    config,
+  }))
+  api.defaults.adapter = adapter
+
+  await api.post(
+    '/api/account/sso/exchange',
+    { code: 'one-time-code' },
+    { skipAuthRefresh: true, singleUseAuthorization: true }
+  )
+
+  expect(adapter).toHaveBeenCalledTimes(1)
+  expect(send).not.toHaveBeenCalled()
+  expect(
+    adapter.mock.calls[0]?.[0].headers.get('Authorization')
+  ).toBeUndefined()
+})
+
 it('rejects an unsuccessful setting update so callers cannot proceed as if it saved, with one useful notification', async () => {
   const client = createAppQueryClient()
   const notify = vi.spyOn(toast, 'error').mockReturnValue('setting-error')

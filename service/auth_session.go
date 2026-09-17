@@ -49,18 +49,43 @@ type AuthBundle struct {
 	RefreshToken    string           `json:"-"`
 }
 
+type CentralSessionAuthority struct {
+	Issuer, Subject, SessionID string
+	AuthVersion                int64
+}
+
+const CentralBrowserLoginMethod = "account_sso"
+
 func CreateLoginSession(userID int, loginMethod, ip, userAgent string) (*AuthBundle, error) {
-	return createLoginSession(userID, 0, loginMethod, ip, userAgent)
+	return createLoginSession(userID, 0, loginMethod, ip, userAgent, nil)
 }
 
 func CreateLoginSessionAtAuthVersion(userID int, expectedAuthVersion int64, loginMethod, ip, userAgent string) (*AuthBundle, error) {
 	if expectedAuthVersion <= 0 {
 		return nil, ErrLoginSessionInvalid
 	}
-	return createLoginSession(userID, expectedAuthVersion, loginMethod, ip, userAgent)
+	return createLoginSession(userID, expectedAuthVersion, loginMethod, ip, userAgent, nil)
 }
 
-func createLoginSession(userID int, expectedAuthVersion int64, loginMethod, ip, userAgent string) (*AuthBundle, error) {
+func CreateCentralDesktopLoginSession(userID int, expectedAuthVersion int64, authority CentralSessionAuthority, ip, userAgent string) (*AuthBundle, error) {
+	return createCentralLoginSession(userID, expectedAuthVersion, DesktopLoginMethod, authority, ip, userAgent)
+}
+
+func CreateCentralBrowserLoginSession(userID int, expectedAuthVersion int64, authority CentralSessionAuthority, ip, userAgent string) (*AuthBundle, error) {
+	return createCentralLoginSession(userID, expectedAuthVersion, CentralBrowserLoginMethod, authority, ip, userAgent)
+}
+
+func createCentralLoginSession(userID int, expectedAuthVersion int64, loginMethod string, authority CentralSessionAuthority, ip, userAgent string) (*AuthBundle, error) {
+	if authority.Issuer != CentralAccountIssuer() || authority.Subject == "" || authority.SessionID == "" || authority.AuthVersion <= 0 {
+		return nil, ErrLoginSessionInvalid
+	}
+	if err := ValidateCentralSessionReference(authority.Subject, authority.SessionID, authority.AuthVersion); err != nil {
+		return nil, ErrLoginSessionRevoked
+	}
+	return createLoginSession(userID, expectedAuthVersion, loginMethod, ip, userAgent, &authority)
+}
+
+func createLoginSession(userID int, expectedAuthVersion int64, loginMethod, ip, userAgent string, authority *CentralSessionAuthority) (*AuthBundle, error) {
 	user, err := model.GetUserCache(userID)
 	if err != nil {
 		return nil, err
@@ -89,6 +114,12 @@ func createLoginSession(userID int, expectedAuthVersion int64, loginMethod, ip, 
 	session, refreshSecret, err := newLoginSession(userID, user.AuthVersion, loginMethod, ip, userAgent)
 	if err != nil {
 		return nil, err
+	}
+	if authority != nil {
+		session.AuthorityIssuer = authority.Issuer
+		session.AuthoritySubject = authority.Subject
+		session.AuthoritySessionID = authority.SessionID
+		session.AuthorityAuthVersion = authority.AuthVersion
 	}
 	if err := model.CreateUserSession(session); err != nil {
 		return nil, err
@@ -139,6 +170,9 @@ func ValidateLoginSession(identity AuthIdentity) (*model.UserSession, *model.Use
 	if session.UserID != identity.UserID || session.Status != model.UserSessionStatusActive || session.RevokedAt != 0 || session.ExpiresAt <= now || session.Version != identity.SessionVersion || session.UserAuthVersion != identity.UserAuthVersion {
 		return nil, nil, ErrLoginSessionRevoked
 	}
+	if err := validateCentralSessionAuthority(session); err != nil {
+		return nil, nil, err
+	}
 	user, err := model.GetUserCache(identity.UserID)
 	if err != nil {
 		return nil, nil, err
@@ -147,6 +181,22 @@ func ValidateLoginSession(identity AuthIdentity) (*model.UserSession, *model.Use
 		return nil, nil, ErrLoginSessionRevoked
 	}
 	return session, user, nil
+}
+
+func validateCentralSessionAuthority(session *model.UserSession) error {
+	if session.AuthorityIssuer == "" && session.AuthoritySubject == "" && session.AuthoritySessionID == "" && session.AuthorityAuthVersion == 0 {
+		return nil
+	}
+	if !CentralAccountEnabled() {
+		return nil
+	}
+	if session.AuthorityIssuer != CentralAccountIssuer() || session.AuthoritySubject == "" || session.AuthoritySessionID == "" || session.AuthorityAuthVersion <= 0 {
+		return ErrLoginSessionRevoked
+	}
+	if err := ValidateCentralSessionReference(session.AuthoritySubject, session.AuthoritySessionID, session.AuthorityAuthVersion); err != nil {
+		return ErrLoginSessionRevoked
+	}
+	return nil
 }
 
 // ValidateSessionReference validates a server-side flow bound to an existing
@@ -231,6 +281,9 @@ func RefreshLoginSession(rawRefreshToken, expectedSID, ip, userAgent string) (*A
 	}
 	if session.Status != model.UserSessionStatusActive || session.RevokedAt != 0 || session.ExpiresAt <= time.Now().Unix() {
 		return nil, nil, ErrLoginSessionRevoked
+	}
+	if err := validateCentralSessionAuthority(session); err != nil {
+		return nil, nil, err
 	}
 	userCache, err := model.GetUserCache(session.UserID)
 	if err != nil {

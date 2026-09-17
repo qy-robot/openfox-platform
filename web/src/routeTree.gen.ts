@@ -29,6 +29,9 @@ import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as AuthenticatedChat2linkRouteImport } from './routes/_authenticated/chat2link'
 import { Route as AuthenticatedSystemSettingsRouteRouteImport } from './routes/_authenticated/system-settings/route'
 import { Route as AboutIndexRouteImport } from './routes/about/index'
+import { Route as AccountCallbackRouteImport } from './routes/account/callback'
+import { Route as DownloadIndexRouteImport } from './routes/download/index'
+import { Route as LicensesIndexRouteImport } from './routes/licenses/index'
 import { Route as OauthProviderRouteImport } from './routes/oauth/$provider'
 import { Route as PricingIndexRouteImport } from './routes/pricing/index'
 import { Route as RankingsIndexRouteImport } from './routes/rankings/index'
@@ -38,6 +41,7 @@ import { Route as AuthenticatedChannelsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedChatChatIdRouteImport } from './routes/_authenticated/chat/$chatId'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedDashboardSectionRouteImport } from './routes/_authenticated/dashboard/$section'
+import { Route as AuthenticatedDesktopAuthorizeRouteImport } from './routes/_authenticated/desktop/authorize'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedKeysIndexRouteImport } from './routes/_authenticated/keys/index'
 import { Route as AuthenticatedModelsIndexRouteImport } from './routes/_authenticated/models/index'
@@ -50,6 +54,8 @@ import { Route as AuthenticatedSubscriptionsIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedSystemInfoIndexRouteImport } from './routes/_authenticated/system-info/index'
 import { Route as AuthenticatedSystemSettingsIndexRouteImport } from './routes/_authenticated/system-settings/index'
 import { Route as AuthenticatedTaskPluginsIndexRouteImport } from './routes/_authenticated/task-plugins/index'
+import { Route as AuthenticatedTeamsIndexRouteImport } from './routes/_authenticated/teams/index'
+import { Route as AuthenticatedTeamsJoinRouteImport } from './routes/_authenticated/teams/join'
 import { Route as AuthenticatedUsageLogsIndexRouteImport } from './routes/_authenticated/usage-logs/index'
 import { Route as AuthenticatedUsageLogsSectionRouteImport } from './routes/_authenticated/usage-logs/$section'
 import { Route as AuthenticatedUsageLogsAuditRouteImport } from './routes/_authenticated/usage-logs/audit'
@@ -70,6 +76,7 @@ import { Route as AuthenticatedSystemSettingsSecurityIndexRouteImport } from './
 import { Route as AuthenticatedSystemSettingsSecuritySectionRouteImport } from './routes/_authenticated/system-settings/security/$section'
 import { Route as AuthenticatedSystemSettingsSiteIndexRouteImport } from './routes/_authenticated/system-settings/site/index'
 import { Route as AuthenticatedSystemSettingsSiteSectionRouteImport } from './routes/_authenticated/system-settings/site/$section'
+import { Route as AuthenticatedTeamsTeamIdSectionRouteImport } from './routes/_authenticated/teams/$teamId/$section'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -170,6 +177,21 @@ const AboutIndexRoute = AboutIndexRouteImport.update({
   path: '/about/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountCallbackRoute = AccountCallbackRouteImport.update({
+  id: '/account/callback',
+  path: '/account/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadIndexRoute = DownloadIndexRouteImport.update({
+  id: '/download/',
+  path: '/download/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LicensesIndexRoute = LicensesIndexRouteImport.update({
+  id: '/licenses/',
+  path: '/licenses/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OauthProviderRoute = OauthProviderRouteImport.update({
   id: '/oauth/$provider',
   path: '/oauth/$provider',
@@ -216,6 +238,12 @@ const AuthenticatedDashboardSectionRoute =
   AuthenticatedDashboardSectionRouteImport.update({
     id: '/dashboard/$section',
     path: '/dashboard/$section',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDesktopAuthorizeRoute =
+  AuthenticatedDesktopAuthorizeRouteImport.update({
+    id: '/desktop/authorize',
+    path: '/desktop/authorize',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedErrorsErrorRoute =
@@ -289,6 +317,16 @@ const AuthenticatedTaskPluginsIndexRoute =
     path: '/task-plugins/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTeamsIndexRoute = AuthenticatedTeamsIndexRouteImport.update({
+  id: '/teams/',
+  path: '/teams/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTeamsJoinRoute = AuthenticatedTeamsJoinRouteImport.update({
+  id: '/teams/join',
+  path: '/teams/join',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedUsageLogsIndexRoute =
   AuthenticatedUsageLogsIndexRouteImport.update({
     id: '/usage-logs/',
@@ -407,6 +445,12 @@ const AuthenticatedSystemSettingsSiteSectionRoute =
     path: '/site/$section',
     getParentRoute: () => AuthenticatedSystemSettingsRouteRoute,
   } as any)
+const AuthenticatedTeamsTeamIdSectionRoute =
+  AuthenticatedTeamsTeamIdSectionRouteImport.update({
+    id: '/teams/$teamId/$section',
+    path: '/teams/$teamId/$section',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -426,16 +470,21 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/chat2link': typeof AuthenticatedChat2linkRoute
+  '/account/callback': typeof AccountCallbackRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about/': typeof AboutIndexRoute
+  '/download/': typeof DownloadIndexRoute
+  '/licenses/': typeof LicensesIndexRoute
   '/pricing/': typeof PricingIndexRoute
   '/rankings/': typeof RankingsIndexRoute
   '/setup/': typeof SetupIndexRoute
   '/user/reset': typeof authUserResetRoute
   '/chat/$chatId': typeof AuthenticatedChatChatIdRoute
   '/dashboard/$section': typeof AuthenticatedDashboardSectionRoute
+  '/desktop/authorize': typeof AuthenticatedDesktopAuthorizeRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/models/$section': typeof AuthenticatedModelsSectionRoute
+  '/teams/join': typeof AuthenticatedTeamsJoinRoute
   '/usage-logs/$section': typeof AuthenticatedUsageLogsSectionRoute
   '/usage-logs/audit': typeof AuthenticatedUsageLogsAuditRoute
   '/channels/': typeof AuthenticatedChannelsIndexRoute
@@ -450,6 +499,7 @@ export interface FileRoutesByFullPath {
   '/system-info/': typeof AuthenticatedSystemInfoIndexRoute
   '/system-settings/': typeof AuthenticatedSystemSettingsIndexRoute
   '/task-plugins/': typeof AuthenticatedTaskPluginsIndexRoute
+  '/teams/': typeof AuthenticatedTeamsIndexRoute
   '/usage-logs/': typeof AuthenticatedUsageLogsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
   '/wallet/': typeof AuthenticatedWalletIndexRoute
@@ -461,6 +511,7 @@ export interface FileRoutesByFullPath {
   '/system-settings/operations/$section': typeof AuthenticatedSystemSettingsOperationsSectionRoute
   '/system-settings/security/$section': typeof AuthenticatedSystemSettingsSecuritySectionRoute
   '/system-settings/site/$section': typeof AuthenticatedSystemSettingsSiteSectionRoute
+  '/teams/$teamId/$section': typeof AuthenticatedTeamsTeamIdSectionRoute
   '/system-settings/auth/': typeof AuthenticatedSystemSettingsAuthIndexRoute
   '/system-settings/billing/': typeof AuthenticatedSystemSettingsBillingIndexRoute
   '/system-settings/content/': typeof AuthenticatedSystemSettingsContentIndexRoute
@@ -486,16 +537,21 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/chat2link': typeof AuthenticatedChat2linkRoute
+  '/account/callback': typeof AccountCallbackRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about': typeof AboutIndexRoute
+  '/download': typeof DownloadIndexRoute
+  '/licenses': typeof LicensesIndexRoute
   '/pricing': typeof PricingIndexRoute
   '/rankings': typeof RankingsIndexRoute
   '/setup': typeof SetupIndexRoute
   '/user/reset': typeof authUserResetRoute
   '/chat/$chatId': typeof AuthenticatedChatChatIdRoute
   '/dashboard/$section': typeof AuthenticatedDashboardSectionRoute
+  '/desktop/authorize': typeof AuthenticatedDesktopAuthorizeRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/models/$section': typeof AuthenticatedModelsSectionRoute
+  '/teams/join': typeof AuthenticatedTeamsJoinRoute
   '/usage-logs/$section': typeof AuthenticatedUsageLogsSectionRoute
   '/usage-logs/audit': typeof AuthenticatedUsageLogsAuditRoute
   '/channels': typeof AuthenticatedChannelsIndexRoute
@@ -510,6 +566,7 @@ export interface FileRoutesByTo {
   '/system-info': typeof AuthenticatedSystemInfoIndexRoute
   '/system-settings': typeof AuthenticatedSystemSettingsIndexRoute
   '/task-plugins': typeof AuthenticatedTaskPluginsIndexRoute
+  '/teams': typeof AuthenticatedTeamsIndexRoute
   '/usage-logs': typeof AuthenticatedUsageLogsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/wallet': typeof AuthenticatedWalletIndexRoute
@@ -521,6 +578,7 @@ export interface FileRoutesByTo {
   '/system-settings/operations/$section': typeof AuthenticatedSystemSettingsOperationsSectionRoute
   '/system-settings/security/$section': typeof AuthenticatedSystemSettingsSecuritySectionRoute
   '/system-settings/site/$section': typeof AuthenticatedSystemSettingsSiteSectionRoute
+  '/teams/$teamId/$section': typeof AuthenticatedTeamsTeamIdSectionRoute
   '/system-settings/auth': typeof AuthenticatedSystemSettingsAuthIndexRoute
   '/system-settings/billing': typeof AuthenticatedSystemSettingsBillingIndexRoute
   '/system-settings/content': typeof AuthenticatedSystemSettingsContentIndexRoute
@@ -550,16 +608,21 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/chat2link': typeof AuthenticatedChat2linkRoute
+  '/account/callback': typeof AccountCallbackRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about/': typeof AboutIndexRoute
+  '/download/': typeof DownloadIndexRoute
+  '/licenses/': typeof LicensesIndexRoute
   '/pricing/': typeof PricingIndexRoute
   '/rankings/': typeof RankingsIndexRoute
   '/setup/': typeof SetupIndexRoute
   '/(auth)/user/reset': typeof authUserResetRoute
   '/_authenticated/chat/$chatId': typeof AuthenticatedChatChatIdRoute
   '/_authenticated/dashboard/$section': typeof AuthenticatedDashboardSectionRoute
+  '/_authenticated/desktop/authorize': typeof AuthenticatedDesktopAuthorizeRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/models/$section': typeof AuthenticatedModelsSectionRoute
+  '/_authenticated/teams/join': typeof AuthenticatedTeamsJoinRoute
   '/_authenticated/usage-logs/$section': typeof AuthenticatedUsageLogsSectionRoute
   '/_authenticated/usage-logs/audit': typeof AuthenticatedUsageLogsAuditRoute
   '/_authenticated/channels/': typeof AuthenticatedChannelsIndexRoute
@@ -574,6 +637,7 @@ export interface FileRoutesById {
   '/_authenticated/system-info/': typeof AuthenticatedSystemInfoIndexRoute
   '/_authenticated/system-settings/': typeof AuthenticatedSystemSettingsIndexRoute
   '/_authenticated/task-plugins/': typeof AuthenticatedTaskPluginsIndexRoute
+  '/_authenticated/teams/': typeof AuthenticatedTeamsIndexRoute
   '/_authenticated/usage-logs/': typeof AuthenticatedUsageLogsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/wallet/': typeof AuthenticatedWalletIndexRoute
@@ -585,6 +649,7 @@ export interface FileRoutesById {
   '/_authenticated/system-settings/operations/$section': typeof AuthenticatedSystemSettingsOperationsSectionRoute
   '/_authenticated/system-settings/security/$section': typeof AuthenticatedSystemSettingsSecuritySectionRoute
   '/_authenticated/system-settings/site/$section': typeof AuthenticatedSystemSettingsSiteSectionRoute
+  '/_authenticated/teams/$teamId/$section': typeof AuthenticatedTeamsTeamIdSectionRoute
   '/_authenticated/system-settings/auth/': typeof AuthenticatedSystemSettingsAuthIndexRoute
   '/_authenticated/system-settings/billing/': typeof AuthenticatedSystemSettingsBillingIndexRoute
   '/_authenticated/system-settings/content/': typeof AuthenticatedSystemSettingsContentIndexRoute
@@ -613,16 +678,21 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/chat2link'
+    | '/account/callback'
     | '/oauth/$provider'
     | '/about/'
+    | '/download/'
+    | '/licenses/'
     | '/pricing/'
     | '/rankings/'
     | '/setup/'
     | '/user/reset'
     | '/chat/$chatId'
     | '/dashboard/$section'
+    | '/desktop/authorize'
     | '/errors/$error'
     | '/models/$section'
+    | '/teams/join'
     | '/usage-logs/$section'
     | '/usage-logs/audit'
     | '/channels/'
@@ -637,6 +707,7 @@ export interface FileRouteTypes {
     | '/system-info/'
     | '/system-settings/'
     | '/task-plugins/'
+    | '/teams/'
     | '/usage-logs/'
     | '/users/'
     | '/wallet/'
@@ -648,6 +719,7 @@ export interface FileRouteTypes {
     | '/system-settings/operations/$section'
     | '/system-settings/security/$section'
     | '/system-settings/site/$section'
+    | '/teams/$teamId/$section'
     | '/system-settings/auth/'
     | '/system-settings/billing/'
     | '/system-settings/content/'
@@ -673,16 +745,21 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/chat2link'
+    | '/account/callback'
     | '/oauth/$provider'
     | '/about'
+    | '/download'
+    | '/licenses'
     | '/pricing'
     | '/rankings'
     | '/setup'
     | '/user/reset'
     | '/chat/$chatId'
     | '/dashboard/$section'
+    | '/desktop/authorize'
     | '/errors/$error'
     | '/models/$section'
+    | '/teams/join'
     | '/usage-logs/$section'
     | '/usage-logs/audit'
     | '/channels'
@@ -697,6 +774,7 @@ export interface FileRouteTypes {
     | '/system-info'
     | '/system-settings'
     | '/task-plugins'
+    | '/teams'
     | '/usage-logs'
     | '/users'
     | '/wallet'
@@ -708,6 +786,7 @@ export interface FileRouteTypes {
     | '/system-settings/operations/$section'
     | '/system-settings/security/$section'
     | '/system-settings/site/$section'
+    | '/teams/$teamId/$section'
     | '/system-settings/auth'
     | '/system-settings/billing'
     | '/system-settings/content'
@@ -736,16 +815,21 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/chat2link'
+    | '/account/callback'
     | '/oauth/$provider'
     | '/about/'
+    | '/download/'
+    | '/licenses/'
     | '/pricing/'
     | '/rankings/'
     | '/setup/'
     | '/(auth)/user/reset'
     | '/_authenticated/chat/$chatId'
     | '/_authenticated/dashboard/$section'
+    | '/_authenticated/desktop/authorize'
     | '/_authenticated/errors/$error'
     | '/_authenticated/models/$section'
+    | '/_authenticated/teams/join'
     | '/_authenticated/usage-logs/$section'
     | '/_authenticated/usage-logs/audit'
     | '/_authenticated/channels/'
@@ -760,6 +844,7 @@ export interface FileRouteTypes {
     | '/_authenticated/system-info/'
     | '/_authenticated/system-settings/'
     | '/_authenticated/task-plugins/'
+    | '/_authenticated/teams/'
     | '/_authenticated/usage-logs/'
     | '/_authenticated/users/'
     | '/_authenticated/wallet/'
@@ -771,6 +856,7 @@ export interface FileRouteTypes {
     | '/_authenticated/system-settings/operations/$section'
     | '/_authenticated/system-settings/security/$section'
     | '/_authenticated/system-settings/site/$section'
+    | '/_authenticated/teams/$teamId/$section'
     | '/_authenticated/system-settings/auth/'
     | '/_authenticated/system-settings/billing/'
     | '/_authenticated/system-settings/content/'
@@ -791,8 +877,11 @@ export interface RootRouteChildren {
   errors404Route: typeof errors404Route
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
+  AccountCallbackRoute: typeof AccountCallbackRoute
   OauthProviderRoute: typeof OauthProviderRoute
   AboutIndexRoute: typeof AboutIndexRoute
+  DownloadIndexRoute: typeof DownloadIndexRoute
+  LicensesIndexRoute: typeof LicensesIndexRoute
   PricingIndexRoute: typeof PricingIndexRoute
   RankingsIndexRoute: typeof RankingsIndexRoute
   SetupIndexRoute: typeof SetupIndexRoute
@@ -941,6 +1030,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/callback': {
+      id: '/account/callback'
+      path: '/account/callback'
+      fullPath: '/account/callback'
+      preLoaderRoute: typeof AccountCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/download/': {
+      id: '/download/'
+      path: '/download'
+      fullPath: '/download/'
+      preLoaderRoute: typeof DownloadIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/licenses/': {
+      id: '/licenses/'
+      path: '/licenses'
+      fullPath: '/licenses/'
+      preLoaderRoute: typeof LicensesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oauth/$provider': {
       id: '/oauth/$provider'
       path: '/oauth/$provider'
@@ -1002,6 +1112,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard/$section'
       fullPath: '/dashboard/$section'
       preLoaderRoute: typeof AuthenticatedDashboardSectionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/desktop/authorize': {
+      id: '/_authenticated/desktop/authorize'
+      path: '/desktop/authorize'
+      fullPath: '/desktop/authorize'
+      preLoaderRoute: typeof AuthenticatedDesktopAuthorizeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/errors/$error': {
@@ -1086,6 +1203,20 @@ declare module '@tanstack/react-router' {
       path: '/task-plugins'
       fullPath: '/task-plugins/'
       preLoaderRoute: typeof AuthenticatedTaskPluginsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/teams/': {
+      id: '/_authenticated/teams/'
+      path: '/teams'
+      fullPath: '/teams/'
+      preLoaderRoute: typeof AuthenticatedTeamsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/teams/join': {
+      id: '/_authenticated/teams/join'
+      path: '/teams/join'
+      fullPath: '/teams/join'
+      preLoaderRoute: typeof AuthenticatedTeamsJoinRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/usage-logs/': {
@@ -1228,6 +1359,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSystemSettingsSiteSectionRouteImport
       parentRoute: typeof AuthenticatedSystemSettingsRouteRoute
     }
+    '/_authenticated/teams/$teamId/$section': {
+      id: '/_authenticated/teams/$teamId/$section'
+      path: '/teams/$teamId/$section'
+      fullPath: '/teams/$teamId/$section'
+      preLoaderRoute: typeof AuthenticatedTeamsTeamIdSectionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -1319,8 +1457,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChat2linkRoute: typeof AuthenticatedChat2linkRoute
   AuthenticatedChatChatIdRoute: typeof AuthenticatedChatChatIdRoute
   AuthenticatedDashboardSectionRoute: typeof AuthenticatedDashboardSectionRoute
+  AuthenticatedDesktopAuthorizeRoute: typeof AuthenticatedDesktopAuthorizeRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedModelsSectionRoute: typeof AuthenticatedModelsSectionRoute
+  AuthenticatedTeamsJoinRoute: typeof AuthenticatedTeamsJoinRoute
   AuthenticatedUsageLogsSectionRoute: typeof AuthenticatedUsageLogsSectionRoute
   AuthenticatedUsageLogsAuditRoute: typeof AuthenticatedUsageLogsAuditRoute
   AuthenticatedChannelsIndexRoute: typeof AuthenticatedChannelsIndexRoute
@@ -1334,9 +1474,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSubscriptionsIndexRoute: typeof AuthenticatedSubscriptionsIndexRoute
   AuthenticatedSystemInfoIndexRoute: typeof AuthenticatedSystemInfoIndexRoute
   AuthenticatedTaskPluginsIndexRoute: typeof AuthenticatedTaskPluginsIndexRoute
+  AuthenticatedTeamsIndexRoute: typeof AuthenticatedTeamsIndexRoute
   AuthenticatedUsageLogsIndexRoute: typeof AuthenticatedUsageLogsIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
   AuthenticatedWalletIndexRoute: typeof AuthenticatedWalletIndexRoute
+  AuthenticatedTeamsTeamIdSectionRoute: typeof AuthenticatedTeamsTeamIdSectionRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1345,8 +1487,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChat2linkRoute: AuthenticatedChat2linkRoute,
   AuthenticatedChatChatIdRoute: AuthenticatedChatChatIdRoute,
   AuthenticatedDashboardSectionRoute: AuthenticatedDashboardSectionRoute,
+  AuthenticatedDesktopAuthorizeRoute: AuthenticatedDesktopAuthorizeRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedModelsSectionRoute: AuthenticatedModelsSectionRoute,
+  AuthenticatedTeamsJoinRoute: AuthenticatedTeamsJoinRoute,
   AuthenticatedUsageLogsSectionRoute: AuthenticatedUsageLogsSectionRoute,
   AuthenticatedUsageLogsAuditRoute: AuthenticatedUsageLogsAuditRoute,
   AuthenticatedChannelsIndexRoute: AuthenticatedChannelsIndexRoute,
@@ -1361,9 +1505,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSubscriptionsIndexRoute: AuthenticatedSubscriptionsIndexRoute,
   AuthenticatedSystemInfoIndexRoute: AuthenticatedSystemInfoIndexRoute,
   AuthenticatedTaskPluginsIndexRoute: AuthenticatedTaskPluginsIndexRoute,
+  AuthenticatedTeamsIndexRoute: AuthenticatedTeamsIndexRoute,
   AuthenticatedUsageLogsIndexRoute: AuthenticatedUsageLogsIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
   AuthenticatedWalletIndexRoute: AuthenticatedWalletIndexRoute,
+  AuthenticatedTeamsTeamIdSectionRoute: AuthenticatedTeamsTeamIdSectionRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -1380,8 +1526,11 @@ const rootRouteChildren: RootRouteChildren = {
   errors404Route: errors404Route,
   errors500Route: errors500Route,
   errors503Route: errors503Route,
+  AccountCallbackRoute: AccountCallbackRoute,
   OauthProviderRoute: OauthProviderRoute,
   AboutIndexRoute: AboutIndexRoute,
+  DownloadIndexRoute: DownloadIndexRoute,
+  LicensesIndexRoute: LicensesIndexRoute,
   PricingIndexRoute: PricingIndexRoute,
   RankingsIndexRoute: RankingsIndexRoute,
   SetupIndexRoute: SetupIndexRoute,

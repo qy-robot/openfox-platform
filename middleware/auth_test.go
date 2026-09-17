@@ -108,6 +108,81 @@ func TestUserAuthAllowsOpaqueDottedPAT(t *testing.T) {
 	assert.Equal(t, user.Id, body.ID)
 }
 
+func TestCentralAccountStatusControlsRelayKeys(t *testing.T) {
+	setupDashboardAuthMiddlewareTest(t)
+	require.NoError(t, model.DB.AutoMigrate(&model.AccountProductIdentity{}))
+	user := createMiddlewarePATUser(t, "central-relay-user", "unrelated-pat")
+	require.NoError(t, model.DB.Create(&model.AccountProductIdentity{Issuer: "https://account.example.com", Subject: "acct_relay", UserID: user.Id}).Error)
+	active := true
+	unavailable := false
+	accountServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "/v1/internal/account-status", r.URL.Path)
+		assert.Equal(t, "Bearer internal-secret", r.Header.Get("Authorization"))
+		var request struct {
+			Subject string `json:"subject"`
+		}
+		require.NoError(t, common.DecodeJson(r.Body, &request))
+		assert.Equal(t, "acct_relay", request.Subject)
+		if unavailable {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprintf(w, `{"success":true,"data":{"active":%t}}`, active)
+	}))
+	t.Cleanup(accountServer.Close)
+	t.Setenv("ROBO_ACCOUNT_MODE", "central")
+	t.Setenv("ROBO_ACCOUNT_URL", accountServer.URL)
+	t.Setenv("ROBO_ACCOUNT_ISSUER", "https://account.example.com")
+	t.Setenv("ROBO_ACCOUNT_INTERNAL_TOKEN", "internal-secret")
+
+	assert.NoError(t, validateCentralRelayAccount(user.Id))
+	active = false
+	assert.ErrorIs(t, validateCentralRelayAccount(user.Id), service.ErrCentralAccountInactive)
+	active = true
+	unavailable = true
+	assert.ErrorIs(t, validateCentralRelayAccount(user.Id), service.ErrCentralAccountUnavailable)
+	unavailable = false
+
+	const callbackName = "test:central-account-mapping-failure"
+	require.NoError(t, model.DB.Callback().Query().Before("gorm:query").Register(callbackName, func(tx *gorm.DB) {
+		if tx.Statement.Table == "account_product_identities" {
+			tx.AddError(errors.New("forced mapping failure"))
+		}
+	}))
+	assert.Error(t, validateCentralRelayAccount(user.Id))
+	require.NoError(t, model.DB.Callback().Query().Remove(callbackName))
+}
+
+func TestCentralAccountPermissionsDoNotOverrideLocalAdminRole(t *testing.T) {
+	setupDashboardAuthMiddlewareTest(t)
+	user := createMiddlewarePATUser(t, "local-common-user", "unused-local-pat")
+	accountServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"success":true,"data":{"active":true}}`))
+	}))
+	t.Cleanup(accountServer.Close)
+	t.Setenv("ROBO_ACCOUNT_MODE", "central")
+	t.Setenv("ROBO_ACCOUNT_URL", accountServer.URL)
+	t.Setenv("ROBO_ACCOUNT_ISSUER", "https://account.example.com")
+	t.Setenv("ROBO_ACCOUNT_INTERNAL_TOKEN", "internal-secret")
+	bundle, err := service.CreateCentralBrowserLoginSession(user.Id, user.AuthVersion, service.CentralSessionAuthority{
+		Issuer: "https://account.example.com", Subject: "acct-common", SessionID: "account-session", AuthVersion: 1,
+	}, "127.0.0.1", "test")
+	require.NoError(t, err)
+	router := gin.New()
+	router.GET("/admin", AdminAuth(), func(c *gin.Context) { c.Status(http.StatusNoContent) })
+	request := httptest.NewRequest(http.MethodGet, "/admin", nil)
+	request.Header.Set("Authorization", "Bearer "+bundle.AccessToken)
+	response := httptest.NewRecorder()
+
+	router.ServeHTTP(response, request)
+
+	assert.Equal(t, http.StatusForbidden, response.Code, response.Body.String())
+	assert.Contains(t, response.Body.String(), "AUTH_INSUFFICIENT_PRIVILEGE")
+}
+
 func TestUserAuthNeverFallsBackForRecognizedInvalidInternalJWT(t *testing.T) {
 	setupDashboardAuthMiddlewareTest(t)
 	identity := service.AuthIdentity{UserID: 42, SessionID: "session-42", UserAuthVersion: 1, SessionVersion: 1}
@@ -254,4 +329,60 @@ func TestTryUserAuthCredentialClassification(t *testing.T) {
 	router.ServeHTTP(databaseFailureResponse, databaseFailureRequest)
 	assert.Equal(t, http.StatusInternalServerError, databaseFailureResponse.Code)
 	assert.Contains(t, databaseFailureResponse.Body.String(), "AUTH_INTERNAL_ERROR")
+}
+
+func TestDesktopSessionIsScopedAndRelayRevokesWithSession(t *testing.T) {
+	setupDashboardAuthMiddlewareTest(t)
+	previousLogType := common.LogDatabaseType()
+	t.Cleanup(func() { common.SetLogDatabaseType(previousLogType) })
+	t.Setenv("LOG_SQL_DSN", "")
+	require.NoError(t, model.InitLogDB())
+	user := createMiddlewarePATUser(t, "desktop-scoped-user", "unused-desktop-pat")
+	require.NoError(t, model.DB.Model(user).Update("role", common.RoleRootUser).Error)
+	bundle, err := service.CreateLoginSession(user.Id, service.DesktopLoginMethod, "127.0.0.1", "desktop")
+	require.NoError(t, err)
+	router := gin.New()
+	ok := func(c *gin.Context) { c.Status(http.StatusNoContent) }
+	router.GET("/api/user/self", UserAuth(), ok)
+	router.GET("/api/option/", RootAuth(), ok)
+	router.POST("/api/user/token", UserAuth(), ok)
+	router.GET("/mixed", TokenOrUserAuth(), ok)
+	for _, tc := range []struct {
+		method, path string
+		status       int
+	}{
+		{"GET", "/api/user/self", http.StatusNoContent},
+		{"GET", "/api/option/", http.StatusUnauthorized},
+		{"POST", "/api/user/token", http.StatusUnauthorized},
+		{"GET", "/mixed", http.StatusUnauthorized},
+	} {
+		req := httptest.NewRequest(tc.method, tc.path, nil)
+		req.Header.Set("Authorization", "Bearer "+bundle.AccessToken)
+		res := httptest.NewRecorder()
+		router.ServeHTTP(res, req)
+		assert.Equal(t, tc.status, res.Code, tc.path)
+	}
+	token := &model.Token{UserId: user.Id, DesktopSessionID: bundle.Session.SID}
+	require.NoError(t, model.DB.AutoMigrate(&model.Token{}))
+	token.Key = "desktopreadonlytestkey"
+	token.Status = common.TokenStatusEnabled
+	token.ExpiredTime = time.Now().Unix() + 3600
+	require.NoError(t, model.DB.Create(token).Error)
+	router.GET("/api/usage/token/", TokenAuthReadOnly(), ok)
+	checkReadOnly := func(status int) {
+		req := httptest.NewRequest(http.MethodGet, "/api/usage/token/", nil)
+		req.Header.Set("Authorization", "Bearer sk-"+token.Key)
+		res := httptest.NewRecorder()
+		router.ServeHTTP(res, req)
+		assert.Equal(t, status, res.Code)
+	}
+	checkReadOnly(http.StatusNoContent)
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	require.True(t, validateDesktopRelaySession(ctx, token))
+	_, err = model.RevokeUserSession(user.Id, bundle.Session.SID, "desktop_logout")
+	require.NoError(t, err)
+	ctx, _ = gin.CreateTestContext(httptest.NewRecorder())
+	assert.False(t, validateDesktopRelaySession(ctx, token))
+	assert.True(t, ctx.IsAborted())
+	checkReadOnly(http.StatusUnauthorized)
 }

@@ -55,7 +55,7 @@ export function stripTrailingZeros(formatted: string): string {
 }
 
 /**
- * Calculate token price in USD.
+ * Calculate the token price in CNY.
  *
  * Returns NaN when the required ratio field is missing/null so callers can
  * skip rendering that price type.
@@ -102,40 +102,13 @@ function hasRatio(value: number | null | undefined): boolean {
   return value !== undefined && value !== null && Number.isFinite(Number(value))
 }
 
-/**
- * Apply recharge rate to price
- *
- * priceRate represents how much users need to recharge (in the display currency)
- * to get 1 USD credit. usdExchangeRate is the real exchange rate.
- *
- * The returned value will be formatted by formatBillingCurrencyFromUSD, which will
- * multiply by the display currency's exchange rate.
- *
- * Examples:
- *
- * 1. Display currency = USD:
- *    - Model: 1 USD
- *    - priceRate = 0.5 (recharge $0.5 to get $1 credit)
- *    - usdExchangeRate = 1
- *    - Return: 1 × 0.5 / 1 = 0.5
- *    - formatBillingCurrencyFromUSD(0.5) → $0.5 ✓
- *
- * 2. Display currency = CNY:
- *    - Model: 1 USD
- *    - priceRate = 4 (recharge ¥4 to get $1 credit)
- *    - usdExchangeRate = 7 (real rate: 1 USD = ¥7)
- *    - Return: 1 × 4 / 7 = 0.571
- *    - formatBillingCurrencyFromUSD(0.571) → 0.571 × 7 = ¥4 ✓
- *    - Normal price: ¥7, Recharge price: ¥4 (cheaper!)
- */
 function applyRechargeRate(
   price: number,
-  showWithRecharge: boolean,
-  priceRate: number,
-  usdExchangeRate: number
+  _showWithRecharge: boolean,
+  _priceRate: number,
+  _usdExchangeRate: number
 ): number {
-  if (!showWithRecharge) return price
-  return (price * priceRate) / usdExchangeRate
+  return price
 }
 
 /**
@@ -157,15 +130,15 @@ export function formatPrice(
 
   const displayGroupRatio = getDisplayGroupRatio(model, selectedGroup)
 
-  let priceInUSD = calculateTokenPrice(model, type, displayGroupRatio)
-  priceInUSD = applyRechargeRate(
-    priceInUSD,
+  let priceInCNY = calculateTokenPrice(model, type, displayGroupRatio)
+  priceInCNY = applyRechargeRate(
+    priceInCNY,
     showWithRecharge,
     priceRate,
     usdExchangeRate
   )
 
-  const price = priceInUSD / TOKEN_UNIT_DIVISORS[tokenUnit]
+  const price = priceInCNY / TOKEN_UNIT_DIVISORS[tokenUnit]
   return formatBillingCurrencyFromUSD(price, {
     showSymbol: showCurrencySymbol,
     digitsLarge: 4,
@@ -192,16 +165,16 @@ export function formatGroupPrice(
   }
 
   const ratio = getConfiguredGroupRatio(groupRatio, group)
-  let priceInUSD = calculateTokenPrice(model, type, ratio)
+  let priceInCNY = calculateTokenPrice(model, type, ratio)
 
-  priceInUSD = applyRechargeRate(
-    priceInUSD,
+  priceInCNY = applyRechargeRate(
+    priceInCNY,
     showWithRecharge,
     priceRate,
     usdExchangeRate
   )
 
-  const price = priceInUSD / TOKEN_UNIT_DIVISORS[tokenUnit]
+  const price = priceInCNY / TOKEN_UNIT_DIVISORS[tokenUnit]
   return formatBillingCurrencyFromUSD(price, {
     digitsLarge: 4,
     digitsSmall: 6,
@@ -225,16 +198,16 @@ export function formatFixedPrice(
   }
 
   const ratio = getConfiguredGroupRatio(groupRatio, group)
-  let priceInUSD = (model.model_price || 0) * ratio
+  let priceInCNY = (model.model_price || 0) * ratio
 
-  priceInUSD = applyRechargeRate(
-    priceInUSD,
+  priceInCNY = applyRechargeRate(
+    priceInCNY,
     showWithRecharge,
     priceRate,
     usdExchangeRate
   )
 
-  return formatBillingCurrencyFromUSD(priceInUSD, {
+  return formatBillingCurrencyFromUSD(priceInCNY, {
     digitsLarge: 4,
     digitsSmall: 4,
     abbreviate: false,
@@ -258,16 +231,16 @@ export function formatRequestPrice(
 
   const displayGroupRatio = getDisplayGroupRatio(model, selectedGroup)
 
-  let priceInUSD = (model.model_price || 0) * displayGroupRatio
+  let priceInCNY = (model.model_price || 0) * displayGroupRatio
 
-  priceInUSD = applyRechargeRate(
-    priceInUSD,
+  priceInCNY = applyRechargeRate(
+    priceInCNY,
     showWithRecharge,
     priceRate,
     usdExchangeRate
   )
 
-  return formatBillingCurrencyFromUSD(priceInUSD, {
+  return formatBillingCurrencyFromUSD(priceInCNY, {
     showSymbol: showCurrencySymbol,
     digitsLarge: 4,
     digitsSmall: 4,

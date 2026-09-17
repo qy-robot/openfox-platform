@@ -66,18 +66,13 @@ import {
   previewModelPricingConversion,
   type ModelPricingPluginVariant,
 } from '@/features/model-pricing/api'
-import {
-  getSitePricingCurrency,
-  isValidPricingCurrency,
-  USD_PRICING_CURRENCY,
-} from '@/features/model-pricing/currency'
+import { CNY_PRICING_CURRENCY } from '@/features/model-pricing/currency'
 import { pricingFromDraft, pricingRow } from '@/features/model-pricing/pricing'
 import { PricingAmountInput } from '@/features/model-pricing/pricing-amount-input'
 import {
   PricingConversionDialog,
   type PricingConversionPreview,
 } from '@/features/model-pricing/pricing-conversion-dialog'
-import { PricingCurrencySelector } from '@/features/model-pricing/pricing-currency-selector'
 import { usePricingData } from '@/features/pricing/hooks/use-pricing-data'
 import { combineBillingExpr } from '@/features/pricing/lib/billing-expr'
 import { pluginExpressionsEqual } from '@/features/pricing/lib/plugin-pricing'
@@ -89,8 +84,6 @@ import type { BillingUsageSchema } from '@/features/pricing/types'
 import { useDebounce } from '@/hooks/use-debounce'
 import { handleServerError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
-import { usePricingPreferencesStore } from '@/stores/pricing-preferences-store'
-import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import {
   EMPTY_LANE_ENABLED,
@@ -108,7 +101,7 @@ import {
   type PricingMode,
 } from './model-pricing-core'
 import { PriceInput, PriceLane } from './model-pricing-inputs'
-import { formatPricingNumber } from './pricing-format'
+import { serializePricingNumber } from './pricing-format'
 import { TaskPluginPricingEditor } from './task-plugin-pricing-editor'
 import { TaskUsagePricingEditor } from './task-usage-pricing-editor'
 import { TieredPricingEditor } from './tiered-pricing-editor'
@@ -206,16 +199,7 @@ export const ModelPricingEditorPanel = forwardRef<
   const { t } = useTranslation()
   const promptPriceId = useId()
   const formElementRef = useRef<HTMLFormElement>(null)
-  const currencyConfig = useSystemConfigStore((state) => state.config.currency)
-  const preference = usePricingPreferencesStore((state) => state.currency)
-  const siteCurrency = useMemo(
-    () => getSitePricingCurrency(currencyConfig),
-    [currencyConfig]
-  )
-  const currency =
-    preference === 'site' && isValidPricingCurrency(siteCurrency)
-      ? siteCurrency
-      : USD_PRICING_CURRENCY
+  const currency = CNY_PRICING_CURRENCY
   const [pricingMode, setPricingMode] = useState<PricingMode>('tiered_expr')
   const [promptPrice, setPromptPrice] = useState('')
   const [lanePrices, setLanePrices] = useState<Record<LaneKey, string>>({
@@ -446,12 +430,12 @@ export const ModelPricingEditorPanel = forwardRef<
     if (lane === 'audioOutput') {
       const audioInputPrice = toNumberOrNull(nextLanePrices.audioInput)
       if (audioInputPrice === null || audioInputPrice === 0) return ''
-      return formatPricingNumber(priceNumber / audioInputPrice)
+      return serializePricingNumber(priceNumber / audioInputPrice)
     }
 
     const inputPrice = toNumberOrNull(nextPromptPrice)
     if (inputPrice === null || inputPrice === 0) return ''
-    return formatPricingNumber(priceNumber / inputPrice)
+    return serializePricingNumber(priceNumber / inputPrice)
   }
 
   const syncLaneRatios = (
@@ -462,7 +446,7 @@ export const ModelPricingEditorPanel = forwardRef<
     const inputPrice = toNumberOrNull(nextPromptPrice)
     setFormValue(
       'ratio',
-      inputPrice !== null ? formatPricingNumber(inputPrice / 2) : ''
+      inputPrice !== null ? serializePricingNumber(inputPrice / 2) : ''
     )
 
     laneConfigs.forEach(({ key }) => {
@@ -906,8 +890,6 @@ export const ModelPricingEditorPanel = forwardRef<
                     )}
                   />
                 )}
-
-                <PricingCurrencySelector siteCurrency={siteCurrency} />
 
                 <TaskPluginPricingEditor
                   key={`${editorReloadToken}:${watchedValues.name}`}

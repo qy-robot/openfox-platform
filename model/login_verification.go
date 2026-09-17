@@ -24,6 +24,17 @@ func GetUserVerificationState(userID int) (*UserVerificationState, error) {
 	return getUserVerificationState(DB, userID, false)
 }
 
+func ValidateUserAuthVersionWithTx(tx *gorm.DB, userID int, authVersion int64) error {
+	state, err := getUserVerificationState(tx, userID, true)
+	if err != nil {
+		return err
+	}
+	if state.Status != common.UserStatusEnabled || state.AuthVersion != authVersion {
+		return ErrUserSessionInactive
+	}
+	return nil
+}
+
 func getUserVerificationState(tx *gorm.DB, userID int, forUpdate bool) (*UserVerificationState, error) {
 	if userID <= 0 {
 		return nil, ErrUserSessionInvalid

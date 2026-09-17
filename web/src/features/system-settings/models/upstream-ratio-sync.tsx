@@ -58,7 +58,6 @@ import {
   OFFICIAL_CHANNEL_ENDPOINT,
   OFFICIAL_CHANNEL_ID,
   OPENROUTER_CHANNEL_TYPE,
-  OPENROUTER_ENDPOINT,
 } from './constants'
 import {
   describeSyncPrice,
@@ -71,7 +70,6 @@ import { UpstreamRatioSyncTable } from './upstream-ratio-sync-table'
 function getDefaultEndpointForChannel(channel: UpstreamChannel): string {
   if (channel.id === MODELS_DEV_PRESET_ID) return MODELS_DEV_PRESET_ENDPOINT
   if (channel.id === OFFICIAL_CHANNEL_ID) return OFFICIAL_CHANNEL_ENDPOINT
-  if (channel.type === OPENROUTER_CHANNEL_TYPE) return OPENROUTER_ENDPOINT
   return DEFAULT_ENDPOINT
 }
 
@@ -97,7 +95,15 @@ export function UpstreamRatioSync() {
     queryFn: async () => requireServerSuccess(await getUpstreamChannels()),
     enabled: channelDialogOpen,
   })
-  const channels = useMemo(() => channelsData?.data ?? [], [channelsData?.data])
+  const channels = useMemo(
+    () =>
+      (channelsData?.data ?? []).filter(
+        (channel) =>
+          channel.id !== MODELS_DEV_PRESET_ID &&
+          channel.type !== OPENROUTER_CHANNEL_TYPE
+      ),
+    [channelsData?.data]
+  )
   useEffect(() => {
     if (!channels.length) return
     setChannelEndpoints((previous) => {

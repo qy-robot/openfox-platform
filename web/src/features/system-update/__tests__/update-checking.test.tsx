@@ -146,7 +146,7 @@ describe('administrator update entry', () => {
     }
   )
 
-  test('shares results with maintenance, opens release details by keyboard and returns focus on Escape', async () => {
+  test('keeps maintenance informational, opens release details by keyboard and returns focus on Escape', async () => {
     const user = userEvent.setup()
     render(
       <>
@@ -161,15 +161,12 @@ describe('administrator update entry', () => {
     const buttons = await screen.findAllByRole('button', {
       name: /New version available: v1\.0\.0-rc\.36/,
     })
-    expect(buttons).toHaveLength(2)
+    expect(buttons).toHaveLength(1)
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(within(buttons[0]).getByText('v1.0.0-rc.35')).toHaveClass('truncate')
     expect(within(buttons[0]).getByText('Update available')).toHaveClass(
       'hidden',
       '@min-[22rem]/system-brand:inline-flex'
-    )
-    expect(within(buttons[1]).getByText('Update available')).not.toHaveClass(
-      'hidden'
     )
 
     buttons[0].focus()

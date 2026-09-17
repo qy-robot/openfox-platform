@@ -23,12 +23,14 @@ import { useStatus } from '@/hooks/use-status'
 
 import { AuthLayout } from '../auth-layout'
 import { TermsFooter } from '../components/terms-footer'
+import { CentralAccountSignIn } from './components/central-account-sign-in'
 import { UserAuthForm } from './components/user-auth-form'
 
 export function SignIn() {
   const { t } = useTranslation()
   const { redirect } = useSearch({ from: '/(auth)/sign-in' })
   const { status } = useStatus()
+  const centralAccountEnabled = status?.account_auth_enabled === true
 
   return (
     <AuthLayout>
@@ -52,7 +54,11 @@ export function SignIn() {
             )}
         </div>
 
-        <UserAuthForm redirectTo={redirect} />
+        {centralAccountEnabled ? (
+          <CentralAccountSignIn redirectTo={redirect} />
+        ) : (
+          <UserAuthForm redirectTo={redirect} />
+        )}
 
         <TermsFooter
           variant='sign-in'

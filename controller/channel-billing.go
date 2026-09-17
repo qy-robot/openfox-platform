@@ -20,10 +20,6 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/QuantumNous/new-api/service"
-	"github.com/QuantumNous/new-api/setting/operation_setting"
-
-	"github.com/shopspring/decimal"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,6 +27,7 @@ import (
 
 type OpenAISubscriptionResponse struct {
 	Object             string  `json:"object"`
+	Currency           string  `json:"currency,omitempty"`
 	HasPaymentMethod   bool    `json:"has_payment_method"`
 	SoftLimitUSD       float64 `json:"soft_limit_usd"`
 	HardLimitUSD       float64 `json:"hard_limit_usd"`
@@ -61,7 +58,8 @@ type channelBalanceResult struct {
 }
 
 type OpenAIUsageResponse struct {
-	Object string `json:"object"`
+	Object   string `json:"object"`
+	Currency string `json:"currency,omitempty"`
 	//DailyCosts []OpenAIUsageDailyCost `json:"daily_costs"`
 	TotalUsage float64 `json:"total_usage"` // unit: 0.01 dollar
 }
@@ -364,9 +362,8 @@ func updateChannelMoonshotBalance(channel *model.Channel) (float64, error) {
 		return 0, fmt.Errorf("failed to update moonshot balance, status: %v, code: %d, scode: %s", response.Status, response.Code, response.Scode)
 	}
 	availableBalanceCny := response.Data.AvailableBalance
-	availableBalanceUsd := decimal.NewFromFloat(availableBalanceCny).Div(decimal.NewFromFloat(operation_setting.Price)).InexactFloat64()
-	channel.UpdateBalance(availableBalanceUsd)
-	return availableBalanceUsd, nil
+	channel.UpdateBalance(availableBalanceCny)
+	return availableBalanceCny, nil
 }
 
 func fetchAdvancedCustomBalance(channel *model.Channel) (channelBalanceResult, error) {

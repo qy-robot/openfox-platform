@@ -31,6 +31,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  getIdentityProfileURL,
+  usesCentralIdentityManagement,
+} from '@/features/auth/central-account-navigation'
 import useDialogState from '@/hooks/use-dialog'
 import { useIsSidebarModuleVisible } from '@/hooks/use-sidebar-config'
 import { useUserDisplay } from '@/hooks/use-user-display'
@@ -49,6 +53,8 @@ export function ProfileDropdown() {
   const isSuperAdmin = user?.role === ROLE.SUPER_ADMIN
   const isWalletVisible = useIsSidebarModuleVisible('/wallet')
   const isSecurityVisible = useIsSidebarModuleVisible('/security')
+  const centralIdentity = usesCentralIdentityManagement()
+  const identityProfileURL = getIdentityProfileURL()
   const avatarName = user?.username || displayName
   const avatarFallback = getUserAvatarFallback(avatarName)
   const avatarFallbackStyle = useMemo(
@@ -103,12 +109,14 @@ export function ProfileDropdown() {
 
           <DropdownMenuSeparator />
 
-          <DropdownMenuItem onClick={() => navigate({ to: '/profile' })}>
+          <DropdownMenuItem
+            onClick={() => navigate({ href: identityProfileURL })}
+          >
             <User className='size-4' />
-            {t('Profile')}
+            {centralIdentity ? t('Account center') : t('Profile')}
           </DropdownMenuItem>
 
-          {isSecurityVisible && (
+          {!centralIdentity && isSecurityVisible && (
             <DropdownMenuItem onClick={() => navigate({ to: '/security' })}>
               <ShieldCheck className='size-4' />
               {t('Security & Access')}

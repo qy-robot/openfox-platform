@@ -19,8 +19,26 @@ For commercial licensing, please contact support@quantumnous.com
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
 import { AuthenticatedLayout } from '@/components/layout'
-import { resolveAuthentication } from '@/lib/auth-session'
+import { isCentralAccountMode } from '@/features/auth/sign-in/central-reauth'
+import {
+  hasValidAuthentication,
+  isExplicitSignOutInProgress,
+  resolveAuthentication,
+} from '@/lib/auth-session'
 import { useAuthStore } from '@/stores/auth-store'
+
+export async function resolveProtectedAuthentication(
+  _returnTo: string
+): Promise<string | null> {
+  if (isCentralAccountMode()) {
+    if (hasValidAuthentication()) return null
+    if (isExplicitSignOutInProgress()) return null
+    await resolveAuthentication()
+    return null
+  }
+  await resolveAuthentication()
+  return null
+}
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: async ({ location }) => {
@@ -28,7 +46,10 @@ export const Route = createFileRoute('/_authenticated')({
     // present. That skip is an optimization for public pages and must not
     // decide a protected route, so resolve against the server before
     // redirecting. An in-memory session returns without a request.
-    await resolveAuthentication()
+    const authorizationURL = await resolveProtectedAuthentication(location.href)
+    if (authorizationURL) {
+      throw redirect({ href: authorizationURL, replace: true })
+    }
 
     const { auth } = useAuthStore.getState()
 

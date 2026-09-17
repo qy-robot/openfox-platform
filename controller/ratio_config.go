@@ -2,6 +2,9 @@ package controller
 
 import (
 	"net/http"
+	"strconv"
+
+	"github.com/QuantumNous/new-api/common"
 
 	"github.com/QuantumNous/new-api/setting/billing_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
@@ -10,6 +13,8 @@ import (
 )
 
 func GetRatioConfig(c *gin.Context) {
+	c.Header("X-Billing-Currency", "CNY")
+	c.Header("X-Quota-Per-Unit", strconv.FormatFloat(common.QuotaPerUnit, 'f', -1, 64))
 	if !ratio_setting.IsExposeRatioEnabled() {
 		c.JSON(http.StatusForbidden, gin.H{
 			"success": false,

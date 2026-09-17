@@ -51,7 +51,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import {
   formatPricingAmount,
-  USD_PRICING_CURRENCY,
+  CNY_PRICING_CURRENCY,
   type PricingCurrency,
 } from '@/features/model-pricing/currency'
 import { useBillingTime } from '@/features/pricing/hooks/use-billing-time'
@@ -328,7 +328,7 @@ function RawExprEditor({ exprString, onChange }: RawExprEditorProps) {
           </div>
           <div>
             {t(
-              'Use tier(name, fixed(amount)) for a USD price per request. Group and request multipliers still apply.'
+              'Use tier(name, fixed(amount)) for a CNY price per request. Group and request multipliers still apply.'
             )}
           </div>
         </AlertDescription>
@@ -909,7 +909,7 @@ Important: len is NOT affected by auto-exclusion. Tier conditions should use len
 ### Built-in Functions
 
 - tier(name, value) — labels the billing tier; must wrap the cost expression
-- fixed(amount) — a finite non-negative USD price per request, used only as tier("name", fixed(0.01)); replaces token charges in that leaf. Other leaves may still use token prices. Group/request multipliers and existing tool surcharges still apply. Unsupported for task usage expressions and Realtime.
+- fixed(amount) — a finite non-negative CNY price per request, used only as tier("name", fixed(0.01)); replaces token charges in that leaf. Other leaves may still use token prices. Group/request multipliers and existing tool surcharges still apply. Unsupported for task usage expressions and Realtime.
 - max(a, b), min(a, b) — maximum/minimum
 - ceil(x), floor(x), abs(x) — ceiling, floor, absolute value
 - header(name) — reads a request header
@@ -1045,7 +1045,7 @@ function parseTierEditorDocument(source: string): VisualBillingDocument | null {
 }
 
 export const TieredPricingEditor = memo(function TieredPricingEditor({
-  currency = USD_PRICING_CURRENCY,
+  currency = CNY_PRICING_CURRENCY,
   modelName,
   billingExpr: currentExpr,
   requestRuleExpr: currentRequestRuleExpr,
@@ -1204,9 +1204,7 @@ export const TieredPricingEditor = memo(function TieredPricingEditor({
       </div>
 
       <p className='text-muted-foreground text-xs'>
-        {t(
-          'Raw expressions and presets use USD. Currency selection only converts visual price inputs and monetary previews.'
-        )}
+        {t('Raw expressions and presets use CNY.')}
       </p>
       <PresetSection applyPreset={applyPreset} />
 

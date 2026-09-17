@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "product": "RoboCoding",
+  "version": null,
+  "publishedAt": null,
+  "downloads": [
+    {
+      "id": "windows-x64",
+      "status": "unavailable",
+      "url": null,
+      "fileName": null,
+      "size": null,
+      "sha256": null
+    },
+    {
+      "id": "macos-arm64",
+      "status": "unavailable",
+      "url": null,
+      "fileName": null,
+      "size": null,
+      "sha256": null
+    },
+    {
+      "id": "macos-x64",
+      "status": "unavailable",
+      "url": null,
+      "fileName": null,
+      "size": null,
+      "sha256": null
+    },
+    {
+      "id": "linux-x64",
+      "status": "unavailable",
+      "url": null,
+      "fileName": null,
+      "size": null,
+      "sha256": null
+    }
+  ]
+}

@@ -21,11 +21,16 @@ import type { Row } from '@tanstack/react-table'
 import { render, screen, waitFor, cleanup, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AxiosError } from 'axios'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { pricingOptions } from '@/features/model-pricing/pricing'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
+import { usePricingPreferencesStore } from '@/stores/pricing-preferences-store'
+import {
+  DEFAULT_CURRENCY_CONFIG,
+  useSystemConfigStore,
+} from '@/stores/system-config-store'
 
 import { DataTableRowActions } from '../components/data-table-row-actions'
 import { ModelMutateDrawer } from '../components/drawers/model-mutate-drawer'
@@ -47,9 +52,20 @@ const model = {
   updated_time: 1,
 }
 
+beforeEach(() => {
+  usePricingPreferencesStore.setState({ currency: 'USD' })
+  useSystemConfigStore.getState().setConfig({
+    currency: { ...DEFAULT_CURRENCY_CONFIG, quotaDisplayType: 'USD' },
+  })
+})
+
 afterEach(() => {
   cleanup()
   useAuthStore.getState().auth.reset()
+  usePricingPreferencesStore.setState({ currency: 'site' })
+  useSystemConfigStore.getState().setConfig({
+    currency: { ...DEFAULT_CURRENCY_CONFIG },
+  })
 })
 
 function renderModelActions(currentModel: Model = model, role = 100) {

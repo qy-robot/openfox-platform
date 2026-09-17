@@ -166,12 +166,15 @@ func appendBillingInfo(relayInfo *relaycommon.RelayInfo, other *model.LogOther) 
 	if relayInfo == nil || other == nil {
 		return
 	}
-	// billing_source: "wallet" or "subscription"
+	// billing_source: "wallet", "subscription" or "team"
 	if relayInfo.BillingSource != "" {
 		other.SetPublic("billing_source", relayInfo.BillingSource)
 	}
 	if relayInfo.UserSetting.BillingPreference != "" {
 		other.SetPublic("billing_preference", relayInfo.UserSetting.BillingPreference)
+	}
+	if relayInfo.BillingSource == BillingSourceTeam && relayInfo.TeamId > 0 {
+		other.SetPublic("team_id", relayInfo.TeamId)
 	}
 	if relayInfo.BillingSource == "subscription" {
 		if relayInfo.SubscriptionId != 0 {

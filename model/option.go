@@ -221,6 +221,9 @@ func SyncOptions(frequency int) {
 }
 
 func validateOptionValue(key string, value string) error {
+	if err := operation_setting.ValidateBillingCurrencyOption(key, value); err != nil {
+		return err
+	}
 	if key == operation_setting.ToolPriceOptionKey {
 		return operation_setting.ValidateToolPricesJSON(value)
 	}
@@ -312,6 +315,13 @@ func updateOptionMap(key string, value string) (err error) {
 	}
 	common.OptionMapRWMutex.Lock()
 	defer common.OptionMapRWMutex.Unlock()
+	if key == "SystemName" {
+		value = common.NormalizeSystemName(value)
+	} else if key == "Logo" {
+		value = common.NormalizeSystemLogo(value)
+	} else if fixed, ok := operation_setting.CanonicalBillingCurrencyOption(key); ok {
+		value = fixed
+	}
 	common.OptionMap[key] = value
 
 	// 检查是否是模型配置 - 使用更规范的方式处理
@@ -365,14 +375,8 @@ func updateOptionMap(key string, value string) (err error) {
 		case "LogConsumeEnabled":
 			common.LogConsumeEnabled = boolValue
 		case "DisplayInCurrencyEnabled":
-			// 兼容旧字段：同步到新配置 general_setting.quota_display_type（运行时生效）
-			// true -> USD, false -> TOKENS
-			newVal := "USD"
-			if !boolValue {
-				newVal = "TOKENS"
-			}
 			if cfg := config.GlobalConfig.Get("general_setting"); cfg != nil {
-				_ = config.UpdateConfigFromMap(cfg, map[string]string{"quota_display_type": newVal})
+				_ = config.UpdateConfigFromMap(cfg, map[string]string{"quota_display_type": operation_setting.QuotaDisplayTypeCNY})
 			}
 		case "DisplayTokenStatEnabled":
 			common.DisplayTokenStatEnabled = boolValue
@@ -465,9 +469,9 @@ func updateOptionMap(key string, value string) (err error) {
 	case "EpayKey":
 		operation_setting.EpayKey = value
 	case "Price":
-		operation_setting.Price, _ = strconv.ParseFloat(value, 64)
+		operation_setting.Price = 1
 	case "USDExchangeRate":
-		operation_setting.USDExchangeRate, _ = strconv.ParseFloat(value, 64)
+		operation_setting.USDExchangeRate = 1
 	case "MinTopUp":
 		operation_setting.MinTopUp, _ = strconv.Atoi(value)
 	case "StripeApiSecret":
@@ -621,7 +625,7 @@ func updateOptionMap(key string, value string) (err error) {
 	case "ChannelDisableThreshold":
 		common.ChannelDisableThreshold, _ = strconv.ParseFloat(value, 64)
 	case "QuotaPerUnit":
-		common.QuotaPerUnit, _ = strconv.ParseFloat(value, 64)
+		common.QuotaPerUnit = 500000
 	case "SensitiveWords":
 		setting.SensitiveWordsFromString(value)
 	case "AutomaticDisableKeywords":

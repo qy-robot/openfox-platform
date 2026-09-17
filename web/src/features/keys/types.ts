@@ -46,9 +46,15 @@ export const apiKeySchema = z.object({
   model_limits_enabled: z.boolean(),
   model_limits: z.string().nullish().default(''),
   allow_ips: z.string().nullish().default(''),
+  funding_mode: z
+    .enum(['personal_only', 'team_only', 'team_first', 'personal_first'])
+    .default('personal_only'),
+  team_id: z.number().nullish().default(0),
 })
 
-export type ApiKey = z.infer<typeof apiKeySchema>
+type ParsedApiKey = z.infer<typeof apiKeySchema>
+export type ApiKey = Omit<ParsedApiKey, 'funding_mode' | 'team_id'> &
+  Partial<Pick<ParsedApiKey, 'funding_mode' | 'team_id'>>
 
 // ============================================================================
 // API Request/Response Types
@@ -94,7 +100,15 @@ export interface ApiKeyFormData {
   group: string
   auto_groups: string[]
   cross_group_retry: boolean
+  funding_mode: FundingMode
+  team_id: number
 }
+
+export type FundingMode =
+  | 'personal_only'
+  | 'team_only'
+  | 'team_first'
+  | 'personal_first'
 
 export interface TokenAutoGroupsConfig {
   groups: string[]

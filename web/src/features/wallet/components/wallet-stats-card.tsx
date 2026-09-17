@@ -21,7 +21,7 @@ import { useTranslation } from 'react-i18next'
 
 import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatQuota } from '@/lib/format'
+import { formatPointsFromQuota } from '@/lib/currency'
 
 import type { UserWalletData } from '../types'
 
@@ -55,14 +55,18 @@ export function WalletStatsCard(props: WalletStatsCardProps) {
   }[] = [
     {
       label: t('Current Balance'),
-      value: formatQuota(props.user?.quota ?? 0),
-      description: t('Remaining quota'),
+      value: t('{{count}} points', {
+        count: formatPointsFromQuota(props.user?.quota ?? 0),
+      }),
+      description: t('Personal balance'),
       icon: WalletCards,
       tone: 'success',
     },
     {
       label: t('Total Usage'),
-      value: formatQuota(props.user?.used_quota ?? 0),
+      value: t('{{count}} points', {
+        count: formatPointsFromQuota(props.user?.used_quota ?? 0),
+      }),
       description: t('Total consumed quota'),
       icon: BarChart3,
       tone: 'info',

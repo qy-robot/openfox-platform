@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import {
   Activity,
   Box,
+  Building2,
   ClipboardList,
   CreditCard,
   FileText,
@@ -40,6 +41,12 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import type { SidebarData } from '@/components/layout/types'
+import {
+  getIdentityProfileURL,
+  getIdentityTeamsURL,
+  getIdentityAdminURL,
+  usesCentralIdentityManagement,
+} from '@/features/auth/central-account-navigation'
 import { ROLE } from '@/lib/roles'
 
 /**
@@ -50,6 +57,7 @@ import { ROLE } from '@/lib/roles'
  */
 export function useSidebarData(): SidebarData {
   const { t } = useTranslation()
+  const centralIdentity = usesCentralIdentityManagement()
 
   return {
     navGroups: [
@@ -117,15 +125,25 @@ export function useSidebarData(): SidebarData {
             icon: Wallet,
           },
           {
-            title: t('Profile'),
-            url: '/profile',
-            icon: User,
+            title: t('Teams'),
+            url: getIdentityTeamsURL(),
+            activeUrls: ['/teams'],
+            icon: Building2,
           },
           {
-            title: t('Security & Access'),
-            url: '/security',
-            icon: ShieldCheck,
+            title: centralIdentity ? t('Account center') : t('Profile'),
+            url: getIdentityProfileURL(),
+            icon: User,
           },
+          ...(!centralIdentity
+            ? [
+                {
+                  title: t('Security & Access'),
+                  url: '/security',
+                  icon: ShieldCheck,
+                },
+              ]
+            : []),
         ],
       },
       {
@@ -144,7 +162,7 @@ export function useSidebarData(): SidebarData {
           },
           {
             title: t('Users'),
-            url: '/users',
+            url: getIdentityAdminURL(),
             icon: Users,
           },
           {

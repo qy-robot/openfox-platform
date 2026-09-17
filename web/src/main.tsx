@@ -25,6 +25,7 @@ import { installBuildMetadata } from '@/lib/build-metadata'
 import { applyFaviconToDom } from '@/lib/dom-utils'
 import '@/lib/dayjs'
 import { initializeFrontendCache } from '@/lib/frontend-cache'
+import { shouldBootstrapPlatform } from '@/lib/platform-bootstrap'
 import { createAppQueryClient } from '@/lib/query-client'
 import { readCachedStatus, statusQueryOptions } from '@/lib/status-query'
 
@@ -71,6 +72,7 @@ if (!rootElement) {
 ;(function initSystemBranding() {
   try {
     if (typeof window === 'undefined' || typeof document === 'undefined') return
+    if (!shouldBootstrapPlatform(window.location.pathname)) return
     const apply = (name: string) => {
       document.title = name
       const metaTitle = document.querySelector(

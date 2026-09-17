@@ -52,6 +52,13 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Sheet,
   SheetClose,
   SheetContent,
@@ -62,6 +69,7 @@ import {
 } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { getMyTeams } from '@/features/teams/api'
 import { useStatus } from '@/hooks/use-status'
 import { getUserModels, getUserGroups } from '@/lib/api'
 import { getCurrencyDisplay, getCurrencyLabel } from '@/lib/currency'
@@ -158,6 +166,17 @@ export function ApiKeysMutateDrawer({
   })
 
   const models = modelsData?.data || []
+  const {
+    data: teams = [],
+    isPending: teamsPending,
+    isError: teamsError,
+    isFetching: teamsFetching,
+    refetch: refetchTeams,
+  } = useQuery({
+    queryKey: ['teams', 'self'],
+    queryFn: getMyTeams,
+    enabled: open,
+  })
   const groups = useMemo<ApiKeyGroupOption[]>(
     () =>
       Object.entries(groupsData?.data || {}).map(([key, info]) => ({
@@ -362,6 +381,21 @@ export function ApiKeysMutateDrawer({
     : t('Enter quota in {{currency}}', { currency: currencyLabel })
   const autoGroupsMode = form.watch('auto_groups_mode')
   const unlimitedQuota = form.watch('unlimited_quota')
+  const fundingMode = form.watch('funding_mode')
+
+  useEffect(() => {
+    if (
+      open &&
+      !isUpdate &&
+      isFormInitialized &&
+      teams[0] &&
+      form.getValues('funding_mode') === 'personal_only' &&
+      !form.formState.dirtyFields.funding_mode
+    ) {
+      form.setValue('funding_mode', 'team_first')
+      form.setValue('team_id', teams[0].id)
+    }
+  }, [form, isFormInitialized, isUpdate, open, teams])
 
   return (
     <Sheet
@@ -611,6 +645,130 @@ export function ApiKeysMutateDrawer({
                 icon={<WalletCards className='size-4' />}
                 iconTone='success'
               />
+              {!isUpdate && teamsPending && (
+                <p role='status' className='text-muted-foreground text-sm'>
+                  {t('Loading teams...')}
+                </p>
+              )}
+              {!isUpdate && teamsError && (
+                <div
+                  role='alert'
+                  className='border-destructive/30 bg-destructive/5 flex items-center justify-between gap-3 rounded-lg border p-3 text-sm'
+                >
+                  <span>
+                    {t('Could not load teams before creating the key.')}
+                  </span>
+                  <Button
+                    type='button'
+                    size='sm'
+                    variant='outline'
+                    disabled={teamsFetching}
+                    onClick={() => void refetchTeams()}
+                  >
+                    {t('Retry')}
+                  </Button>
+                </div>
+              )}
+              <FormField
+                control={form.control}
+                name='funding_mode'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Payment source')}</FormLabel>
+                    <Select
+                      value={field.value}
+                      disabled={!isUpdate && (teamsPending || teamsError)}
+                      onValueChange={(value) => {
+                        field.onChange(value)
+                        if (
+                          value !== 'personal_only' &&
+                          form.getValues('team_id') === 0 &&
+                          teams[0]
+                        ) {
+                          form.setValue('team_id', teams[0].id, {
+                            shouldValidate: true,
+                          })
+                        }
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger className='w-full'>
+                          <SelectValue>
+                            {field.value === 'team_first'
+                              ? t('Team first, then personal')
+                              : field.value === 'personal_first'
+                                ? t('Personal first, then team')
+                                : field.value === 'team_only'
+                                  ? t('Team only')
+                                  : t('Personal only')}
+                          </SelectValue>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem
+                          value='team_first'
+                          disabled={teams.length === 0}
+                        >
+                          {t('Team first, then personal')}
+                        </SelectItem>
+                        <SelectItem
+                          value='personal_first'
+                          disabled={teams.length === 0}
+                        >
+                          {t('Personal first, then team')}
+                        </SelectItem>
+                        <SelectItem
+                          value='team_only'
+                          disabled={teams.length === 0}
+                        >
+                          {t('Team only')}
+                        </SelectItem>
+                        <SelectItem value='personal_only'>
+                          {t('Personal only')}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      {t(
+                        'Fallback is decided when a new request starts. An invalid or revoked team membership will not fall back automatically.'
+                      )}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {fundingMode !== 'personal_only' && (
+                <FormField
+                  control={form.control}
+                  name='team_id'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('Team')}</FormLabel>
+                      <Select
+                        value={String(field.value || '')}
+                        onValueChange={(value) => field.onChange(Number(value))}
+                      >
+                        <FormControl>
+                          <SelectTrigger className='w-full'>
+                            <SelectValue>
+                              {teams.find((team) => team.id === field.value)
+                                ?.name || t('Select a team')}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {teams.map((team) => (
+                            <SelectItem key={team.id} value={String(team.id)}>
+                              {team.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               {!unlimitedQuota && (
                 <FormField
                   control={form.control}
@@ -762,7 +920,11 @@ export function ApiKeysMutateDrawer({
           <Button
             type='button'
             onClick={form.handleSubmit(onSubmit, onInvalid)}
-            disabled={!isFormInitialized || isSubmitting}
+            disabled={
+              !isFormInitialized ||
+              isSubmitting ||
+              (!isUpdate && (teamsPending || teamsError))
+            }
             className='w-full sm:w-auto'
           >
             {isSubmitting ? t('Saving...') : t('Save changes')}

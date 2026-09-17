@@ -38,7 +38,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import {
   formatPricingAmount,
-  USD_PRICING_CURRENCY,
+  CNY_PRICING_CURRENCY,
   type PricingCurrency,
 } from '@/features/model-pricing/currency'
 import { PricingAmountInput } from '@/features/model-pricing/pricing-amount-input'
@@ -472,10 +472,9 @@ export const TaskUsagePricingEditor = memo(function TaskUsagePricingEditor(
 
       <Alert>
         <AlertDescription className='text-xs'>
-          {t(
-            'Prices are in {{currency}}, with units shown below. Use USD when editing expressions directly.',
-            { currency: (props.currency ?? USD_PRICING_CURRENCY).label }
-          )}
+          {t('Prices are in {{currency}}, with units shown below.', {
+            currency: (props.currency ?? CNY_PRICING_CURRENCY).label,
+          })}
         </AlertDescription>
       </Alert>
 
@@ -554,7 +553,7 @@ export const TaskUsagePricingEditor = memo(function TaskUsagePricingEditor(
                               />
                               <span className='text-muted-foreground shrink-0 text-xs'>
                                 {
-                                  (props.currency ?? USD_PRICING_CURRENCY)
+                                  (props.currency ?? CNY_PRICING_CURRENCY)
                                     .symbol
                                 }
                                 /
@@ -599,7 +598,7 @@ export const TaskUsagePricingEditor = memo(function TaskUsagePricingEditor(
                             className='font-mono'
                           />
                           <span className='text-muted-foreground shrink-0 text-xs'>
-                            {(props.currency ?? USD_PRICING_CURRENCY).symbol}/
+                            {(props.currency ?? CNY_PRICING_CURRENCY).symbol}/
                             {t('request')}
                           </span>
                         </div>

@@ -57,10 +57,6 @@ type MockableApi = {
 type RenderedDrawer = {
   result: RenderResult
 }
-type CurrencyFixture = {
-  quotaDisplayType: 'USD' | 'CNY'
-  usdExchangeRate: number
-}
 
 const apiClient = api as unknown as MockableApi
 const originalGet = apiClient.get
@@ -110,17 +106,14 @@ function drawerTree(currentRow: Redemption) {
 
 async function renderDrawer(
   currentRow: Redemption,
-  currency: CurrencyFixture = {
-    quotaDisplayType: 'USD',
-    usdExchangeRate: 1,
-  }
+  legacyUsdExchangeRate = 1
 ): Promise<void> {
   useSystemConfigStore.getState().setConfig({
     currency: {
       displayInCurrency: true,
-      quotaDisplayType: currency.quotaDisplayType,
+      quotaDisplayType: 'CNY',
       quotaPerUnit: 500000,
-      usdExchangeRate: currency.usdExchangeRate,
+      usdExchangeRate: legacyUsdExchangeRate,
       customCurrencySymbol: '¤',
       customCurrencyExchangeRate: 1,
     },
@@ -142,7 +135,6 @@ function getSaveButton(): HTMLButtonElement {
 
 function getControlByLabel(labelText: 'Name'): HTMLInputElement
 function getControlByLabel(labelText: 'Quota (CNY)'): HTMLInputElement
-function getControlByLabel(labelText: 'Quota (USD)'): HTMLInputElement
 function getControlByLabel(labelText: string): HTMLElement {
   const label = [...document.querySelectorAll<HTMLLabelElement>('label')].find(
     (candidate) => candidate.textContent?.trim() === labelText
@@ -187,17 +179,14 @@ afterEach(() => {
 })
 
 describe('redemption drawer', () => {
-  test('shows the reported CNY quota without floating-point noise', async () => {
+  test('shows CNY quota without applying the legacy exchange-rate field or floating-point noise', async () => {
     const original = redemption(1, 13888889)
     apiClient.get = async () => ({ data: { success: true, data: original } })
 
-    await renderDrawer(original, {
-      quotaDisplayType: 'CNY',
-      usdExchangeRate: 7.2,
-    })
+    await renderDrawer(original, 7.2)
     await waitForLoadedForm()
 
-    expect(getControlByLabel('Quota (CNY)').value).toBe('200')
+    expect(getControlByLabel('Quota (CNY)').value).toBe('27.78')
   })
 
   test('blocks updates and reports an error when loading rejects', async () => {
@@ -251,7 +240,7 @@ describe('redemption drawer', () => {
 
     await renderDrawer(original)
     await waitForLoadedForm()
-    expect(getControlByLabel('Quota (USD)').value).toBe('1')
+    expect(getControlByLabel('Quota (CNY)').value).toBe('1')
 
     changeInput(getControlByLabel('Name'), 'renamed')
     submitForm()
@@ -273,7 +262,7 @@ describe('redemption drawer', () => {
 
     await renderDrawer(original)
     await waitForLoadedForm()
-    changeInput(getControlByLabel('Quota (USD)'), '2')
+    changeInput(getControlByLabel('Quota (CNY)'), '2')
     submitForm()
     await waitFor(() => expect(updates).toHaveLength(1))
 

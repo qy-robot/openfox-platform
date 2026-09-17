@@ -17,11 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
-import { Construction } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { Bot } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { PublicLayout } from '@/components/layout'
+import { Footer } from '@/components/layout/components/footer'
 import { RichContent } from '@/components/rich-content'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { isHttpUrl, isLikelyHtml } from '@/lib/content-format'
 import { requireServerSuccess } from '@/lib/server-error-message'
@@ -30,86 +33,41 @@ import { getAboutContent } from './api'
 
 function EmptyAboutState() {
   const { t } = useTranslation()
-  const currentYear = new Date().getFullYear()
-
   return (
-    <div className='flex min-h-[60vh] items-center justify-center p-8'>
-      <div className='max-w-2xl space-y-6 text-center'>
-        <div className='flex justify-center'>
-          <Construction className='text-muted-foreground h-24 w-24' />
+    <>
+      <main className='mx-auto max-w-3xl px-6 pt-32 pb-20'>
+        <Bot className='text-primary mb-8 size-12' aria-hidden />
+        <p className='text-muted-foreground mb-3 text-sm'>
+          RoboCoding · by擎云机器人
+        </p>
+        <h1 className='text-4xl leading-tight font-semibold'>
+          {t('Learn by building, one task at a time.')}
+        </h1>
+        <p className='text-muted-foreground mt-6 text-lg leading-9'>
+          {t(
+            'RoboCoding brings AI coding, robotics skills, and team services into one connected workspace.'
+          )}
+        </p>
+        <p className='text-muted-foreground mt-5 leading-8'>
+          {t(
+            'Use the desktop app for your projects. Use the console to manage your account, team, balance, and model usage.'
+          )}
+        </p>
+        <div className='mt-9 flex flex-wrap gap-3'>
+          <Button className='h-11 px-5' render={<Link to='/download' />}>
+            {t('Download desktop app')}
+          </Button>
+          <Button
+            variant='outline'
+            className='h-11 px-5'
+            render={<Link to='/licenses' />}
+          >
+            {t('Open-source licenses')}
+          </Button>
         </div>
-        <div className='space-y-2'>
-          <h2 className='text-2xl font-bold'>{t('No About Content Set')}</h2>
-          <p className='text-muted-foreground'>
-            {t(
-              'The administrator has not configured any about content yet. You can set it in the settings page, supporting HTML or URL.'
-            )}
-          </p>
-        </div>
-        <div className='space-y-4 text-sm'>
-          <p>
-            {t('New API Project Repository:')}{' '}
-            <a
-              href='https://github.com/QuantumNous/new-api'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
-            >
-              {t('https://github.com/QuantumNous/new-api')}
-            </a>
-          </p>
-          <p className='text-muted-foreground'>
-            <a
-              href='https://github.com/QuantumNous/new-api'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
-            >
-              {t('NewAPI')}
-            </a>{' '}
-            © {currentYear}{' '}
-            <a
-              href='https://github.com/QuantumNous'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
-            >
-              {t('QuantumNous')}
-            </a>{' '}
-            {t('| Based on')}{' '}
-            <a
-              href='https://github.com/songquanpeng/one-api'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
-            >
-              {t('One API')}
-            </a>{' '}
-            © 2023{' '}
-            <a
-              href='https://github.com/songquanpeng'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
-            >
-              {t('JustSong')}
-            </a>
-          </p>
-          <p className='text-muted-foreground'>
-            {t('This project must be used in compliance with the')}{' '}
-            <a
-              href='https://github.com/QuantumNous/new-api/blob/main/LICENSE'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
-            >
-              {t('AGPL v3.0 License')}
-            </a>
-            .
-          </p>
-        </div>
-      </div>
-    </div>
+      </main>
+      <Footer />
+    </>
   )
 }
 
@@ -140,7 +98,7 @@ export function About() {
 
   if (!hasContent) {
     return (
-      <PublicLayout>
+      <PublicLayout showMainContainer={false}>
         <EmptyAboutState />
       </PublicLayout>
     )

@@ -21,8 +21,35 @@ For commercial licensing, please contact support@quantumnous.com
  */
 
 // System Configuration Defaults
-export const DEFAULT_SYSTEM_NAME = 'New API'
-export const DEFAULT_LOGO = '/logo.png'
+export const DEFAULT_SYSTEM_NAME = 'RoboCoding'
+export const DEFAULT_SYSTEM_SUBTITLE = 'by擎云机器人'
+export const DEFAULT_LOGO = '/robocodingai-logo.png'
+
+const LEGACY_DEFAULT_SYSTEM_NAMES = new Set([
+  'new api',
+  'new-api',
+  'newapi',
+  'robocoding',
+  'robocodingai',
+])
+
+/** Replace upstream and provisional defaults while preserving custom branding. */
+export function normalizeSystemName(value: unknown): string {
+  if (typeof value !== 'string') return DEFAULT_SYSTEM_NAME
+
+  const name = value.trim()
+  if (!name || LEGACY_DEFAULT_SYSTEM_NAMES.has(name.toLowerCase())) {
+    return DEFAULT_SYSTEM_NAME
+  }
+  return name
+}
+
+/** Keep deliberate custom logos and fall back to the bundled RoboCoding mark. */
+export function normalizeSystemLogo(value: unknown): string {
+  if (typeof value !== 'string') return DEFAULT_LOGO
+  const logo = value.trim()
+  return !logo || logo === '/logo.png' ? DEFAULT_LOGO : logo
+}
 
 // LocalStorage Keys
 export const STORAGE_KEYS = {

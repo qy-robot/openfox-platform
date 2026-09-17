@@ -20,12 +20,23 @@ import { Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { isCentralAccountMode } from '@/features/auth/sign-in/central-reauth'
 
 import { useUsers } from './users-provider'
 
 export function UsersPrimaryButtons() {
   const { t } = useTranslation()
   const { setOpen, setCurrentRow } = useUsers()
+
+  if (isCentralAccountMode()) {
+    return (
+      <p className='text-muted-foreground text-sm'>
+        {t(
+          'Users are provisioned when they first sign in with RoboCoding Account.'
+        )}
+      </p>
+    )
+  }
 
   const handleCreate = () => {
     setCurrentRow(null)

@@ -58,6 +58,7 @@ func buildMaskedTokenResponse(token *model.Token) *tokenResponse {
 	}
 	maskedToken := *token
 	maskedToken.Key = token.GetMaskedKey()
+	maskedToken.FundingMode = model.NormalizeTokenFundingMode(token.FundingMode)
 	autoGroups, err := token.GetAutoGroups()
 	if err != nil {
 		common.SysError(fmt.Sprintf("failed to parse auto groups for token %d: %v", token.Id, err))
@@ -283,6 +284,11 @@ func AddToken(c *gin.Context) {
 		return
 	}
 	token := request.Token
+	token.FundingMode = model.NormalizeTokenFundingMode(token.FundingMode)
+	if err := model.ValidateTeamFunding(c.GetInt("id"), token.TeamId, token.FundingMode); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	if len(token.Name) > 50 {
 		common.ApiErrorI18n(c, i18n.MsgTokenNameTooLong)
 		return
@@ -344,6 +350,8 @@ func AddToken(c *gin.Context) {
 		Group:              token.Group,
 		CrossGroupRetry:    token.CrossGroupRetry,
 		AutoGroups:         token.AutoGroups,
+		FundingMode:        token.FundingMode,
+		TeamId:             token.TeamId,
 	}
 	err = cleanToken.Insert()
 	if err != nil {
@@ -414,6 +422,10 @@ func UpdateToken(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	if statusOnly == "" && cleanToken.DesktopSessionID != "" {
+		common.ApiErrorMsg(c, "desktop relay token settings are managed by the desktop session")
+		return
+	}
 	params["name"] = cleanToken.Name
 	previous := *cleanToken
 	if token.Status == common.TokenStatusEnabled {
@@ -427,8 +439,19 @@ func UpdateToken(c *gin.Context) {
 		}
 	}
 	if statusOnly != "" {
+		if token.Status == common.TokenStatusEnabled {
+			if err := model.ValidateTeamFunding(userId, cleanToken.TeamId, cleanToken.FundingMode); err != nil {
+				common.ApiError(c, err)
+				return
+			}
+		}
 		cleanToken.Status = token.Status
 	} else {
+		token.FundingMode = model.NormalizeTokenFundingMode(token.FundingMode)
+		if err := model.ValidateTeamFunding(userId, token.TeamId, token.FundingMode); err != nil {
+			common.ApiError(c, err)
+			return
+		}
 		// If you add more fields, please also update token.Update()
 		cleanToken.Name = token.Name
 		cleanToken.ExpiredTime = token.ExpiredTime
@@ -439,6 +462,8 @@ func UpdateToken(c *gin.Context) {
 		cleanToken.AllowIps = token.AllowIps
 		cleanToken.Group = token.Group
 		cleanToken.CrossGroupRetry = token.CrossGroupRetry
+		cleanToken.FundingMode = token.FundingMode
+		cleanToken.TeamId = token.TeamId
 		if token.Group != "auto" {
 			cleanToken.CrossGroupRetry = false
 			_ = cleanToken.SetAutoGroups(nil)
@@ -473,6 +498,8 @@ func UpdateToken(c *gin.Context) {
 			{"group", previous.Group != cleanToken.Group},
 			{"cross_group_retry", previous.CrossGroupRetry != cleanToken.CrossGroupRetry},
 			{"auto_groups", previous.AutoGroups != cleanToken.AutoGroups},
+			{"funding_mode", model.NormalizeTokenFundingMode(previous.FundingMode) != cleanToken.FundingMode},
+			{"team_id", previous.TeamId != cleanToken.TeamId},
 		} {
 			if field.changed {
 				changedFields = append(changedFields, field.name)

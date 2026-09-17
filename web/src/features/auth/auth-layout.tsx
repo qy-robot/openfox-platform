@@ -31,7 +31,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
   const { systemName, logo, loading } = useSystemConfig()
 
   return (
-    <div className='relative grid h-svh max-w-none'>
+    <div className='relative grid min-h-svh max-w-none lg:grid-cols-2'>
       <Link
         to='/'
         className='absolute top-4 left-4 z-10 flex items-center gap-2 transition-opacity hover:opacity-80 sm:top-8 sm:left-8'
@@ -50,10 +50,32 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         {loading ? (
           <Skeleton className='h-6 w-24' />
         ) : (
-          <h1 className='text-xl font-medium'>{systemName}</h1>
+          <span>
+            <span className='block text-lg font-semibold'>{systemName}</span>
+            <span className='text-muted-foreground block text-xs'>
+              by擎云机器人
+            </span>
+          </span>
         )}
       </Link>
-      <div className='container flex items-center pt-16 sm:pt-0'>
+      <aside className='bg-accent/60 hidden flex-col justify-center px-16 py-32 lg:flex xl:px-24'>
+        <p className='text-primary mb-6 text-sm font-medium'>RoboCoding</p>
+        <h1 className='text-4xl leading-snug font-semibold tracking-tight'>
+          {t('Learn by building.')}
+          <br />
+          {t('Move forward with every task.')}
+        </h1>
+        <p className='text-muted-foreground mt-6 max-w-md text-base leading-8'>
+          {t('One account for your desktop workspace and cloud services.')}
+        </p>
+        <Link
+          to='/download'
+          className='text-primary mt-10 w-fit text-sm underline underline-offset-4'
+        >
+          {t('Download desktop app')}
+        </Link>
+      </aside>
+      <div className='flex items-center pt-20 lg:pt-0'>
         <div className='mx-auto flex w-full flex-col justify-center space-y-2 px-4 py-8 sm:w-[480px] sm:p-8'>
           {children}
         </div>

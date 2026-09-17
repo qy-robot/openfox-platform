@@ -24,7 +24,12 @@ import { toast } from 'sonner'
 
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { logout } from '@/features/auth/api'
-import { clearAuthenticatedClientState } from '@/lib/auth-session'
+import { markCentralSignedOutIfEnabled } from '@/features/auth/sign-in/central-reauth'
+import {
+  beginExplicitSignOut,
+  clearAuthenticatedClientState,
+  finishExplicitSignOut,
+} from '@/lib/auth-session'
 import { handleServerError } from '@/lib/handle-server-error'
 
 interface SignOutDialogProps {
@@ -40,6 +45,7 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
 
   const handleSignOut = async () => {
     setIsSigningOut(true)
+    beginExplicitSignOut()
     try {
       const response = await logout()
       if (!response.success) {
@@ -47,12 +53,14 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
         return
       }
 
+      markCentralSignedOutIfEnabled()
       clearAuthenticatedClientState(queryClient)
+      await navigate({ to: '/sign-in', replace: true })
       toast.success(t('Signed out'))
-      void navigate({ to: '/sign-in', replace: true })
     } catch (error: unknown) {
       handleServerError(error, t('Failed to sign out session'))
     } finally {
+      finishExplicitSignOut()
       setIsSigningOut(false)
     }
   }
