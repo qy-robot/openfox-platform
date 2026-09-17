@@ -48,7 +48,8 @@ func (user *UserBase) GetSetting() dto.UserSetting {
 
 // getUserCacheKey returns the key for user cache
 func getUserCacheKey(userId int) string {
-	return fmt.Sprintf("user:%d", userId)
+	// Never reuse a pre-migration USD quota snapshot after switching ledgers.
+	return fmt.Sprintf("billing:cny:v1:user:%d", userId)
 }
 
 func userCacheTTLSeconds() int {

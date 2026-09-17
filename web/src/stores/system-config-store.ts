@@ -19,7 +19,12 @@ For commercial licensing, please contact support@quantumnous.com
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-import { DEFAULT_SYSTEM_NAME, DEFAULT_LOGO } from '@/lib/constants'
+import {
+  DEFAULT_SYSTEM_NAME,
+  DEFAULT_LOGO,
+  normalizeSystemLogo,
+  normalizeSystemName,
+} from '@/lib/constants'
 
 export type CurrencyDisplayType = 'USD' | 'CNY' | 'TOKENS' | 'CUSTOM'
 
@@ -28,14 +33,18 @@ export interface CurrencyConfig {
   displayInCurrency: boolean
   /** Currency presentation strategy configured by the admin */
   quotaDisplayType: CurrencyDisplayType
-  /** Number of quota units that equal one USD */
+  /** Number of quota units that equal one CNY */
   quotaPerUnit: number
-  /** Exchange rate from USD to the configured local currency */
+  /** Legacy compatibility field; runtime billing does not apply it */
   usdExchangeRate: number
   /** Custom currency symbol configured by the admin (used when type === CUSTOM) */
   customCurrencySymbol: string
-  /** Exchange rate from USD to the custom currency (used when type === CUSTOM) */
+  /** Legacy compatibility field; runtime billing does not apply it */
   customCurrencyExchangeRate: number
+  /** Product points granted for one CNY. */
+  pointsPerCny?: number
+  /** Exact backend quota units represented by one product point. */
+  quotaPerPoint?: number
 }
 
 export interface SystemConfig {
@@ -49,11 +58,13 @@ export interface SystemConfig {
 
 export const DEFAULT_CURRENCY_CONFIG: CurrencyConfig = {
   displayInCurrency: true,
-  quotaDisplayType: 'USD',
+  quotaDisplayType: 'CNY',
   quotaPerUnit: 500000,
   usdExchangeRate: 1,
   customCurrencySymbol: '¤',
   customCurrencyExchangeRate: 1,
+  pointsPerCny: 10,
+  quotaPerPoint: 500000 / 10,
 }
 
 interface SystemConfigState {
@@ -80,16 +91,23 @@ export const useSystemConfigStore = create<SystemConfigState>()(
       loading: true,
       loadedLogoUrl: DEFAULT_LOGO,
       setConfig: (newConfig) =>
-        set((state) => ({
-          config: {
+        set((state) => {
+          const config = {
             ...state.config,
             ...newConfig,
             currency: {
               ...state.config.currency,
-              ...(newConfig.currency ?? {}),
+              ...newConfig.currency,
             },
-          },
-        })),
+          }
+          return {
+            config: {
+              ...config,
+              systemName: normalizeSystemName(config.systemName),
+              logo: normalizeSystemLogo(config.logo),
+            },
+          }
+        }),
       setLoadedLogoUrl: (url) => set({ loadedLogoUrl: url }),
       setLoading: (loading) => set({ loading }),
     }),
@@ -99,6 +117,31 @@ export const useSystemConfigStore = create<SystemConfigState>()(
         config: state.config,
         loadedLogoUrl: state.loadedLogoUrl,
       }),
+      merge: (persistedState, currentState) => {
+        const savedState =
+          typeof persistedState === 'object' && persistedState !== null
+            ? (persistedState as Partial<SystemConfigState>)
+            : {}
+        const config = {
+          ...currentState.config,
+          ...savedState.config,
+          currency: {
+            ...currentState.config.currency,
+            ...savedState.config?.currency,
+          },
+        }
+
+        return {
+          ...currentState,
+          ...savedState,
+          config: {
+            ...config,
+            systemName: normalizeSystemName(config.systemName),
+            logo: normalizeSystemLogo(config.logo),
+          },
+          loadedLogoUrl: normalizeSystemLogo(savedState.loadedLogoUrl),
+        }
+      },
     }
   )
 )

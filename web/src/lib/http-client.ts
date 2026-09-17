@@ -20,12 +20,20 @@ import axios, { type AxiosRequestConfig } from 'axios'
 import { t } from 'i18next'
 
 import {
+  clearCentralReauthenticationAttempt,
+  currentCentralReturnTo,
+  isCentralAccountMode,
+  requestFreshCentralLogin,
+  reserveCentralReauthentication,
+} from '@/features/auth/sign-in/central-reauth'
+import {
   applyAuthRotation,
   clearAuthentication,
   getFreshAuthHeaders,
+  isExplicitSignOutInProgress,
   refreshAuthentication,
 } from '@/lib/auth-session'
-import { handleServerError } from '@/lib/handle-server-error'
+import { handleServerError, markServerErrorHandled } from '@/lib/handle-server-error'
 import {
   getServerErrorMessage,
   safeServerErrorMessage,
@@ -57,6 +65,7 @@ export const api = axios.create({
 
 const inFlightGet = new Map<string, Promise<unknown>>()
 const originalGet = api.get.bind(api)
+let centralReauthentication: Promise<boolean> | null = null
 
 api.get = ((url: string, config: ApiRequestConfig = {}) => {
   if (config.disableDuplicate) return originalGet(url, config)
@@ -83,6 +92,45 @@ function redirectToSignIn(): void {
   }
 }
 
+async function beginCentralReauthentication(
+  forceFreshLogin = false
+): Promise<boolean> {
+  if (!isCentralAccountMode()) return false
+  if (centralReauthentication) return centralReauthentication
+  if (!reserveCentralReauthentication()) return false
+
+  const attempt = (async () => {
+    try {
+      if (forceFreshLogin) requestFreshCentralLogin()
+      const returnTo = encodeURIComponent(currentCentralReturnTo())
+      window.location.assign(`/sign-in?redirect=${returnTo}`)
+      return true
+    } catch {
+      clearCentralReauthenticationAttempt()
+      return false
+    }
+  })()
+  centralReauthentication = attempt
+  try {
+    return await attempt
+  } finally {
+    if (centralReauthentication === attempt) centralReauthentication = null
+  }
+}
+
+function reportExpiredSession(
+  error: unknown,
+  skipErrorHandler?: boolean
+): void {
+  if (!skipErrorHandler) {
+    handleServerError({
+      message: t('Session expired!'),
+      [safeServerErrorMessage]: true,
+      cause: error,
+    })
+  }
+}
+
 api.interceptors.response.use(
   (response) => {
     if (response.config.acceptAuthRotation && response.data?.success === true) {
@@ -97,7 +145,35 @@ api.interceptors.response.use(
     const status = error?.response?.status
 
     if (status === 401) {
-      if (config && !config.skipAuthRefresh && !config.authRetry) {
+      const auth = useAuthStore.getState().auth
+      // Revoked background requests may settle after navigation has finished.
+      // Keep their rejection, but do not present it as a new user-facing failure.
+      // Explicit login/logout calls still own and report their failures.
+      if (
+        !config?.skipAuthRefresh &&
+        config?.headers?.Authorization &&
+        (isExplicitSignOutInProgress() ||
+          (!auth.accessToken && auth.bootstrapState === 'complete'))
+      ) {
+        markServerErrorHandled(error)
+        throw error
+      }
+
+      if (
+        isExplicitSignOutInProgress() ||
+        (isCentralAccountMode() && window.location.pathname === '/sign-in')
+      ) {
+        throw error
+      }
+      if (config && !config.skipAuthRefresh && isCentralAccountMode()) {
+        clearAuthentication(false)
+        const forceFreshLogin =
+          error?.response?.data?.code === 'AUTH_REAUTH_REQUIRED'
+        if (!(await beginCentralReauthentication(forceFreshLogin))) {
+          reportExpiredSession(error, skipErrorHandler)
+          redirectToSignIn()
+        }
+      } else if (config && !config.skipAuthRefresh && !config.authRetry) {
         config.authRetry = true
         const outcome = await refreshAuthentication()
         if (outcome.kind === 'authenticated') {
@@ -112,31 +188,15 @@ api.interceptors.response.use(
         }
 
         if (outcome.kind === 'anonymous' || outcome.kind === 'out_of_sync') {
-          if (!skipErrorHandler) {
-            handleServerError({
-              message: t('Session expired!'),
-              [safeServerErrorMessage]: true,
-              cause: error,
-            })
-          }
+          reportExpiredSession(error, skipErrorHandler)
           redirectToSignIn()
         }
       } else if (config?.authRetry) {
         clearAuthentication(false)
-        if (!skipErrorHandler) {
-          handleServerError({
-            message: t('Session expired!'),
-            [safeServerErrorMessage]: true,
-            cause: error,
-          })
-        }
+        reportExpiredSession(error, skipErrorHandler)
         redirectToSignIn()
       } else if (!skipErrorHandler) {
-        handleServerError({
-          message: t('Session expired!'),
-          [safeServerErrorMessage]: true,
-          cause: error,
-        })
+        reportExpiredSession(error)
       }
     }
     if (axios.isAxiosError(error)) error.message = getServerErrorMessage(error)
@@ -147,7 +207,24 @@ api.interceptors.response.use(
 api.interceptors.request.use(async (config) => {
   if (config.singleUseAuthorization || config.headers.has('X-Security-Proof')) {
     // Refresh before spending a proof/flow, never by replaying its request.
+    const explicitlySkipsRefresh = config.skipAuthRefresh === true
     config.skipAuthRefresh = true
+    if (explicitlySkipsRefresh) return config
+    const auth = useAuthStore.getState().auth
+    const refreshBefore = Math.floor(Date.now() / 1000) + 60
+    if (
+      !explicitlySkipsRefresh &&
+      isCentralAccountMode() &&
+      (!auth.accessExpiresAt || auth.accessExpiresAt <= refreshBefore)
+    ) {
+      clearAuthentication(false)
+      await beginCentralReauthentication()
+      throw axios.AxiosError.from(
+        new Error(t('Session expired!')),
+        undefined,
+        config
+      )
+    }
     try {
       const headers = await getFreshAuthHeaders()
       for (const [name, value] of Object.entries(headers)) {

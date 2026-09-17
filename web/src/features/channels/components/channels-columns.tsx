@@ -47,11 +47,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { toIntlLocale } from '@/i18n/languages'
-import {
-  formatCurrencyFromUSD,
-  formatQuotaWithCurrency,
-  getCurrencyLabel,
-} from '@/lib/currency'
+import { formatQuotaWithCurrency, getCurrencyLabel } from '@/lib/currency'
 import { formatTimestampToDate } from '@/lib/format'
 import { handleServerError } from '@/lib/handle-server-error'
 import { createServerError } from '@/lib/server-error-message'
@@ -65,6 +61,7 @@ import {
 } from '../constants'
 import {
   formatRelativeTime,
+  formatBalance,
   formatResponseTime,
   getBalanceVariant,
   getChannelTypeIcon,
@@ -354,12 +351,6 @@ export function BalanceCell({ channel }: { channel: Channel }) {
     tokenSuffix && value !== '-' ? `${value}${tokenSuffix}` : value
 
   const locale = toIntlLocale(i18n.resolvedLanguage || i18n.language)
-  const balanceFormatOptions = {
-    digitsLarge: 2,
-    digitsSmall: 4,
-    abbreviate: false,
-    showSymbol: layout !== 'card',
-  } as const
   // Precise values are kept for the tooltip; long values are shown compactly inline.
   const usedFull = withSuffix(
     formatQuotaWithCurrency(usedQuota, {
@@ -369,9 +360,7 @@ export function BalanceCell({ channel }: { channel: Channel }) {
       showSymbol: layout !== 'card',
     })
   )
-  const remainingFull = withSuffix(
-    formatCurrencyFromUSD(balance, balanceFormatOptions)
-  )
+  const remainingFull = formatBalance(balance)
   const usedDisplay =
     usedFull.length > MAX_INLINE_BALANCE_CHARS
       ? withSuffix(
@@ -384,16 +373,10 @@ export function BalanceCell({ channel }: { channel: Channel }) {
       : usedFull
   const remainingDisplay =
     remainingFull.length > MAX_INLINE_BALANCE_CHARS
-      ? withSuffix(
-          formatCurrencyFromUSD(balance, {
-            compact: true,
-            locale,
-            showSymbol: layout !== 'card',
-          })
-        )
+      ? withSuffix(formatBalance(balance, { compact: true, locale }))
       : remainingFull
   const usedLabel = `${t('Used:')} ${usedFull}`
-  const remainingLabel = `${t('Remaining:')} ${remainingFull}`
+  const remainingLabel = `${t('Remaining:')} ${remainingFull} (${t('Currency unknown')})`
   const maskedUsedLabel = `${t('Used:')} ${SENSITIVE_MASK}`
   const maskedRemainingLabel = `${t('Remaining:')} ${SENSITIVE_MASK}`
 
@@ -456,11 +439,9 @@ export function BalanceCell({ channel }: { channel: Channel }) {
       if (response.success && response.balance !== undefined) {
         toast.success(
           t('Balance updated: {{balance}}', {
-            balance: formatCurrencyFromUSD(response.balance, {
-              digitsLarge: 2,
-              digitsSmall: 4,
-              abbreviate: false,
-            }),
+            balance: response.currency
+              ? formatBalance(response.balance, { currency: response.currency })
+              : `${formatBalance(response.balance)} (${t('Currency unknown')})`,
           })
         )
         void queryClient.invalidateQueries({

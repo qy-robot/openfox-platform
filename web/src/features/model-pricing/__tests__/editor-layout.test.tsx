@@ -74,7 +74,8 @@ it.each(['none', 'standard', 'claude_ttl'] as const)(
     useAuthStore
       .getState()
       .auth.setUser({ id: 1, username: 'administrator', role: 100 })
-    usePricingPreferencesStore.setState({ currency: 'USD' })
+    await usePricingPreferencesStore.persist.rehydrate()
+    usePricingPreferencesStore.setState({ currency: 'site' })
     vi.spyOn(api, 'get').mockImplementation(async (url) => ({
       data: {
         success: true,
@@ -116,7 +117,7 @@ it.each(['none', 'standard', 'claude_ttl'] as const)(
     expect(within(billing).getByText('16')).toBeVisible()
     expect(within(billing).queryByText('Image input')).not.toBeInTheDocument()
     const preview = screen.getByRole('complementary', { name: 'Preview' })
-    expect(await within(preview).findByText('$16')).toBeVisible()
+    expect(await within(preview).findByText('¥16')).toBeVisible()
     expect(
       within(preview).queryByText('Image input price')
     ).not.toBeInTheDocument()
@@ -139,12 +140,12 @@ it.each(['none', 'standard', 'claude_ttl'] as const)(
           within(panel).getByText(
             mode === 'claude_ttl' ? 'Cache Creation (5m)' : 'Cache write price'
           ).nextElementSibling
-        ).toHaveTextContent('$5')
+        ).toHaveTextContent('¥5')
         if (mode === 'claude_ttl') {
           expect(
             within(panel).getByText('Cache create (1h) price')
               .nextElementSibling
-          ).toHaveTextContent('$8')
+          ).toHaveTextContent('¥8')
         } else {
           expect(
             within(panel).queryByText('Cache create (1h) price')
@@ -228,7 +229,7 @@ it('keeps the preview expanded and the save action outside the scrolling embedde
   expect(
     screen.queryByRole('textbox', { name: 'Model name' })
   ).not.toBeInTheDocument()
-  expect(screen.getAllByText(/USD price per 1M tokens\./)).toHaveLength(1)
+  expect(screen.getAllByText(/CNY price per 1M tokens\./)).toHaveLength(1)
 })
 
 it('retains the model identity and heading when the editor is used standalone', () => {
@@ -249,10 +250,10 @@ it('updates the preview for explicit zero and disabled prices and explains depen
   const cache = screen.getByRole('textbox', { name: 'Cache read price' })
   await user.clear(cache)
   await user.type(cache, '0')
-  expect(await within(preview).findByText('$0')).toBeVisible()
+  expect(await within(preview).findByText('¥0')).toBeVisible()
   await user.click(screen.getByRole('switch', { name: 'Cache read price' }))
   expect(cache).toBeDisabled()
-  expect(within(preview).queryByText('$0')).not.toBeInTheDocument()
+  expect(within(preview).queryByText('¥0')).not.toBeInTheDocument()
   await waitFor(() =>
     expect(
       within(preview).queryByText('Cache read price')

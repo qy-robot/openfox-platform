@@ -1,3 +1,5 @@
+import { DEFAULT_SYSTEM_NAME, DEFAULT_LOGO } from '@/lib/constants'
+
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -26,8 +28,8 @@ import {
 
 const defaultSiteSettings: SiteSettings = {
   Notice: '',
-  SystemName: 'New API',
-  Logo: '',
+  SystemName: DEFAULT_SYSTEM_NAME,
+  Logo: DEFAULT_LOGO,
   Footer: '',
   About: '',
   HomePageContent: '',

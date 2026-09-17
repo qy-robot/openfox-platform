@@ -20,10 +20,12 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import z from 'zod'
 
 import { UsageLogs } from '@/features/usage-logs'
+import { canAccessUsageLogsSection } from '@/features/usage-logs/access'
 import {
   isUsageLogsSectionId,
   USAGE_LOGS_DEFAULT_SECTION,
 } from '@/features/usage-logs/section-registry'
+import { useAuthStore } from '@/stores/auth-store'
 
 const logTypeValues = ['0', '1', '2', '3', '4', '5', '6', '7'] as const
 const logTypeSearchSchema = z
@@ -55,6 +57,14 @@ export const Route = createFileRoute('/_authenticated/usage-logs/$section')({
       throw redirect({
         to: '/usage-logs/$section',
         params: { section: USAGE_LOGS_DEFAULT_SECTION },
+      })
+    }
+    const role = useAuthStore.getState().auth.user?.role
+    if (!canAccessUsageLogsSection(params.section, role)) {
+      throw redirect({
+        to: '/usage-logs/$section',
+        params: { section: USAGE_LOGS_DEFAULT_SECTION },
+        replace: true,
       })
     }
     // type 仅 common 使用，非 common 时清掉 URL 里的 type

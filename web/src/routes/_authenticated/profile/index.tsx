@@ -16,10 +16,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
+import {
+  getIdentityProfileURL,
+  usesCentralIdentityManagement,
+} from '@/features/auth/central-account-navigation'
 import { Profile } from '@/features/profile'
 
 export const Route = createFileRoute('/_authenticated/profile/')({
+  beforeLoad: () => {
+    if (usesCentralIdentityManagement()) {
+      throw redirect({ href: getIdentityProfileURL(), replace: true })
+    }
+  },
   component: Profile,
 })

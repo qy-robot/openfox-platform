@@ -55,7 +55,8 @@ func AuthLogout(c *gin.Context) {
 	}
 
 	if rawAccessToken, ok := dashboardBearer(c.GetHeader("Authorization")); ok {
-		if identity, err := service.ParseAccessToken(rawAccessToken); err == nil {
+		identity, internal, parseErr := service.ParseDashboardAccessToken(rawAccessToken)
+		if internal && parseErr == nil {
 			if expectedSID != "" && expectedSID != identity.SessionID {
 				writeAuthSessionError(c, service.ErrLoginSessionMismatch)
 				return

@@ -179,6 +179,104 @@ func TestExecuteTaskSubmissionSettlementFailureStaysDurableAndWritesNothing(t *t
 	assert.False(t, c.Writer.Written())
 }
 
+func TestExecuteTaskSubmissionKeepsTeamReservationOpenUntilCompletion(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, db.AutoMigrate(
+		&model.User{}, &model.Channel{}, &model.Task{}, &model.Log{},
+		&model.Team{}, &model.TeamMember{}, &model.TeamMonthlyUsage{}, &model.TeamQuotaReservation{},
+	))
+	previousDB, previousLogDB := model.DB, model.LOG_DB
+	previousRedis, previousBatch, previousConsume := common.RedisEnabled, common.BatchUpdateEnabled, common.LogConsumeEnabled
+	model.DB, model.LOG_DB = db, db
+	common.RedisEnabled, common.BatchUpdateEnabled, common.LogConsumeEnabled = false, false, false
+	t.Cleanup(func() {
+		model.DB, model.LOG_DB = previousDB, previousLogDB
+		common.RedisEnabled, common.BatchUpdateEnabled, common.LogConsumeEnabled = previousRedis, previousBatch, previousConsume
+	})
+	user := &model.User{Username: "controller-team-member", AffCode: "controller-team-member", Status: common.UserStatusEnabled, Role: common.RoleCommonUser}
+	require.NoError(t, db.Create(user).Error)
+	channel := &model.Channel{Name: "controller task channel", Type: constant.ChannelTypeTaskPlugin}
+	require.NoError(t, db.Create(channel).Error)
+	team := &model.Team{Name: "Controller Team", JoinCode: "CONTROLLERTEAM", Quota: 100, CreatedBy: user.Id}
+	require.NoError(t, db.Create(team).Error)
+	require.NoError(t, db.Create(&model.TeamMember{TeamId: team.Id, UserId: user.Id, Role: model.TeamRoleMember, MonthlyLimitQuota: 200}).Error)
+
+	c := taskSubmissionTestContext()
+	c.Set(common.RequestIdKey, "controller-team-submit")
+	c.Set("username", user.Username)
+	info := taskSubmissionRelayInfo(nil)
+	info.RequestId = "controller-team-submit"
+	info.UserId = user.Id
+	info.TeamId = team.Id
+	info.FundingMode = model.TokenFundingTeamOnly
+	info.TokenUnlimited = true
+	info.IsPlayground = true
+	info.ForcePreConsume = true
+	info.UserSetting.BillingPreference = "wallet_only"
+	info.PublicTaskID = "controller-team-task"
+	info.LockedChannel = channel
+	info.ChannelMeta = &relaycommon.ChannelMeta{ChannelId: channel.Id, ChannelType: channel.Type}
+	session, apiErr := service.NewBillingSession(c, info, 60)
+	require.Nil(t, apiErr)
+	info.Billing = session
+	outcome, taskErr := executeTaskSubmissionWith(c, info, func(*gin.Context, *relaycommon.RelayInfo) (*relay.TaskSubmitResult, *dto.TaskError) {
+		return &relay.TaskSubmitResult{UpstreamTaskID: "controller-upstream", Platform: constant.TaskPlatform("plugin"), Quota: 40}, nil
+	})
+	require.Nil(t, taskErr)
+	require.NotNil(t, outcome)
+
+	var reservation model.TeamQuotaReservation
+	require.NoError(t, db.Where("request_id = ?", info.RequestId).First(&reservation).Error)
+	assert.Equal(t, model.TeamReservationReserved, reservation.Status)
+	assert.Equal(t, 40, reservation.Quota)
+	service.RecalculateTaskQuota(t.Context(), outcome.Task, 70, "controller completion")
+	require.NoError(t, db.Where("request_id = ?", info.RequestId).First(&reservation).Error)
+	assert.Equal(t, model.TeamReservationSettled, reservation.Status)
+	assert.Equal(t, 70, reservation.Quota)
+	require.NoError(t, db.First(team, team.Id).Error)
+	assert.Equal(t, 30, team.Quota)
+
+	failureTeam := &model.Team{Name: "Controller Failure Team", JoinCode: "CONTROLLERFAIL", Quota: 100, CreatedBy: user.Id}
+	require.NoError(t, db.Create(failureTeam).Error)
+	require.NoError(t, db.Create(&model.TeamMember{TeamId: failureTeam.Id, UserId: user.Id, Role: model.TeamRoleMember, MonthlyLimitQuota: 100}).Error)
+	failureContext := taskSubmissionTestContext()
+	failureContext.Set(common.RequestIdKey, "controller-team-immediate-failure")
+	failureContext.Set("username", user.Username)
+	failureInfo := taskSubmissionRelayInfo(nil)
+	failureInfo.RequestId = "controller-team-immediate-failure"
+	failureInfo.UserId = user.Id
+	failureInfo.TeamId = failureTeam.Id
+	failureInfo.FundingMode = model.TokenFundingTeamOnly
+	failureInfo.TokenUnlimited = true
+	failureInfo.IsPlayground = true
+	failureInfo.ForcePreConsume = true
+	failureInfo.UserSetting.BillingPreference = "wallet_only"
+	failureInfo.PublicTaskID = "controller-team-failed-task"
+	failureInfo.LockedChannel = channel
+	failureInfo.ChannelMeta = &relaycommon.ChannelMeta{ChannelId: channel.Id, ChannelType: channel.Type}
+	failureSession, failureAPIErr := service.NewBillingSession(failureContext, failureInfo, 50)
+	require.Nil(t, failureAPIErr)
+	failureInfo.Billing = failureSession
+	failureOutcome, failureTaskErr := executeTaskSubmissionWith(failureContext, failureInfo, func(*gin.Context, *relaycommon.RelayInfo) (*relay.TaskSubmitResult, *dto.TaskError) {
+		return &relay.TaskSubmitResult{
+			UpstreamTaskID: "controller-failed-upstream",
+			Platform:       constant.TaskPlatform("plugin"),
+			Quota:          30,
+			Immediate:      &relaycommon.TaskInfo{Status: model.TaskStatusFailure, Reason: "provider rejected"},
+		}, nil
+	})
+	require.Nil(t, failureTaskErr)
+	require.NotNil(t, failureOutcome)
+	assert.Zero(t, failureOutcome.Task.Quota)
+	reservation = model.TeamQuotaReservation{}
+	require.NoError(t, db.Where("request_id = ?", failureInfo.RequestId).First(&reservation).Error)
+	assert.Equal(t, model.TeamReservationSettled, reservation.Status)
+	assert.Zero(t, reservation.Quota)
+	require.NoError(t, db.First(failureTeam, failureTeam.Id).Error)
+	assert.Equal(t, 100, failureTeam.Quota)
+}
+
 func TestExecuteTaskSubmissionPersistsPinnedPluginProvenance(t *testing.T) {
 	events := make([]string, 0, 3)
 	database := setupTaskSubmissionDatabase(t, true, &events)

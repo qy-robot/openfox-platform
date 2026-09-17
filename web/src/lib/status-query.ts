@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { queryOptions, type QueryClient } from '@tanstack/react-query'
 
 import { getStatus } from '@/lib/api'
-import { DEFAULT_SYSTEM_NAME, DEFAULT_LOGO } from '@/lib/constants'
+import { normalizeSystemLogo, normalizeSystemName } from '@/lib/constants'
 import {
   useSystemConfigStore,
   type CurrencyConfig,
@@ -46,6 +46,14 @@ export const STATUS_STORAGE_KEY = 'status'
 
 /** Status payload shape — loose on purpose; the backend map is open-ended. */
 export type StatusData = Record<string, unknown>
+
+function normalizeStatusBrand(data: StatusData): StatusData {
+  return {
+    ...data,
+    system_name: normalizeSystemName(data.system_name),
+    logo: normalizeSystemLogo(data.logo),
+  }
+}
 
 /** Coerce a status field to a number, keeping `fallback` for unusable values. */
 function toNumber(value: unknown, fallback: number): number {
@@ -89,11 +97,19 @@ export function mapStatusDataToConfig(
       data.custom_currency_exchange_rate,
       DEFAULT_CURRENCY_CONFIG.customCurrencyExchangeRate
     ),
+    pointsPerCny: toNumber(
+      data.points_per_cny,
+      DEFAULT_CURRENCY_CONFIG.pointsPerCny ?? 10
+    ),
+    quotaPerPoint: toNumber(
+      data.quota_per_point,
+      DEFAULT_CURRENCY_CONFIG.quotaPerPoint ?? 500000 / 70
+    ),
   }
 
   return {
-    systemName: (data.system_name as string | undefined) || DEFAULT_SYSTEM_NAME,
-    logo: (data.logo as string | undefined) || DEFAULT_LOGO,
+    systemName: normalizeSystemName(data.system_name),
+    logo: normalizeSystemLogo(data.logo),
     footerHtml: data.footer_html as string | undefined,
     demoSiteEnabled: data.demo_site_enabled as boolean | undefined,
     displayTokenStatEnabled: data.display_token_stat_enabled as
@@ -108,7 +124,7 @@ export function readCachedStatus(): StatusData | null {
   try {
     if (typeof window === 'undefined') return null
     const raw = window.localStorage.getItem(STATUS_STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as StatusData) : null
+    return raw ? normalizeStatusBrand(JSON.parse(raw) as StatusData) : null
   } catch {
     return null
   }
@@ -132,7 +148,8 @@ function writeCachedStatus(status: StatusData | null): void {
  * and writing the localStorage snapshot — so consumers never repeat either one.
  */
 async function fetchStatus(): Promise<StatusData | null> {
-  const status = (await getStatus()) as StatusData | null
+  const response = (await getStatus()) as StatusData | null
+  const status = response ? normalizeStatusBrand(response) : null
 
   if (status) {
     try {

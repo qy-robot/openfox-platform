@@ -79,6 +79,19 @@ const authClient = axios.create({
 const refreshRaceDelays = [80, 200, 500] as const
 let refreshPromise: Promise<RefreshOutcome> | null = null
 let authEpoch = 0
+let explicitSignOutInProgress = false
+
+export function beginExplicitSignOut(): void {
+  explicitSignOutInProgress = true
+}
+
+export function finishExplicitSignOut(): void {
+  explicitSignOutInProgress = false
+}
+
+export function isExplicitSignOutInProgress(): boolean {
+  return explicitSignOutInProgress
+}
 
 class AuthRefreshSupersededError extends Error {
   constructor() {
@@ -360,6 +373,10 @@ function currentValidAuthBundle(): AuthBundle | null {
     user: auth.user,
     session: auth.session,
   }
+}
+
+export function hasValidAuthentication(): boolean {
+  return currentValidAuthBundle() != null
 }
 
 /**

@@ -25,6 +25,10 @@ import { SignOutDialog } from '@/components/sign-out-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  getIdentityProfileURL,
+  usesCentralIdentityManagement,
+} from '@/features/auth/central-account-navigation'
 import useDialogState from '@/hooks/use-dialog'
 import { useIsSidebarModuleVisible } from '@/hooks/use-sidebar-config'
 import { useUserDisplay } from '@/hooks/use-user-display'
@@ -83,6 +87,8 @@ function MobileUserProfile({ user, onNavigate }: MobileUserProfileProps) {
   const [signOutOpen, setSignOutOpen] = useDialogState()
   const { displayName, initials, roleLabel } = useUserDisplay(user)
   const isSecurityVisible = useIsSidebarModuleVisible('/security')
+  const centralIdentity = usesCentralIdentityManagement()
+  const identityProfileURL = getIdentityProfileURL()
 
   if (!user) return null
 
@@ -115,16 +121,16 @@ function MobileUserProfile({ user, onNavigate }: MobileUserProfileProps) {
         </div>
 
         {/* Navigation links - same style as top nav */}
-        <Link
-          to='/profile'
+        <a
+          href={identityProfileURL}
           onClick={onNavigate}
           className='text-primary/60 hover:text-primary/80 border-border flex items-center gap-2.5 border-b p-2.5 transition-colors'
         >
           <User className='size-4' />
-          {t('Profile')}
-        </Link>
+          {centralIdentity ? t('Account center') : t('Profile')}
+        </a>
 
-        {isSecurityVisible && (
+        {!centralIdentity && isSecurityVisible && (
           <Link
             to='/security'
             onClick={onNavigate}

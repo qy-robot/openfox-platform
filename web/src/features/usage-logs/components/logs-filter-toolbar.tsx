@@ -99,6 +99,12 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
   const activeAdvancedCount =
     props.advancedFilterCount ?? (props.hasAdvancedActiveFilters ? 1 : 0)
   const activeMobileFilterCount = props.mobileFilterCount ?? activeAdvancedCount
+  const hasHideableColumns = props.table
+    .getAllColumns()
+    .some(
+      (column) =>
+        typeof column.accessorFn !== 'undefined' && column.getCanHide()
+    )
 
   const handleMobileReset = () => {
     props.onReset()
@@ -181,7 +187,9 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
                 {props.searchLoading && <Loader2 className='animate-spin' />}
                 {t('Search')}
               </Button>
-              <DataTableViewOptions table={props.table} />
+              {hasHideableColumns && (
+                <DataTableViewOptions table={props.table} />
+              )}
             </>
           }
         >
@@ -284,7 +292,7 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
             {props.searchLoading && <Loader2 className='animate-spin' />}
             {t('Search')}
           </Button>
-          <DataTableViewOptions table={props.table} />
+          {hasHideableColumns && <DataTableViewOptions table={props.table} />}
         </div>
       </div>
     </div>

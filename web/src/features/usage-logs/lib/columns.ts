@@ -24,6 +24,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { useCommonLogsColumns } from '../components/columns/common-logs-columns'
 import { useDrawingLogsColumns } from '../components/columns/drawing-logs-columns'
 import { useTaskLogsColumns } from '../components/columns/task-logs-columns'
+import { useUserLogsColumns } from '../components/columns/user-logs-columns'
 import type { LogCategory } from '../types'
 
 /**
@@ -37,17 +38,18 @@ export function useColumnsByCategory(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ColumnDef<any>[] {
   const commonColumns = useCommonLogsColumns(isAdmin, isRoot)
+  const userColumns = useUserLogsColumns()
   const drawingColumns = useDrawingLogsColumns(isAdmin)
   const taskColumns = useTaskLogsColumns(isAdmin, isRoot)
 
   switch (logCategory) {
     case 'common':
-      return commonColumns
+      return isAdmin ? commonColumns : userColumns
     case 'drawing':
       return drawingColumns
     case 'task':
       return taskColumns
     default:
-      return commonColumns
+      return isAdmin ? commonColumns : userColumns
   }
 }

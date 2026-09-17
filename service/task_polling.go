@@ -671,6 +671,9 @@ func settleTaskBillingOnComplete(ctx context.Context, adaptor TaskPollingAdaptor
 		result, usageFacts, err := EvaluateTaskCompletionUsage(bc.TieredSnapshot, taskResult.UsageFacts)
 		if err != nil {
 			logger.LogWarn(ctx, fmt.Sprintf("任务 %s 表达式结算失败，保留预扣额度: %v", task.TaskID, err))
+			if task.PrivateData.BillingSource == BillingSourceTeam {
+				RecalculateTaskQuota(ctx, task, task.Quota, "任务用量表达式结算失败，确认预扣额度")
+			}
 			return true
 		}
 		if result.Clamp != nil {
@@ -684,6 +687,10 @@ func settleTaskBillingOnComplete(ctx context.Context, adaptor TaskPollingAdaptor
 	// 按次计费的成功任务保持预扣；失败任务由调用方全额退款。
 	if bc := task.PrivateData.BillingContext; bc != nil && bc.PerCallBilling {
 		logger.LogInfo(ctx, fmt.Sprintf("任务 %s 按次计费，跳过差额结算", task.TaskID))
+		if task.Status == model.TaskStatusSuccess && task.PrivateData.BillingSource == BillingSourceTeam {
+			RecalculateTaskQuota(ctx, task, task.Quota, "按次计费完成，确认团队预扣额度")
+			return true
+		}
 		return false
 	}
 	// 优先让 adaptor 决定最终额度。
@@ -697,7 +704,13 @@ func settleTaskBillingOnComplete(ctx context.Context, adaptor TaskPollingAdaptor
 		tokens = taskResult.CompletionTokens
 	}
 	if tokens > 0 {
-		return RecalculateTaskQuotaByTokens(ctx, task, tokens)
+		if RecalculateTaskQuotaByTokens(ctx, task, tokens) {
+			return true
+		}
+	}
+	if task.Status == model.TaskStatusSuccess && task.PrivateData.BillingSource == BillingSourceTeam {
+		RecalculateTaskQuota(ctx, task, task.Quota, "任务完成，确认团队预扣额度")
+		return true
 	}
 	return false
 }

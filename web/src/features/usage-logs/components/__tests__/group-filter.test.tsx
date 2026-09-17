@@ -47,6 +47,7 @@ const pointerCaptureDescriptor = Object.getOwnPropertyDescriptor(
 )
 
 function FilterFixture() {
+  // eslint-disable-next-line react/incompatible-library -- TanStack table fixture is not compiled.
   const table = useReactTable({
     data: [],
     columns: [],
@@ -66,6 +67,9 @@ async function renderFilter(
     premium: { desc: '', ratio: 2 },
   }
 ) {
+  if (!useAuthStore.getState().auth.user) {
+    useAuthStore.getState().auth.setUser({ id: 1, username: 'admin', role: 10 })
+  }
   vi.spyOn(api, 'get').mockImplementation(async (url) => {
     if (url === '/api/user/self/groups' || url === '/api/group/') {
       if (groups === null) throw new Error('Group loading failed')
@@ -122,7 +126,7 @@ afterEach(() => {
   }
 })
 
-it('loads personal groups and filters choices without submitting until Search', async () => {
+it('loads administrator groups and filters choices without submitting until Search', async () => {
   const router = await renderFilter()
   const input = screen.getByRole('combobox', { name: 'Group' })
   await userEvent.click(input)
@@ -141,8 +145,8 @@ it('loads personal groups and filters choices without submitting until Search', 
       page: 1,
     })
   )
-  expect(api.get).toHaveBeenCalledWith('/api/user/self/groups')
-  expect(api.get).not.toHaveBeenCalledWith('/api/group/')
+  expect(api.get).toHaveBeenCalledWith('/api/group/')
+  expect(api.get).not.toHaveBeenCalledWith('/api/user/self/groups')
 })
 
 it('loads all groups in the administrator view', async () => {
@@ -265,7 +269,7 @@ it('lets mobile users select a long group name inside the filter drawer and subm
   )
 })
 
-it.each([1, 10])(
+it.each([10, 100])(
   'excludes only auto from group choices for role %s',
   async (role) => {
     useAuthStore.getState().auth.setUser({ id: 1, username: 'viewer', role })

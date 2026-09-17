@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,99 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
+
+func TestAuthLogoutRevokesOnlyLocalFederatedSession(t *testing.T) {
+	previousDB, previousRedis, previousSecret := model.DB, common.RedisEnabled, common.SessionSecret
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, db.AutoMigrate(&model.User{}, &model.UserSession{}))
+	model.DB, common.RedisEnabled, common.SessionSecret = db, false, "federated-logout-test-secret"
+	t.Cleanup(func() {
+		model.DB, common.RedisEnabled, common.SessionSecret = previousDB, previousRedis, previousSecret
+	})
+	user := &model.User{Username: "federated-user", Password: "unused", Role: common.RoleCommonUser, Status: common.UserStatusEnabled, Group: "default", AuthVersion: 1}
+	require.NoError(t, db.Create(user).Error)
+	revokeCalls := 0
+	accountServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/internal/revoke-session" {
+			revokeCalls++
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"success":true,"data":{"active":true}}`))
+	}))
+	t.Cleanup(accountServer.Close)
+	t.Setenv("ROBO_ACCOUNT_MODE", "central")
+	t.Setenv("ROBO_ACCOUNT_URL", accountServer.URL)
+	t.Setenv("ROBO_ACCOUNT_ISSUER", "https://account.example.com")
+	t.Setenv("ROBO_ACCOUNT_INTERNAL_TOKEN", "internal-secret")
+	bundle, err := service.CreateCentralBrowserLoginSession(user.Id, user.AuthVersion, service.CentralSessionAuthority{Issuer: "https://account.example.com", Subject: "acct-1", SessionID: "account-session", AuthVersion: 1}, "127.0.0.1", "test")
+	require.NoError(t, err)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Request = httptest.NewRequest(http.MethodPost, "/api/user/auth/logout", nil)
+	context.Request.Header.Set("Authorization", "Bearer "+bundle.AccessToken)
+	context.Request.Header.Set("X-Auth-Session", bundle.Session.SID)
+	context.Request.AddCookie(&http.Cookie{Name: service.RefreshCookieName, Value: bundle.RefreshToken})
+
+	AuthLogout(context)
+
+	assert.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+	assert.Zero(t, revokeCalls)
+	var session model.UserSession
+	require.NoError(t, db.Where("sid = ?", bundle.Session.SID).First(&session).Error)
+	assert.Equal(t, model.UserSessionStatusRevoked, session.Status)
+}
+
+func TestCentralAccountModeAllowsLocalFederatedRefresh(t *testing.T) {
+	previousDB, previousRedis, previousSecret := model.DB, common.RedisEnabled, common.SessionSecret
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, db.AutoMigrate(&model.User{}, &model.UserSession{}))
+	model.DB, common.RedisEnabled, common.SessionSecret = db, false, "federated-refresh-test-secret"
+	t.Cleanup(func() {
+		model.DB, common.RedisEnabled, common.SessionSecret = previousDB, previousRedis, previousSecret
+	})
+	user := &model.User{Username: "federated-refresh-user", Password: "unused", Role: common.RoleCommonUser, Status: common.UserStatusEnabled, Group: "default", AuthVersion: 1}
+	require.NoError(t, db.Create(user).Error)
+	accountServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/internal/session-status", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"success":true,"data":{"active":true}}`))
+	}))
+	t.Cleanup(accountServer.Close)
+	t.Setenv("ROBO_ACCOUNT_MODE", "central")
+	t.Setenv("ROBO_ACCOUNT_URL", accountServer.URL)
+	t.Setenv("ROBO_ACCOUNT_ISSUER", "https://account.example.com")
+	t.Setenv("ROBO_ACCOUNT_INTERNAL_TOKEN", "internal-secret")
+	bundle, err := service.CreateCentralBrowserLoginSession(user.Id, user.AuthVersion, service.CentralSessionAuthority{Issuer: "https://account.example.com", Subject: "acct-1", SessionID: "account-session", AuthVersion: 1}, "127.0.0.1", "test")
+	require.NoError(t, err)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(middleware.CentralAccountLegacyGuard())
+	router.POST("/api/user/auth/refresh", RefreshAuth)
+	request := httptest.NewRequest(http.MethodPost, "/api/user/auth/refresh", nil)
+	request.Header.Set("X-Auth-Session", bundle.Session.SID)
+	request.AddCookie(&http.Cookie{Name: service.RefreshCookieName, Value: bundle.RefreshToken})
+	response := httptest.NewRecorder()
+
+	router.ServeHTTP(response, request)
+
+	require.Equal(t, http.StatusOK, response.Code, response.Body.String())
+	var body struct {
+		Success bool `json:"success"`
+		Data    struct {
+			AccessToken string `json:"access_token"`
+			Session     struct {
+				SID string `json:"sid"`
+			} `json:"session"`
+		} `json:"data"`
+	}
+	require.NoError(t, common.Unmarshal(response.Body.Bytes(), &body))
+	assert.True(t, body.Success)
+	assert.NotEmpty(t, body.Data.AccessToken)
+	assert.Equal(t, bundle.Session.SID, body.Data.Session.SID)
+}
 
 func TestAuthLogoutRejectsRefreshCookieSessionMismatch(t *testing.T) {
 	previousDB := model.DB

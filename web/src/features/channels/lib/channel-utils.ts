@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { formatCurrencyFromUSD, formatQuotaWithCurrency } from '@/lib/currency'
+import { formatQuotaWithCurrency } from '@/lib/currency'
 import { formatTimestampToDate } from '@/lib/format'
 
 import {
@@ -323,18 +323,38 @@ export function validateChannelSettings(settings: string): boolean {
 // Balance Formatting
 // ============================================================================
 
-/**
- * Format balance with currency symbol
- */
-export function formatBalance(balance: number | null | undefined): string {
+/** Format an upstream-reported balance without assuming it uses platform CNY. */
+export function formatBalance(
+  balance: number | null | undefined,
+  options: {
+    currency?: string
+    compact?: boolean
+    locale?: Intl.LocalesArgument
+  } = {}
+): string {
   if (balance == null || Number.isNaN(balance)) {
     return '-'
   }
-  return formatCurrencyFromUSD(balance, {
-    digitsLarge: 2,
-    digitsSmall: 4,
-    abbreviate: false,
-  })
+
+  const currency = options.currency?.trim().toUpperCase()
+  const numberOptions: Intl.NumberFormatOptions = {
+    maximumFractionDigits: Math.abs(balance) >= 1 ? 2 : 4,
+    ...(options.compact ? { notation: 'compact' } : {}),
+  }
+  if (currency && /^[A-Z]{3}$/.test(currency)) {
+    try {
+      return new Intl.NumberFormat(options.locale, {
+        ...numberOptions,
+        style: 'currency',
+        currency,
+        currencyDisplay: 'narrowSymbol',
+      }).format(balance)
+    } catch {
+      return `${new Intl.NumberFormat(options.locale, numberOptions).format(balance)} ${currency}`
+    }
+  }
+
+  return new Intl.NumberFormat(options.locale, numberOptions).format(balance)
 }
 
 /**

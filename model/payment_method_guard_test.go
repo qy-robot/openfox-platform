@@ -1,19 +1,90 @@
 package model
 
 import (
+	"fmt"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/setting/operation_setting"
+	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
+
+func useTopUpPaymentDialect(t *testing.T, dialect common.DatabaseType, dsn string) *gorm.DB {
+	t.Helper()
+
+	var dialector gorm.Dialector
+	switch dialect {
+	case common.DatabaseTypeSQLite:
+		dialector = sqlite.Open("file:" + strings.ReplaceAll(t.Name(), "/", "_") + "?mode=memory&cache=shared")
+	case common.DatabaseTypeMySQL:
+		if strings.TrimSpace(dsn) == "" {
+			t.Skip("TOPUP_TEST_MYSQL_DSN is not configured")
+		}
+		dialector = mysql.Open(dsn)
+	case common.DatabaseTypePostgreSQL:
+		if strings.TrimSpace(dsn) == "" {
+			t.Skip("TOPUP_TEST_POSTGRES_DSN is not configured")
+		}
+		dialector = postgres.New(postgres.Config{DSN: dsn, PreferSimpleProtocol: true})
+	default:
+		t.Fatalf("unsupported top-up test dialect %q", dialect)
+	}
+
+	prefix := fmt.Sprintf("topup_%d_", time.Now().UnixNano())
+	db, err := gorm.Open(dialector, &gorm.Config{NamingStrategy: schema.NamingStrategy{TablePrefix: prefix}})
+	require.NoError(t, err)
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	sqlDB.SetMaxOpenConns(1)
+
+	models := []any{&User{}, &TopUp{}, &Log{}}
+	require.NoError(t, db.AutoMigrate(models...))
+
+	previousDB, previousLogDB := DB, LOG_DB
+	previousMainType, previousLogType := common.MainDatabaseType(), common.LogDatabaseType()
+	previousRedisEnabled := common.RedisEnabled
+	previousQuotaPerUnit := common.QuotaPerUnit
+	DB, LOG_DB = db, db
+	common.SetDatabaseTypes(dialect, dialect)
+	common.RedisEnabled = false
+	common.QuotaPerUnit = 500000
+	initCol()
+
+	t.Cleanup(func() {
+		DB, LOG_DB = previousDB, previousLogDB
+		common.SetDatabaseTypes(previousMainType, previousLogType)
+		common.RedisEnabled = previousRedisEnabled
+		common.QuotaPerUnit = previousQuotaPerUnit
+		initCol()
+		require.NoError(t, db.Migrator().DropTable(models...))
+		require.NoError(t, sqlDB.Close())
+	})
+
+	var version string
+	if dialect == common.DatabaseTypeSQLite {
+		require.NoError(t, db.Raw("SELECT sqlite_version()").Scan(&version).Error)
+	} else {
+		require.NoError(t, db.Raw("SELECT version()").Scan(&version).Error)
+	}
+	t.Logf("top-up database: %s %s", dialect, version)
+	return db
+}
 
 func insertUserForPaymentGuardTest(t *testing.T, id int, quota int) *User {
 	t.Helper()
 	user := &User{
 		Id:       id,
-		Username: "payment_guard_user",
+		Username: fmt.Sprintf("payment_guard_user_%d", id),
+		AffCode:  fmt.Sprintf("payment-guard-%d", id),
 		Status:   common.UserStatusEnabled,
 		Quota:    quota,
 	}
@@ -58,6 +129,7 @@ func insertTopUpForPaymentGuardTest(t *testing.T, tradeNo string, userID int, pa
 		UserId:          userID,
 		Amount:          2,
 		Money:           9.99,
+		Currency:        operation_setting.BillingCurrency,
 		TradeNo:         tradeNo,
 		PaymentMethod:   paymentProvider,
 		PaymentProvider: paymentProvider,
@@ -180,6 +252,7 @@ func createEpayTestOrder(t *testing.T, userId int, tradeNo string, provider stri
 		UserId:          userId,
 		Amount:          2,
 		Money:           10.0,
+		Currency:        operation_setting.BillingCurrency,
 		TradeNo:         tradeNo,
 		PaymentMethod:   "alipay",
 		PaymentProvider: provider,
@@ -209,11 +282,107 @@ func TestRechargeEpayCreditsQuotaExactlyOnce(t *testing.T) {
 	require.NotNil(t, reloaded)
 	assert.Equal(t, common.TopUpStatusSuccess, reloaded.Status)
 	assert.NotZero(t, reloaded.CompleteTime)
+	assert.Equal(t, operation_setting.BillingCurrency, reloaded.Currency)
+	assert.Equal(t, int64(2*500000), reloaded.CreditedQuota)
 
 	alreadyDone, err = RechargeEpay(order.TradeNo, "alipay", "127.0.0.1")
 	require.NoError(t, err)
 	assert.True(t, alreadyDone)
 	assert.Equal(t, 2*500000, getUserQuotaForPaymentGuardTest(t, user.Id))
+	reloaded = GetTopUpByTradeNo(order.TradeNo)
+	require.NotNil(t, reloaded)
+	assert.Equal(t, int64(2*500000), reloaded.CreditedQuota)
+}
+
+func TestRechargeCreemRecordsActualCreditedQuota(t *testing.T) {
+	truncateTables(t)
+
+	user := insertUserForPaymentGuardTest(t, 507, 0)
+	order := TopUp{
+		UserId:          user.Id,
+		Amount:          1_234_567,
+		Money:           25,
+		Currency:        operation_setting.BillingCurrency,
+		TradeNo:         "CREEMTESTSNAPSHOT",
+		PaymentMethod:   PaymentMethodCreem,
+		PaymentProvider: PaymentProviderCreem,
+		CreateTime:      common.GetTimestamp(),
+		Status:          common.TopUpStatusPending,
+	}
+	require.NoError(t, order.Insert())
+
+	require.NoError(t, RechargeCreem(order.TradeNo, "", "", "127.0.0.1"))
+	assert.Equal(t, 1_234_567, getUserQuotaForPaymentGuardTest(t, user.Id))
+
+	reloaded := GetTopUpByTradeNo(order.TradeNo)
+	require.NotNil(t, reloaded)
+	assert.Equal(t, int64(1_234_567), reloaded.CreditedQuota)
+	assert.Equal(t, operation_setting.BillingCurrency, reloaded.Currency)
+	assert.Equal(t, int64(1_234_567), reloaded.Amount)
+	assert.Equal(t, float64(25), reloaded.Money)
+}
+
+func TestTopUpCreditedQuotaDatabaseMatrix(t *testing.T) {
+	testCases := []struct {
+		name    string
+		dialect common.DatabaseType
+		dsn     string
+	}{
+		{name: "sqlite", dialect: common.DatabaseTypeSQLite},
+		{name: "mysql", dialect: common.DatabaseTypeMySQL, dsn: os.Getenv("TOPUP_TEST_MYSQL_DSN")},
+		{name: "postgres", dialect: common.DatabaseTypePostgreSQL, dsn: os.Getenv("TOPUP_TEST_POSTGRES_DSN")},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			db := useTopUpPaymentDialect(t, tc.dialect, tc.dsn)
+
+			epayUser := insertUserForPaymentGuardTest(t, 601, 0)
+			epayOrder := createEpayTestOrder(t, epayUser.Id, "EPAYMATRIX", PaymentProviderEpay, common.TopUpStatusPending)
+			alreadyDone, err := RechargeEpay(epayOrder.TradeNo, "alipay", "127.0.0.1")
+			require.NoError(t, err)
+			require.False(t, alreadyDone)
+
+			var storedEpay TopUp
+			require.NoError(t, db.Where("trade_no = ?", epayOrder.TradeNo).First(&storedEpay).Error)
+			require.Equal(t, operation_setting.BillingCurrency, storedEpay.Currency)
+			require.Equal(t, int64(1_000_000), storedEpay.CreditedQuota)
+			require.Equal(t, 1_000_000, getUserQuotaForPaymentGuardTest(t, epayUser.Id))
+
+			alreadyDone, err = RechargeEpay(epayOrder.TradeNo, "alipay", "127.0.0.1")
+			require.NoError(t, err)
+			require.True(t, alreadyDone)
+			require.Equal(t, 1_000_000, getUserQuotaForPaymentGuardTest(t, epayUser.Id))
+			require.NoError(t, db.Where("trade_no = ?", epayOrder.TradeNo).First(&storedEpay).Error)
+			require.Equal(t, int64(1_000_000), storedEpay.CreditedQuota)
+
+			creemUser := insertUserForPaymentGuardTest(t, 602, 0)
+			creemOrder := TopUp{
+				UserId:          creemUser.Id,
+				Amount:          1_234_567,
+				Money:           25,
+				Currency:        operation_setting.BillingCurrency,
+				TradeNo:         "CREEMMATRIX",
+				PaymentMethod:   PaymentMethodCreem,
+				PaymentProvider: PaymentProviderCreem,
+				CreateTime:      common.GetTimestamp(),
+				Status:          common.TopUpStatusPending,
+			}
+			require.NoError(t, creemOrder.Insert())
+			require.NoError(t, RechargeCreem(creemOrder.TradeNo, "", "", "127.0.0.1"))
+
+			var storedCreem TopUp
+			require.NoError(t, db.Where("trade_no = ?", creemOrder.TradeNo).First(&storedCreem).Error)
+			require.Equal(t, operation_setting.BillingCurrency, storedCreem.Currency)
+			require.Equal(t, int64(1_234_567), storedCreem.CreditedQuota)
+			require.Equal(t, 1_234_567, getUserQuotaForPaymentGuardTest(t, creemUser.Id))
+
+			require.Error(t, RechargeCreem(creemOrder.TradeNo, "", "", "127.0.0.1"))
+			require.Equal(t, 1_234_567, getUserQuotaForPaymentGuardTest(t, creemUser.Id))
+			require.NoError(t, db.Where("trade_no = ?", creemOrder.TradeNo).First(&storedCreem).Error)
+			require.Equal(t, int64(1_234_567), storedCreem.CreditedQuota)
+		})
+	}
 }
 
 func TestRechargeEpayKeepsRedisAndDatabaseCreditInSync(t *testing.T) {

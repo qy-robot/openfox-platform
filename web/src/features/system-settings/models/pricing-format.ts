@@ -59,3 +59,13 @@ export function formatPricingNumber(value: unknown): string {
   const normalized = snapFloatDrift(num)
   return Number.parseFloat(normalized.toFixed(DISPLAY_DECIMALS)).toString()
 }
+
+/** Keep storage precision; only normalize rounding within binary float noise. */
+export function serializePricingNumber(value: number): string {
+  if (!Number.isFinite(value)) return String(value)
+  const formatted = formatPricingNumber(value)
+  const tolerance = Math.abs(value) * Number.EPSILON * 8
+  return Math.abs(value - Number(formatted)) <= tolerance
+    ? formatted
+    : String(value)
+}

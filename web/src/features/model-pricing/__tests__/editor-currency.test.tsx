@@ -40,7 +40,6 @@ import {
   type ModelRatioData,
 } from '@/features/system-settings/models/model-pricing-sheet'
 import { api } from '@/lib/api'
-import { usePricingPreferencesStore } from '@/stores/pricing-preferences-store'
 import {
   DEFAULT_CURRENCY_CONFIG,
   useSystemConfigStore,
@@ -52,7 +51,6 @@ const clients: QueryClient[] = []
 
 beforeEach(() => {
   localStorage.clear()
-  usePricingPreferencesStore.setState({ currency: 'USD' })
   useSystemConfigStore.getState().setConfig({
     currency: {
       ...DEFAULT_CURRENCY_CONFIG,
@@ -68,7 +66,6 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   clients.splice(0).forEach((client) => client.clear())
-  usePricingPreferencesStore.setState({ currency: 'USD' })
   useSystemConfigStore
     .getState()
     .setConfig({ currency: { ...DEFAULT_CURRENCY_CONFIG } })
@@ -129,12 +126,6 @@ function renderEditor(
   }
 }
 
-async function selectCurrency(label: string) {
-  const user = userEvent.setup()
-  await user.click(screen.getByRole('combobox', { name: 'Pricing currency' }))
-  await user.click(await screen.findByRole('option', { name: label }))
-}
-
 async function commit(
   ref: React.RefObject<ModelPricingEditorPanelHandle | null>
 ) {
@@ -164,7 +155,6 @@ it('previews legacy conversion in the selected currency and applies only after c
   }))
   const save = vi.spyOn(api, 'patch')
   const editor = renderEditor({ cacheRatio: '0' })
-  await selectCurrency('Site currency (CNY)')
   await userEvent
     .setup()
     .click(screen.getByRole('button', { name: 'Convert to expression' }))
@@ -177,8 +167,8 @@ it('previews legacy conversion in the selected currency and applies only after c
   const after = within(dialog).getByRole('region', {
     name: 'After conversion',
   })
-  expect(within(before).getAllByText(/¥14/).length).toBeGreaterThan(0)
-  expect(within(after).getAllByText(/¥14/).length).toBeGreaterThan(0)
+  expect(within(before).getAllByText(/¥2/).length).toBeGreaterThan(0)
+  expect(within(after).getAllByText(/¥2/).length).toBeGreaterThan(0)
   expect(within(before).getByText(/^¥0 /)).toBeVisible()
   expect(within(after).getByText(/^¥0 /)).toBeVisible()
   expect(within(after).getByText(expression)).toBeVisible()
@@ -301,11 +291,11 @@ it.each([
       if (fixture.mode === 'claude_ttl') label = 'Cache Creation (5m)'
       expect(
         within(panel).getByText(label).nextElementSibling
-      ).toHaveTextContent(`$${fixture.ratio * 2} / 1M token`)
+      ).toHaveTextContent(`¥${fixture.ratio * 2} / 1M token`)
       if (fixture.mode === 'claude_ttl') {
         expect(
           within(panel).getByText('Cache create (1h) price').nextElementSibling
-        ).toHaveTextContent('$4.8 / 1M token')
+        ).toHaveTextContent('¥4.8 / 1M token')
       } else {
         expect(
           within(panel).queryByText('Cache create (1h) price')
@@ -390,11 +380,11 @@ it.each([
       } else {
         expect(
           within(panel).getByText('Cache read price').nextElementSibling
-        ).toHaveTextContent('$0 / 1M token')
+        ).toHaveTextContent('¥0 / 1M token')
       }
       expect(
         within(panel).getByText('Input price').nextElementSibling
-      ).toHaveTextContent(`$${fixture.inputRatio * 2} / 1M token`)
+      ).toHaveTextContent(`¥${fixture.inputRatio * 2} / 1M token`)
     }
     await userEvent
       .setup()
@@ -421,7 +411,7 @@ it('discards a conversion preview when the model being edited changes', async ()
   const dialog = await screen.findByRole('alertdialog', {
     name: 'Preview pricing conversion',
   })
-  expect(within(dialog).getAllByText(/^\$0 \/ request$/)).toHaveLength(2)
+  expect(within(dialog).getAllByText(/^¥0 \/ request$/)).toHaveLength(2)
   editor.reload({ name: 'another-model', ratio: '3' })
   await waitFor(() =>
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
@@ -466,7 +456,7 @@ it('previews and retains image quantity and nested quality rules when applying a
     const panel = within(dialog).getByRole('region', { name })
     expect(
       within(panel).getByText('Price per image').nextElementSibling
-    ).toHaveTextContent('$0.04 / image')
+    ).toHaveTextContent('¥0.04 / image')
     expect(
       within(panel).getByText('Image count').nextElementSibling
     ).toHaveTextContent('Reserve requested images; settle returned images.')
@@ -513,7 +503,7 @@ it('shows Gemini audio pricing when the legacy text price is zero without creati
     const panel = within(dialog).getByRole('region', { name })
     expect(
       within(panel).getByText('Audio input price').nextElementSibling
-    ).toHaveTextContent('$1 / 1M token')
+    ).toHaveTextContent('¥1 / 1M token')
   }
   await userEvent
     .setup()
@@ -552,7 +542,7 @@ it.each([0, 2])(
       expect(within(panel).getByText('Image input price')).toBeVisible()
       expect(
         within(panel).getByText('Image input price').nextElementSibling
-      ).toHaveTextContent(`$${imageRatio * 2} / 1M token`)
+      ).toHaveTextContent(`¥${imageRatio * 2} / 1M token`)
     }
   }
 )
@@ -596,192 +586,40 @@ it('preserves a legacy per-request draft when conversion is unsupported', async 
   expect(draft?.billingExpr).toBeUndefined()
 })
 
-it('defaults to USD, remembers a currency choice and restores it when reopened', async () => {
-  const editor = renderEditor()
+it('uses CNY directly and exposes no currency selector', () => {
+  renderEditor()
   expect(
-    screen.getByRole('combobox', { name: 'Pricing currency' })
-  ).toHaveTextContent('US dollar (USD)')
+    screen.queryByRole('combobox', { name: 'Pricing currency' })
+  ).not.toBeInTheDocument()
   expect(screen.getByRole('textbox', { name: 'Input price' })).toHaveValue('2')
-  await selectCurrency('Site currency (CNY)')
-  expect(screen.getByRole('textbox', { name: 'Input price' })).toHaveValue('14')
-  editor.unmount()
-  // Rehydrate from browser storage, rather than relying on the live store.
-  const stored = localStorage.getItem('model-pricing-preferences') ?? ''
-  expect(stored).not.toBe('')
-  usePricingPreferencesStore.setState({ currency: 'USD' })
-  localStorage.setItem('model-pricing-preferences', stored)
-  await usePricingPreferencesStore.persist.rehydrate()
-  renderEditor()
-  expect(
-    screen.getByRole('combobox', { name: 'Pricing currency' })
-  ).toHaveTextContent('Site currency (CNY)')
 })
 
-it('opens currency help by keyboard and restores focus after Escape', async () => {
-  renderEditor()
-  const user = userEvent.setup()
-  const help = screen.getByRole('button', { name: 'About pricing currency' })
-  help.focus()
-  await user.keyboard('{Enter}')
-  const dialog = await screen.findByRole('dialog', {
-    name: 'About pricing currency',
-  })
-  expect(
-    within(dialog).getByText(/The system always bills in USD/)
-  ).toBeVisible()
-  expect(
-    within(dialog).getByText('Current exchange rate: 1 USD = 7 CNY')
-  ).toBeVisible()
-  await user.keyboard('{Escape}')
-  await waitFor(() => expect(help).toHaveFocus())
-})
-
-it('switches currencies and refreshes exchange rates without changing stored prices or dirty state', async () => {
-  const editor = renderEditor({ ratio: '0.123456789123', cacheRatio: '0' })
-  const before = await commit(editor.ref)
-  editor.dirty.mockClear()
-  await selectCurrency('Site currency (CNY)')
-  await selectCurrency('US dollar (USD)')
-  await selectCurrency('Site currency (CNY)')
-  act(() =>
-    useSystemConfigStore.getState().setConfig({
-      currency: {
-        ...DEFAULT_CURRENCY_CONFIG,
-        quotaDisplayType: 'CNY',
-        usdExchangeRate: 3,
-      },
-    })
-  )
-  expect(await commit(editor.ref)).toEqual(before)
-  expect(editor.dirty).not.toHaveBeenCalledWith(true)
-  expect(screen.getByRole('textbox', { name: 'Cache read price' })).toHaveValue(
-    '0'
-  )
-})
-
-it('converts edited token prices to USD ratios while preserving unfinished decimals and disabled lanes', async () => {
+it('preserves entered CNY prices 10 and 5 across save and reload', async () => {
   const editor = renderEditor()
-  await selectCurrency('Site currency (CNY)')
-  const input = screen.getByRole('textbox', { name: 'Input price' })
-  fireEvent.change(input, { target: { value: '21.' } })
-  expect(input).toHaveValue('21.')
+  fireEvent.change(screen.getByRole('textbox', { name: 'Input price' }), {
+    target: { value: '10' },
+  })
   fireEvent.change(screen.getByRole('textbox', { name: 'Completion price' }), {
-    target: { value: '42' },
+    target: { value: '5' },
   })
-  expect(await commit(editor.ref)).toMatchObject({
-    ratio: '1.5',
-    completionRatio: '2',
-    cacheRatio: '',
-  })
-  await selectCurrency('US dollar (USD)')
-  expect(input).toHaveValue('3')
-  expect(await commit(editor.ref)).toMatchObject({
-    ratio: '1.5',
-    completionRatio: '2',
-  })
+  const saved = await commit(editor.ref)
+  expect(saved).toMatchObject({ ratio: '5', completionRatio: '0.5' })
+  editor.reload(saved ?? {})
+  expect(screen.getByRole('textbox', { name: 'Input price' })).toHaveValue('10')
+  expect(screen.getByRole('textbox', { name: 'Completion price' })).toHaveValue(
+    '5'
+  )
 })
 
 it.each(['0', '0.0000007', '14'])(
-  'saves the CNY per-request price %s as USD without display rounding',
+  'saves the CNY per-request price %s unchanged',
   async (price) => {
     const editor = renderEditor({ billingMode: 'per-request', price: '1' })
-    await selectCurrency('Site currency (CNY)')
     const fixed = screen.getByRole('textbox', { name: 'Fixed price' })
     fireEvent.change(fixed, { target: { value: price } })
-    const expected = { '0': '0', '0.0000007': '0.0000001', '14': '2' }[price]
-    expect(Number((await commit(editor.ref))?.price)).toBe(Number(expected))
-    await selectCurrency('US dollar (USD)')
-    expect(fixed).toHaveValue(expected)
+    expect(Number((await commit(editor.ref))?.price)).toBe(Number(price))
   }
 )
-
-it('uses the custom currency exchange rate instead of the CNY exchange rate', async () => {
-  useSystemConfigStore.getState().setConfig({
-    currency: {
-      ...DEFAULT_CURRENCY_CONFIG,
-      quotaDisplayType: 'CUSTOM',
-      usdExchangeRate: 7,
-      customCurrencySymbol: '€',
-      customCurrencyExchangeRate: 0.5,
-    },
-  })
-  const editor = renderEditor({ price: '2', billingMode: 'per-request' })
-  await selectCurrency('Site currency (€)')
-  const fixed = screen.getByRole('textbox', { name: 'Fixed price' })
-  expect(fixed).toHaveValue('1')
-  fireEvent.change(fixed, { target: { value: '7' } })
-  expect(await commit(editor.ref)).toMatchObject({ price: '14' })
-})
-
-it.each([0, -1, Infinity, Number.NaN, undefined])(
-  'disables site currency and falls back to USD for invalid rate %s',
-  async (rate) => {
-    usePricingPreferencesStore.setState({ currency: 'site' })
-    useSystemConfigStore.getState().setConfig({
-      currency: {
-        ...DEFAULT_CURRENCY_CONFIG,
-        quotaDisplayType: 'CNY',
-        usdExchangeRate: rate as number,
-      },
-    })
-    renderEditor()
-    expect(screen.getByRole('textbox', { name: 'Input price' })).toHaveValue(
-      '2'
-    )
-    expect(
-      screen.getByText(
-        'The site exchange rate is invalid. Prices are shown in USD.'
-      )
-    ).toBeVisible()
-    await userEvent.click(
-      screen.getByRole('combobox', { name: 'Pricing currency' })
-    )
-    expect(
-      await screen.findByRole('option', { name: 'Site currency (CNY)' })
-    ).toHaveAttribute('aria-disabled', 'true')
-  }
-)
-
-it.each(['USD', 'TOKENS'] as const)(
-  'offers only USD when the site uses %s',
-  async (type) => {
-    usePricingPreferencesStore.setState({ currency: 'site' })
-    useSystemConfigStore.getState().setConfig({
-      currency: { ...DEFAULT_CURRENCY_CONFIG, quotaDisplayType: type },
-    })
-    renderEditor()
-    await userEvent.click(
-      screen.getByRole('combobox', { name: 'Pricing currency' })
-    )
-    expect(screen.getAllByRole('option')).toHaveLength(1)
-    expect(
-      screen.getByRole('option', { name: 'US dollar (USD)' })
-    ).toBeVisible()
-  }
-)
-
-it('blocks a non-finite conversion and allows saving after the amount is corrected', async () => {
-  useSystemConfigStore.getState().setConfig({
-    currency: {
-      ...DEFAULT_CURRENCY_CONFIG,
-      quotaDisplayType: 'CNY',
-      usdExchangeRate: 1e-308,
-    },
-  })
-  const editor = renderEditor({ price: '1', billingMode: 'per-request' })
-  await selectCurrency('Site currency (CNY)')
-  const fixed = screen.getByRole('textbox', { name: 'Fixed price' })
-  fireEvent.change(fixed, { target: { value: '14' } })
-  expect(fixed).toHaveAttribute('aria-invalid', 'true')
-  expect(await commit(editor.ref)).toBeNull()
-  expect(
-    screen.getByText(
-      'The converted price must be a finite, non-negative number.'
-    )
-  ).toBeVisible()
-  fireEvent.change(fixed, { target: { value: '0' } })
-  expect(await commit(editor.ref)).toMatchObject({ price: '0' })
-})
 
 it('converts tier price coefficients but leaves token thresholds and rule multipliers unchanged', async () => {
   const expr =
@@ -792,33 +630,54 @@ it('converts tier price coefficients but leaves token thresholds and rule multip
     requestRuleExpr: '(header("x-priority") == "high" ? 2 : 1)',
   })
   const before = await commit(editor.ref)
-  await selectCurrency('Site currency (CNY)')
   expect(await commit(editor.ref)).toEqual(before)
   const inputs = screen.getAllByRole('textbox', { name: 'Input price' })
-  expect(inputs[0]).toHaveValue('14')
+  expect(inputs[0]).toHaveValue('2')
   fireEvent.change(inputs[0], { target: { value: '21' } })
   const saved = await commit(editor.ref)
   const config = tryParseVisualConfig(saved?.billingExpr ?? '')
-  expect(config?.tiers[0].input_unit_cost).toBe(3)
+  expect(config?.tiers[0].input_unit_cost).toBe(21)
   expect(config?.tiers[0].conditions).toEqual([
     { var: 'len', op: '<=', value: 200000 },
   ])
   expect(saved?.requestRuleExpr).toBe(before?.requestRuleExpr)
 })
 
-it('keeps custom raw expressions byte-for-byte intact on currency changes', async () => {
+it('edits migrated fixed-multiplier token prices as normalized CNY values', async () => {
+  const expr = 'tier("base", (p * 2 + c * 8) * 7.3)'
+  const editor = renderEditor({
+    billingMode: 'tiered_expr',
+    billingExpr: expr,
+  })
+
+  expect(screen.getByRole('textbox', { name: 'Input price' })).toHaveValue(
+    '14.6'
+  )
+  expect(screen.getByRole('textbox', { name: 'Output price' })).toHaveValue(
+    '58.4'
+  )
+  expect(await commit(editor.ref)).toMatchObject({ billingExpr: expr })
+
+  fireEvent.change(screen.getByRole('textbox', { name: 'Input price' }), {
+    target: { value: '15' },
+  })
+  const saved = await commit(editor.ref)
+  expect(
+    tryParseVisualConfig(saved?.billingExpr ?? '')?.tiers[0]
+  ).toMatchObject({
+    input_unit_cost: 15,
+    output_unit_cost: 58.4,
+  })
+})
+
+it('keeps custom raw expressions byte-for-byte intact', async () => {
   const expr = 'tier("custom", max(p * 2, 100))'
   const editor = renderEditor({
     billingMode: 'tiered_expr',
     billingExpr: expr,
   })
-  await selectCurrency('Site currency (CNY)')
   expect(await commit(editor.ref)).toMatchObject({ billingExpr: expr })
-  expect(
-    screen.getByText(
-      'Raw expressions and presets use USD. Currency selection only converts visual price inputs and monetary previews.'
-    )
-  ).toBeVisible()
+  expect(screen.getByText('Raw expressions and presets use CNY.')).toBeVisible()
 })
 
 it('keeps time pricing and request rules unchanged when opening the simulator', async () => {
@@ -837,7 +696,6 @@ it('keeps time pricing and request rules unchanged when opening the simulator', 
     screen.getByRole('textbox', { name: 'Simulated request body' }),
     { target: { value: '{"unused":1}' } }
   )
-  await selectCurrency('Site currency (CNY)')
   expect(await commit(editor.ref)).toEqual(before)
   expect(before?.billingExpr).toBe(expression)
   expect(before?.requestRuleExpr).toBe(rules)
@@ -857,7 +715,6 @@ it('converts task base charges and second, token and credit prices, including wh
     },
     schema
   )
-  await selectCurrency('Site currency (CNY)')
   fireEvent.change(
     screen.getByRole('textbox', { name: 'Additional charge: mode: std' }),
     {
@@ -896,12 +753,11 @@ it('converts task base charges and second, token and credit prices, including wh
   const saved = await commit(editor.ref)
   const config = tryParseTaskVisualConfig(saved?.billingExpr ?? '', schema)
   expect(config?.tiers[0]).toMatchObject({
-    constant: 1,
-    unitPrices: { seconds: 2, tokens: 10, credits: 0.1 },
+    constant: 7,
+    unitPrices: { seconds: 14, tokens: 70, credits: 0.7 },
   })
-  expect(config?.tiers[1].unitPrices.seconds).toBe(2)
+  expect(config?.tiers[1].unitPrices.seconds).toBe(14)
   expect(saved?.billingExpr).toContain('/ 1000000')
-  await selectCurrency('US dollar (USD)')
   expect(await commit(editor.ref)).toEqual(saved)
 })
 
@@ -916,7 +772,6 @@ it('converts task unit prices without enum tiers and updates the monetary previe
     },
     schema
   )
-  await selectCurrency('Site currency (CNY)')
   fireEvent.change(screen.getByRole('textbox', { name: 'seconds' }), {
     target: { value: '14' },
   })
@@ -924,37 +779,23 @@ it('converts task unit prices without enum tiers and updates the monetary previe
     target: { value: '7' },
   })
   expect(await commit(editor.ref)).toMatchObject({
-    billingExpr: 'tier("base", 1 + u("seconds") * 2)',
+    billingExpr: 'tier("base", 7 + u("seconds") * 14)',
   })
   expect(screen.getByText(/= ¥77$/)).toBeVisible()
 })
 
-it('switches currency using the keyboard without changing the saved configuration', async () => {
-  const editor = renderEditor()
-  const original = await commit(editor.ref)
-  const user = userEvent.setup()
-  screen.getByRole('combobox', { name: 'Pricing currency' }).focus()
-  await user.keyboard('{ArrowDown}{End}{Enter}')
-  expect(
-    screen.getByRole('combobox', { name: 'Pricing currency' })
-  ).toHaveTextContent('Site currency (CNY)')
-  expect(await commit(editor.ref)).toEqual(original)
-})
-
-it('shows the estimated token cost in the selected currency while token quantities stay unchanged', async () => {
+it('shows the estimated token cost in CNY while token quantities stay unchanged', async () => {
   renderEditor({
     billingMode: 'tiered_expr',
     billingExpr: 'tier("base", p * 2 + c * 4)',
   })
   const tokens = screen.getByRole('spinbutton', { name: 'Input tokens' })
   fireEvent.change(tokens, { target: { value: '1000000' } })
-  expect(screen.getByText('Estimated cost: $2')).toBeVisible()
-  await selectCurrency('Site currency (CNY)')
+  expect(screen.getByText('Estimated cost: ¥2')).toBeVisible()
   expect(tokens).toHaveValue(1000000)
-  expect(screen.getByText('Estimated cost: ¥14')).toBeVisible()
 })
 
-it('keeps an empty per-request amount empty when currencies change', async () => {
+it('keeps an empty per-request amount empty', async () => {
   const editor = renderEditor({
     billingMode: 'per-request',
     price: '1',
@@ -963,7 +804,6 @@ it('keeps an empty per-request amount empty when currencies change', async () =>
   })
   const fixed = screen.getByRole('textbox', { name: 'Fixed price' })
   fireEvent.change(fixed, { target: { value: '' } })
-  await selectCurrency('Site currency (CNY)')
   expect(fixed).toHaveValue('')
   expect(await commit(editor.ref)).toMatchObject({ price: '' })
 })
@@ -995,13 +835,12 @@ it('clears an invalid amount draft when pricing is reloaded with the same saved 
     completionRatio: '',
   }
   const editor = renderEditor(saved)
-  await selectCurrency('Site currency (CNY)')
   fireEvent.change(screen.getByRole('textbox', { name: 'Fixed price' }), {
     target: { value: '9'.repeat(309) },
   })
   expect(await commit(editor.ref)).toBeNull()
   editor.reload({ ...saved })
-  expect(screen.getByRole('textbox', { name: 'Fixed price' })).toHaveValue('7')
+  expect(screen.getByRole('textbox', { name: 'Fixed price' })).toHaveValue('1')
   expect(await commit(editor.ref)).toMatchObject({ price: '1' })
 })
 
@@ -1018,7 +857,6 @@ it('preserves time billing on direct save and blocks incomplete local conditions
     billingExpr: expression,
     requestRuleExpr,
   })
-  await selectCurrency('Site currency (CNY)')
   expect(await commit(editor.ref)).toMatchObject({
     billingExpr: expression,
     requestRuleExpr,

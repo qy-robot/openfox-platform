@@ -4,22 +4,46 @@ import (
 	"crypto/tls"
 	//"os"
 	//"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
 )
 
+const (
+	DefaultSystemName = "RoboCoding"
+	DefaultLogo       = "/robocodingai-logo.png"
+)
+
 var StartTime = time.Now().Unix() // unit: second
 var Version = "v0.0.0"            // this hard coding will be replaced automatically when building, no need to manually change
-var SystemName = "New API"
+var SystemName = DefaultSystemName
 var Footer = ""
-var Logo = ""
+var Logo = DefaultLogo
 var TopUpLink = ""
+
+func NormalizeSystemName(value string) string {
+	name := strings.TrimSpace(value)
+	switch strings.ToLower(name) {
+	case "", "new api", "new-api", "newapi", "robocoding", "robocodingai":
+		return DefaultSystemName
+	default:
+		return name
+	}
+}
+
+func NormalizeSystemLogo(value string) string {
+	logo := strings.TrimSpace(value)
+	if logo == "" || logo == "/logo.png" {
+		return DefaultLogo
+	}
+	return logo
+}
 
 // var ChatLink = ""
 // var ChatLink2 = ""
-var QuotaPerUnit = 500 * 1000.0 // $0.002 / 1K tokens
+var QuotaPerUnit = 500 * 1000.0 // integer ledger units per CNY; 1 unit = ¥0.000002
 // 保留旧变量以兼容历史逻辑，实际展示由 general_setting.quota_display_type 控制
 var DisplayInCurrencyEnabled = true
 var DisplayTokenStatEnabled = true

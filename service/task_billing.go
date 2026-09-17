@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"maps"
 	"math"
@@ -104,10 +105,24 @@ func taskIsSubscription(task *model.Task) bool {
 	return task.PrivateData.BillingSource == BillingSourceSubscription && task.PrivateData.SubscriptionId > 0
 }
 
+func taskTeamRequestID(task *model.Task) string {
+	if task.PrivateData.Execution == nil {
+		return ""
+	}
+	return task.PrivateData.Execution.RequestID
+}
+
 // taskAdjustFunding 调整任务的资金来源（钱包或订阅），delta > 0 表示扣费，delta < 0 表示退还。
 func taskAdjustFunding(task *model.Task, delta int) error {
 	if taskIsSubscription(task) {
 		return model.PostConsumeUserSubscriptionDelta(task.PrivateData.SubscriptionId, int64(delta))
+	}
+	if task.PrivateData.BillingSource == BillingSourceTeam {
+		requestID := taskTeamRequestID(task)
+		if requestID == "" {
+			return errors.New("team billing request id is missing")
+		}
+		return model.SettleTeamQuota(requestID, delta)
 	}
 	if delta > 0 {
 		return model.DecreaseUserQuota(task.UserId, delta, false)
@@ -215,14 +230,28 @@ func taskModelName(task *model.Task) string {
 // 返回资金来源是否已成功退还；失败时保留 quota，供显式重试或人工对账。
 func RefundTaskQuota(ctx context.Context, task *model.Task, reason string) bool {
 	quota := task.Quota
-	if quota == 0 {
+	if quota == 0 && task.PrivateData.BillingSource != BillingSourceTeam {
 		return true
 	}
 
-	// 1. 退还资金来源（钱包或订阅）
-	if err := taskAdjustFunding(task, -quota); err != nil {
-		logger.LogWarn(ctx, fmt.Sprintf("退还资金来源失败 task %s: %s", task.TaskID, err.Error()))
+	// 1. 退还资金来源（钱包、订阅或团队）
+	var fundingErr error
+	if task.PrivateData.BillingSource == BillingSourceTeam {
+		requestID := taskTeamRequestID(task)
+		if requestID == "" {
+			fundingErr = errors.New("team billing request id is missing")
+		} else {
+			fundingErr = model.RefundTeamQuota(requestID)
+		}
+	} else {
+		fundingErr = taskAdjustFunding(task, -quota)
+	}
+	if fundingErr != nil {
+		logger.LogWarn(ctx, fmt.Sprintf("退还资金来源失败 task %s: %s", task.TaskID, fundingErr.Error()))
 		return false
+	}
+	if quota == 0 {
+		return true
 	}
 
 	// 2. 退还令牌额度
@@ -269,6 +298,14 @@ func RecalculateTaskQuota(ctx context.Context, task *model.Task, actualQuota int
 	quotaDelta := actualQuota - preConsumedQuota
 
 	if quotaDelta == 0 {
+		if task.PrivateData.BillingSource == BillingSourceTeam {
+			if requestID := taskTeamRequestID(task); requestID != "" {
+				if err := model.SettleTeamQuota(requestID, 0); err != nil {
+					logger.LogError(ctx, fmt.Sprintf("团队任务结算确认失败 task %s: %s", task.TaskID, err.Error()))
+					return
+				}
+			}
+		}
 		logger.LogInfo(ctx, fmt.Sprintf("任务 %s 预扣费准确（%s，%s）",
 			task.TaskID, logger.LogQuota(actualQuota), reason))
 		return

@@ -24,13 +24,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import { normalizeSystemName } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
 type SystemBrandProps = {
-  defaultName?: string
-  defaultVersion?: string
   /**
    * Visual layout:
    * - 'sidebar': stacked card style (used inside the sidebar header).
@@ -47,13 +45,10 @@ type SystemBrandProps = {
  */
 export function SystemBrand(props: SystemBrandProps) {
   const { t } = useTranslation()
-  const { status } = useStatus()
-  const { logo } = useSystemConfig()
+  const { systemName, logo } = useSystemConfig()
 
   const variant = props.variant ?? 'sidebar'
-  const name = status?.system_name || props.defaultName || 'New API'
-  const version =
-    status?.version || props.defaultVersion || t('Unknown version')
+  const name = normalizeSystemName(systemName)
 
   if (variant === 'inline') {
     return (
@@ -72,7 +67,7 @@ export function SystemBrand(props: SystemBrandProps) {
             className='size-full rounded-md object-cover'
           />
         </div>
-        <span className='max-w-[12rem] truncate'>{name}</span>
+        <span className='max-w-[12rem] truncate text-lg'>{name}</span>
       </Link>
     )
   }
@@ -92,9 +87,8 @@ export function SystemBrand(props: SystemBrandProps) {
               className='size-full rounded-lg object-cover'
             />
           </div>
-          <div className='grid flex-1 text-start text-sm leading-tight group-data-[collapsible=icon]:hidden'>
-            <span className='truncate font-semibold'>{name}</span>
-            <span className='truncate text-xs'>{version}</span>
+          <div className='grid flex-1 text-start leading-tight group-data-[collapsible=icon]:hidden'>
+            <span className='truncate text-lg font-semibold'>{name}</span>
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>

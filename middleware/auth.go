@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -24,6 +25,7 @@ import (
 )
 
 const authIdentityContextKey = "auth_identity"
+const centralPrincipalContextKey = "central_principal"
 
 type dashboardCredentialKind int
 
@@ -160,14 +162,44 @@ func classifyDashboardCredential(c *gin.Context) (*model.UserBase, service.AuthI
 	if !ok {
 		return nil, service.AuthIdentity{}, dashboardCredentialUnmatched, nil
 	}
+	if service.CentralAccountEnabled() {
+		identity, internal, parseErr := service.ParseDashboardAccessToken(raw)
+		if internal {
+			if parseErr != nil {
+				return nil, service.AuthIdentity{}, dashboardCredentialInternal, parseErr
+			}
+			session, user, validateErr := service.ValidateLoginSession(identity)
+			if validateErr != nil {
+				return nil, service.AuthIdentity{}, dashboardCredentialInternal, validateErr
+			}
+			if (session.LoginMethod != service.CentralBrowserLoginMethod && session.LoginMethod != service.DesktopLoginMethod) || !desktopDashboardScopeAllowed(c, session) {
+				return nil, service.AuthIdentity{}, dashboardCredentialInternal, service.ErrAuthTokenInvalid
+			}
+			if session.LoginMethod == service.CentralBrowserLoginMethod {
+				c.Set(centralPrincipalContextKey, &service.CentralPrincipal{
+					Subject: session.AuthoritySubject, SessionID: session.AuthoritySessionID, AuthVersion: session.AuthorityAuthVersion,
+					Session: service.CentralSessionView{
+						SID: session.AuthoritySessionID, Current: true, LoginMethod: service.CentralBrowserLoginMethod,
+						IP: session.IP, UserAgent: session.UserAgent, CreatedAt: session.CreatedAt,
+						LastActiveAt: session.LastActiveAt, ExpiresAt: session.ExpiresAt,
+					},
+				})
+			}
+			return user, identity, dashboardCredentialInternal, nil
+		}
+		return nil, service.AuthIdentity{}, dashboardCredentialInternal, service.ErrAuthTokenInvalid
+	}
 	identity, internal, err := service.ParseDashboardAccessToken(raw)
 	if internal {
 		if err != nil {
 			return nil, service.AuthIdentity{}, dashboardCredentialInternal, err
 		}
-		_, user, err := service.ValidateLoginSession(identity)
+		session, user, err := service.ValidateLoginSession(identity)
 		if err != nil {
 			return nil, service.AuthIdentity{}, dashboardCredentialInternal, err
+		}
+		if !desktopDashboardScopeAllowed(c, session) {
+			return nil, service.AuthIdentity{}, dashboardCredentialInternal, service.ErrAuthTokenInvalid
 		}
 		return user, identity, dashboardCredentialInternal, nil
 	}
@@ -184,6 +216,20 @@ func classifyDashboardCredential(c *gin.Context) (*model.UserBase, service.AuthI
 		return nil, service.AuthIdentity{}, dashboardCredentialPAT, err
 	}
 	return user, service.AuthIdentity{UserID: user.Id, UserAuthVersion: user.AuthVersion}, dashboardCredentialPAT, nil
+}
+
+func GetCentralPrincipal(c *gin.Context) (*service.CentralPrincipal, bool) {
+	value, ok := c.Get(centralPrincipalContextKey)
+	if !ok {
+		return nil, false
+	}
+	principal, ok := value.(*service.CentralPrincipal)
+	return principal, ok && principal != nil
+}
+
+func HasCentralPermission(c *gin.Context, permission string) bool {
+	principal, ok := GetCentralPrincipal(c)
+	return ok && slices.Contains(principal.Permissions, permission)
 }
 
 func authorizationToken(header string) (string, bool) {
@@ -216,6 +262,14 @@ func setDashboardAuthContext(c *gin.Context, user *model.UserBase, identity serv
 }
 
 func writeDashboardAuthError(c *gin.Context, err error) {
+	if errors.Is(err, service.ErrCentralAccountInactive) {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "code": "AUTH_SESSION_REVOKED", "message": common.TranslateMessage(c, i18n.MsgAuthNotLoggedIn)})
+		return
+	}
+	if errors.Is(err, service.ErrCentralAccountUnavailable) {
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"success": false, "code": "AUTH_SERVICE_UNAVAILABLE", "message": "account service is unavailable"})
+		return
+	}
 	if errors.Is(err, service.ErrAuthTokenExpired) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "code": "AUTH_TOKEN_EXPIRED", "message": common.TranslateMessage(c, i18n.MsgAuthNotLoggedIn)})
 		return
@@ -267,9 +321,13 @@ func TokenOrUserAuth() func(c *gin.Context) {
 				writeDashboardAuthError(c, err)
 				return
 			}
-			_, user, err := service.ValidateLoginSession(identity)
+			session, user, err := service.ValidateLoginSession(identity)
 			if err != nil {
 				writeDashboardAuthError(c, err)
+				return
+			}
+			if !desktopDashboardScopeAllowed(c, session) {
+				writeDashboardAuthError(c, service.ErrAuthTokenInvalid)
 				return
 			}
 			setDashboardAuthContext(c, user, identity, false)
@@ -323,6 +381,9 @@ func TokenAuthReadOnly() func(c *gin.Context) {
 
 		// TokenAuthReadOnly must keep allowing other token states to query read-only
 		// data, such as token usage logs; only explicitly disabled tokens are denied.
+		if !validateDesktopRelaySession(c, token) {
+			return
+		}
 		if token.Status == common.TokenStatusDisabled {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"success": false,
@@ -347,6 +408,15 @@ func TokenAuthReadOnly() func(c *gin.Context) {
 				"success": false,
 				"message": common.TranslateMessage(c, i18n.MsgAuthUserBanned),
 			})
+			c.Abort()
+			return
+		}
+		if err := validateCentralRelayAccount(token.UserId); err != nil {
+			status := http.StatusForbidden
+			if errors.Is(err, service.ErrCentralAccountUnavailable) || (!errors.Is(err, service.ErrCentralAccountInactive) && !errors.Is(err, gorm.ErrRecordNotFound)) {
+				status = http.StatusServiceUnavailable
+			}
+			c.JSON(status, gin.H{"success": false, "code": "CENTRAL_ACCOUNT_REQUIRED", "message": "account authorization is unavailable"})
 			c.Abort()
 			return
 		}
@@ -462,6 +532,17 @@ func TokenAuth() func(c *gin.Context) {
 			abortWithOpenAiMessage(c, http.StatusForbidden, common.TranslateMessage(c, i18n.MsgAuthUserBanned))
 			return
 		}
+		if err := validateCentralRelayAccount(token.UserId); err != nil {
+			status := http.StatusForbidden
+			if errors.Is(err, service.ErrCentralAccountUnavailable) || (!errors.Is(err, service.ErrCentralAccountInactive) && !errors.Is(err, gorm.ErrRecordNotFound)) {
+				status = http.StatusServiceUnavailable
+			}
+			abortWithOpenAiMessage(c, status, "account authorization is unavailable", types.ErrorCodeAccessDenied)
+			return
+		}
+		if !validateDesktopRelaySession(c, token) {
+			return
+		}
 
 		userCache.WriteContext(c)
 
@@ -492,6 +573,20 @@ func TokenAuth() func(c *gin.Context) {
 	}
 }
 
+func validateCentralRelayAccount(userID int) error {
+	if !service.CentralAccountEnabled() {
+		return nil
+	}
+	identity, err := model.GetAccountProductIdentityByUserID(userID)
+	if err != nil {
+		return err
+	}
+	if identity.Issuer != service.CentralAccountIssuer() {
+		return service.ErrCentralAccountInactive
+	}
+	return service.ValidateCentralAccountSubject(identity.Subject)
+}
+
 func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) error {
 	if token == nil {
 		return fmt.Errorf("token is nil")
@@ -512,6 +607,8 @@ func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) e
 	}
 	common.SetContextKey(c, constant.ContextKeyTokenGroup, token.Group)
 	common.SetContextKey(c, constant.ContextKeyTokenCrossGroupRetry, token.CrossGroupRetry)
+	common.SetContextKey(c, constant.ContextKeyTokenFundingMode, model.NormalizeTokenFundingMode(token.FundingMode))
+	common.SetContextKey(c, constant.ContextKeyTokenTeamId, token.TeamId)
 	if token.AutoGroups != "" {
 		autoGroups, err := token.GetAutoGroups()
 		if err != nil {

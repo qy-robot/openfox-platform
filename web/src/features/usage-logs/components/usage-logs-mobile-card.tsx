@@ -300,7 +300,24 @@ export function UsageLogsMobileList<TData>({
               tintClass
             )}
           >
-            {logCategory === 'common' && (
+            {logCategory === 'common' && cells.has('source') && (
+              <div className='space-y-2'>
+                {row.getVisibleCells().map((cell) => (
+                  <div
+                    key={cell.id}
+                    className='flex min-w-0 justify-between gap-4 text-sm'
+                  >
+                    <span className='text-muted-foreground shrink-0'>
+                      {typeof cell.column.columnDef.header === 'string'
+                        ? cell.column.columnDef.header
+                        : cell.column.id}
+                    </span>
+                    <CompactCell cell={cell} className='text-right break-all' />
+                  </div>
+                ))}
+              </div>
+            )}
+            {logCategory === 'common' && !cells.has('source') && (
               <CommonLogMobileCard
                 log={row.original as UsageLog}
                 cells={cells}

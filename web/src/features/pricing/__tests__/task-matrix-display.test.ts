@@ -17,7 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import assert from 'node:assert/strict'
-import { describe, test } from 'vitest'
+
+import { afterAll, beforeAll, describe, test } from 'vitest'
+
+import {
+  DEFAULT_CURRENCY_CONFIG,
+  useSystemConfigStore,
+} from '@/stores/system-config-store'
 
 import { getDynamicPriceEntries } from '../lib/dynamic-price'
 import { getTaskMatrixDisplayTiers } from '../lib/task-matrix-display'
@@ -37,6 +43,18 @@ const doubleEnumSchema: BillingUsageSchema = {
 const numberOnlySchema: BillingUsageSchema = {
   seconds: { type: 'number', unit: 'second' },
 }
+
+const previousCurrency = useSystemConfigStore.getState().config.currency
+
+beforeAll(() => {
+  useSystemConfigStore.getState().setConfig({
+    currency: { ...DEFAULT_CURRENCY_CONFIG, quotaDisplayType: 'USD' },
+  })
+})
+
+afterAll(() => {
+  useSystemConfigStore.getState().setConfig({ currency: previousCurrency })
+})
 
 describe('task matrix marketplace display rows', () => {
   test('expands a uniform flat expression into every enum combination', () => {

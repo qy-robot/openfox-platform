@@ -19,16 +19,25 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { useTheme } from '@/context/theme-provider'
 import { useStatus } from '@/hooks/use-status'
 
 import { AuthLayout } from '../auth-layout'
+import { getAccountRegistrationURL } from '../central-account-navigation'
 import { TermsFooter } from '../components/terms-footer'
+import { CentralAccountSignIn } from './components/central-account-sign-in'
 import { UserAuthForm } from './components/user-auth-form'
 
 export function SignIn() {
   const { t } = useTranslation()
   const { redirect } = useSearch({ from: '/(auth)/sign-in' })
   const { status } = useStatus()
+  const { resolvedTheme } = useTheme()
+  const centralAccountEnabled = status?.account_auth_enabled === true
+  const registrationURL = getAccountRegistrationURL({
+    accountCenterURL: status?.account_center_url,
+    theme: resolvedTheme,
+  })
 
   return (
     <AuthLayout>
@@ -41,18 +50,31 @@ export function SignIn() {
             status?.register_enabled !== false && (
               <p className='text-muted-foreground text-left text-sm sm:text-base'>
                 {t("Don't have an account?")}{' '}
-                <Link
-                  to='/sign-up'
-                  className='hover:text-primary font-medium underline underline-offset-4'
-                >
-                  {t('Sign up')}
-                </Link>
+                {centralAccountEnabled ? (
+                  <a
+                    href={registrationURL}
+                    className='hover:text-primary font-medium underline underline-offset-4'
+                  >
+                    {t('Sign up')}
+                  </a>
+                ) : (
+                  <Link
+                    to='/sign-up'
+                    className='hover:text-primary font-medium underline underline-offset-4'
+                  >
+                    {t('Sign up')}
+                  </Link>
+                )}
                 .
               </p>
             )}
         </div>
 
-        <UserAuthForm redirectTo={redirect} />
+        {centralAccountEnabled ? (
+          <CentralAccountSignIn redirectTo={redirect} />
+        ) : (
+          <UserAuthForm redirectTo={redirect} />
+        )}
 
         <TermsFooter
           variant='sign-in'

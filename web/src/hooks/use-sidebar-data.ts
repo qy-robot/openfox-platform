@@ -19,14 +19,13 @@ For commercial licensing, please contact support@quantumnous.com
 import {
   Activity,
   Box,
+  Building2,
   ClipboardList,
   CreditCard,
   FileText,
-  FlaskConical,
   Key,
   LayoutDashboard,
   ListTodo,
-  MessageSquare,
   PlugZap,
   Radio,
   ServerCog,
@@ -40,7 +39,14 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import type { SidebarData } from '@/components/layout/types'
+import {
+  getIdentityProfileURL,
+  getIdentityTeamsURL,
+  getIdentityAdminURL,
+  usesCentralIdentityManagement,
+} from '@/features/auth/central-account-navigation'
 import { ROLE } from '@/lib/roles'
+import { useAuthStore } from '@/stores/auth-store'
 
 /**
  * Root navigation groups for the application sidebar.
@@ -50,25 +56,12 @@ import { ROLE } from '@/lib/roles'
  */
 export function useSidebarData(): SidebarData {
   const { t } = useTranslation()
+  const centralIdentity = usesCentralIdentityManagement()
+  const role = useAuthStore((state) => state.auth.user?.role) ?? ROLE.GUEST
+  const isAdmin = role >= ROLE.ADMIN
 
   return {
     navGroups: [
-      {
-        id: 'chat',
-        title: t('Chat'),
-        items: [
-          {
-            title: t('Playground'),
-            url: '/playground',
-            icon: FlaskConical,
-          },
-          {
-            title: t('Chat'),
-            icon: MessageSquare,
-            type: 'chat-presets',
-          },
-        ],
-      },
       {
         id: 'general',
         title: t('General'),
@@ -93,18 +86,22 @@ export function useSidebarData(): SidebarData {
             url: '/usage-logs/common',
             icon: FileText,
           },
-          {
-            title: t('Audit Logs'),
-            url: '/usage-logs/audit',
-            icon: ClipboardList,
-          },
-          {
-            title: t('Task Logs'),
-            url: '/usage-logs/task',
-            activeUrls: ['/usage-logs/drawing'],
-            configUrls: ['/usage-logs/drawing', '/usage-logs/task'],
-            icon: ListTodo,
-          },
+          ...(isAdmin
+            ? [
+                {
+                  title: t('Audit Logs'),
+                  url: '/usage-logs/audit',
+                  icon: ClipboardList,
+                },
+                {
+                  title: t('Task Logs'),
+                  url: '/usage-logs/task',
+                  activeUrls: ['/usage-logs/drawing'],
+                  configUrls: ['/usage-logs/drawing', '/usage-logs/task'],
+                  icon: ListTodo,
+                },
+              ]
+            : []),
         ],
       },
       {
@@ -117,15 +114,25 @@ export function useSidebarData(): SidebarData {
             icon: Wallet,
           },
           {
-            title: t('Profile'),
-            url: '/profile',
-            icon: User,
+            title: t('Teams'),
+            url: getIdentityTeamsURL(),
+            activeUrls: ['/teams'],
+            icon: Building2,
           },
           {
-            title: t('Security & Access'),
-            url: '/security',
-            icon: ShieldCheck,
+            title: centralIdentity ? t('Account center') : t('Profile'),
+            url: getIdentityProfileURL(),
+            icon: User,
           },
+          ...(!centralIdentity
+            ? [
+                {
+                  title: t('Security & Access'),
+                  url: '/security',
+                  icon: ShieldCheck,
+                },
+              ]
+            : []),
         ],
       },
       {
@@ -144,7 +151,7 @@ export function useSidebarData(): SidebarData {
           },
           {
             title: t('Users'),
-            url: '/users',
+            url: getIdentityAdminURL(),
             icon: Users,
           },
           {

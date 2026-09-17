@@ -269,6 +269,27 @@ func GetVerificationRequirements(identity AuthIdentity, scope string) (*Verifica
 	return requirements, nil
 }
 
+func GetCentralVerificationRequirements(identity AuthIdentity, principal *CentralPrincipal, scope string) (*VerificationRequirements, error) {
+	if scope != VerificationScopeChannelKeyRead {
+		return nil, ErrProofScope
+	}
+	if err := ValidateCentralVerificationSession(identity, principal, true); err != nil {
+		return nil, err
+	}
+	state, err := model.GetUserVerificationState(identity.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if state.Role != common.RoleRootUser {
+		return nil, ErrVerificationForbidden
+	}
+	return &VerificationRequirements{
+		Scope:          scope,
+		Methods:        []VerificationMethodOption{{Method: VerificationMethodSession, Available: true}},
+		OAuthProviders: []VerificationOAuthProvider{},
+	}, nil
+}
+
 func verificationOAuthProviders(user *model.User) ([]VerificationOAuthProvider, error) {
 	bindings := map[int]string{}
 	if len(oauth.GetEnabledCustomProviders()) > 0 {
@@ -381,6 +402,42 @@ func ConsumeOperationProof(raw string, identity AuthIdentity, operation Verifica
 	}, nil
 }
 
+func ConsumeCentralOperationProof(raw string, identity AuthIdentity, principal *CentralPrincipal, operation VerificationOperation) (*model.AuthFlowAuthorization, error) {
+	binding, err := BindVerificationOperation(operation)
+	if err != nil {
+		return nil, err
+	}
+	claims, err := verifySecurityProof(raw, identity, binding)
+	if err != nil {
+		return nil, err
+	}
+	if claims.Method != VerificationMethodSession {
+		return nil, ErrProofMethod
+	}
+	if _, err := GetCentralVerificationRequirements(identity, principal, binding.Scope); err != nil {
+		return nil, err
+	}
+	flow, err := model.ConsumeAuthFlowWithAction(claims.ID, model.AuthFlowMatch{
+		Purpose: model.AuthFlowPurposeSecurityProof, UserId: identity.UserID, SessionId: identity.SessionID,
+	}, func(tx *gorm.DB, _ *model.AuthFlow) error {
+		return model.ValidateUserAuthVersionWithTx(tx, identity.UserID, identity.UserAuthVersion)
+	})
+	switch {
+	case errors.Is(err, model.ErrAuthFlowConsumed):
+		return nil, ErrProofConsumed
+	case errors.Is(err, model.ErrAuthFlowExpired):
+		return nil, ErrAuthTokenExpired
+	case errors.Is(err, model.ErrAuthFlowInvalid):
+		return nil, ErrAuthTokenInvalid
+	case err != nil:
+		return nil, err
+	}
+	return &model.AuthFlowAuthorization{
+		AuthSessionIdentity: identity, ProofID: flow.Id, Scope: binding.Scope,
+		ContextHash: binding.ContextHash, Method: claims.Method,
+	}, nil
+}
+
 // ValidateFlowAuthorization permits a dedicated configuration flow to outlive
 // its consumed proof, while retaining its operation, session and method policy.
 func ValidateFlowAuthorization(identity AuthIdentity, operation VerificationOperation, authorization *model.AuthFlowAuthorization) error {
@@ -455,6 +512,24 @@ func VerifySecurityInput(identity AuthIdentity, input VerificationInput) (*Secur
 		return nil, ErrProofMethod
 	}
 	return CompleteSecurityVerification(identity, binding, input.Method)
+}
+
+func VerifyCentralSecurityInput(identity AuthIdentity, principal *CentralPrincipal, input VerificationInput) (*SecurityProof, error) {
+	binding, err := BindVerificationOperation(VerificationOperation{Scope: input.Scope, Context: input.Context})
+	if err != nil {
+		return nil, err
+	}
+	if input.Method != VerificationMethodSession {
+		return nil, ErrProofMethod
+	}
+	if _, err := GetCentralVerificationRequirements(identity, principal, input.Scope); err != nil {
+		return nil, err
+	}
+	token, expiresAt, err := IssueSecurityProof(identity, VerificationMethodSession, binding)
+	if err != nil {
+		return nil, err
+	}
+	return &SecurityProof{ProofToken: token, ExpiresAt: expiresAt, Method: VerificationMethodSession, Scope: binding.Scope}, nil
 }
 
 // VerifyTwoFactorCode classifies the input before verification so one failed

@@ -189,12 +189,11 @@ export function getDynamicDisplayGroupRatio(
 
 function applyRechargeRate(
   price: number,
-  showWithRecharge: boolean,
-  priceRate: number,
-  usdExchangeRate: number
+  _showWithRecharge: boolean,
+  _priceRate: number,
+  _usdExchangeRate: number
 ): number {
-  if (!showWithRecharge) return price
-  return (price * priceRate) / usdExchangeRate
+  return price
 }
 
 export function formatDynamicUnitPrice(
@@ -204,11 +203,11 @@ export function formatDynamicUnitPrice(
   const groupRatio = options.groupRatioMultiplier ?? 1
   const priceRate = options.priceRate ?? 1
   const usdExchangeRate = options.usdExchangeRate ?? 1
-  const priceUSD =
+  const priceCNY =
     (valuePerMillionTokens * groupRatio) /
     TOKEN_UNIT_DIVISORS[options.tokenUnit]
   const displayPrice = applyRechargeRate(
-    priceUSD,
+    priceCNY,
     options.showRechargePrice ?? false,
     priceRate,
     usdExchangeRate
@@ -229,9 +228,9 @@ export function formatTaskUsageUnitPrice(
   const groupRatio = options.groupRatioMultiplier ?? 1
   const priceRate = options.priceRate ?? 1
   const usdExchangeRate = options.usdExchangeRate ?? 1
-  const priceUSD = valuePerUnit * groupRatio
+  const priceCNY = valuePerUnit * groupRatio
   const displayPrice = applyRechargeRate(
-    priceUSD,
+    priceCNY,
     options.showRechargePrice ?? false,
     priceRate,
     usdExchangeRate

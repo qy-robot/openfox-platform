@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -13,6 +14,7 @@ import (
 const (
 	BillingSourceWallet       = "wallet"
 	BillingSourceSubscription = "subscription"
+	BillingSourceTeam         = "team"
 )
 
 // PreConsumeBilling 根据用户计费偏好创建 BillingSession 并执行预扣费。
@@ -79,7 +81,7 @@ func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuo
 		if actualQuota != 0 {
 			if relayInfo.BillingSource == BillingSourceSubscription {
 				checkAndSendSubscriptionQuotaNotify(relayInfo)
-			} else {
+			} else if relayInfo.BillingSource == BillingSourceWallet {
 				checkAndSendQuotaNotify(relayInfo, actualQuota-preConsumed, preConsumed)
 			}
 		}
@@ -92,4 +94,17 @@ func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuo
 		return PostConsumeQuota(relayInfo, quotaDelta, relayInfo.FinalPreConsumedQuota, true)
 	}
 	return nil
+}
+
+// PrepareAsyncTaskBilling persists the submit-time team charge while keeping
+// its reservation open for the task's terminal completion or failure phase.
+func PrepareAsyncTaskBilling(relayInfo *relaycommon.RelayInfo, actualQuota int) error {
+	if relayInfo == nil || relayInfo.BillingSource != BillingSourceTeam {
+		return errors.New("asynchronous task billing is not team funded")
+	}
+	session, ok := relayInfo.Billing.(*BillingSession)
+	if !ok || session == nil {
+		return errors.New("asynchronous team billing session is missing")
+	}
+	return session.PrepareAsyncTeamSettlement(actualQuota)
 }

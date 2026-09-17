@@ -37,6 +37,43 @@ type WalletFunding struct {
 	consumed int // 实际预扣的用户额度
 }
 
+// TeamFunding reserves a team's shared balance and the member's monthly cap
+// under one request id. The request id also makes retries and refunds
+// idempotent after the HTTP request has left the admission path.
+type TeamFunding struct {
+	requestId string
+	teamId    int
+	userId    int
+	consumed  int
+}
+
+func (t *TeamFunding) Source() string { return BillingSourceTeam }
+
+func (t *TeamFunding) PreConsume(amount int) error {
+	if amount <= 0 {
+		return nil
+	}
+	target := t.consumed + amount
+	if err := model.ReserveTeamQuota(t.requestId, t.teamId, t.userId, target); err != nil {
+		return err
+	}
+	t.consumed = target
+	return nil
+}
+
+func (t *TeamFunding) Settle(delta int) error {
+	return model.SettleTeamQuota(t.requestId, delta)
+}
+
+func (t *TeamFunding) Refund() error {
+	if t.consumed <= 0 {
+		return nil
+	}
+	return refundWithRetry(func() error {
+		return model.RefundTeamQuota(t.requestId)
+	})
+}
+
 func (w *WalletFunding) Source() string { return BillingSourceWallet }
 
 func (w *WalletFunding) PreConsume(amount int) error {

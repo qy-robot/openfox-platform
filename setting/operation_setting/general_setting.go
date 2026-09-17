@@ -1,6 +1,12 @@
 package operation_setting
 
-import "github.com/QuantumNous/new-api/setting/config"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/QuantumNous/new-api/setting/config"
+)
 
 // 额度展示类型
 const (
@@ -14,11 +20,10 @@ type GeneralSetting struct {
 	DocsLink            string `json:"docs_link"`
 	PingIntervalEnabled bool   `json:"ping_interval_enabled"`
 	PingIntervalSeconds int    `json:"ping_interval_seconds"`
-	// 当前站点额度展示类型：USD / CNY / TOKENS
-	QuotaDisplayType string `json:"quota_display_type"`
-	// 自定义货币符号，用于 CUSTOM 展示类型
-	CustomCurrencySymbol string `json:"custom_currency_symbol"`
-	// 自定义货币与美元汇率（1 USD = X Custom）
+	// Legacy configuration fields are retained for compatibility; runtime values
+	// are fixed to CNY, ¥ and 1 and cannot enable currency conversion.
+	QuotaDisplayType           string  `json:"quota_display_type"`
+	CustomCurrencySymbol       string  `json:"custom_currency_symbol"`
 	CustomCurrencyExchangeRate float64 `json:"custom_currency_exchange_rate"`
 }
 
@@ -27,8 +32,8 @@ var generalSetting = GeneralSetting{
 	DocsLink:                   "https://docs.newapi.pro",
 	PingIntervalEnabled:        false,
 	PingIntervalSeconds:        60,
-	QuotaDisplayType:           QuotaDisplayTypeUSD,
-	CustomCurrencySymbol:       "¤",
+	QuotaDisplayType:           QuotaDisplayTypeCNY,
+	CustomCurrencySymbol:       "¥",
 	CustomCurrencyExchangeRate: 1.0,
 }
 
@@ -41,51 +46,66 @@ func GetGeneralSetting() *GeneralSetting {
 	return &generalSetting
 }
 
-// IsCurrencyDisplay 是否以货币形式展示（美元或人民币）
+// IsCurrencyDisplay reports the fixed monetary (CNY) display mode.
 func IsCurrencyDisplay() bool {
-	return generalSetting.QuotaDisplayType != QuotaDisplayTypeTokens
+	return true
 }
 
 // IsCNYDisplay 是否以人民币展示
 func IsCNYDisplay() bool {
-	return generalSetting.QuotaDisplayType == QuotaDisplayTypeCNY
+	return true
 }
 
 // GetQuotaDisplayType 返回额度展示类型
 func GetQuotaDisplayType() string {
-	return generalSetting.QuotaDisplayType
+	return QuotaDisplayTypeCNY
 }
 
 // GetCurrencySymbol 返回当前展示类型对应符号
 func GetCurrencySymbol() string {
-	switch generalSetting.QuotaDisplayType {
-	case QuotaDisplayTypeUSD:
-		return "$"
-	case QuotaDisplayTypeCNY:
-		return "¥"
-	case QuotaDisplayTypeCustom:
-		if generalSetting.CustomCurrencySymbol != "" {
-			return generalSetting.CustomCurrencySymbol
-		}
-		return "¤"
+	return "¥"
+}
+
+// GetUsdToCurrencyRate remains for source compatibility. RMB is the native
+// ledger currency, so no runtime conversion is applied.
+func GetUsdToCurrencyRate(_ float64) float64 {
+	return 1
+}
+
+func fixedBillingCurrencyOptionValue(key string) (string, bool) {
+	switch key {
+	case "Price", "USDExchangeRate", "general_setting.custom_currency_exchange_rate":
+		return "1", true
+	case "QuotaPerUnit":
+		return "500000", true
+	case "DisplayInCurrencyEnabled":
+		return "true", true
+	case "general_setting.quota_display_type":
+		return QuotaDisplayTypeCNY, true
+	case "general_setting.custom_currency_symbol":
+		return "¥", true
 	default:
-		return ""
+		return "", false
 	}
 }
 
-// GetUsdToCurrencyRate 返回 1 USD = X <currency> 的 X（TOKENS 不适用）
-func GetUsdToCurrencyRate(usdToCny float64) float64 {
-	switch generalSetting.QuotaDisplayType {
-	case QuotaDisplayTypeUSD:
-		return 1
-	case QuotaDisplayTypeCNY:
-		return usdToCny
-	case QuotaDisplayTypeCustom:
-		if generalSetting.CustomCurrencyExchangeRate > 0 {
-			return generalSetting.CustomCurrencyExchangeRate
-		}
-		return 1
-	default:
-		return 1
+func CanonicalBillingCurrencyOption(key string) (string, bool) {
+	return fixedBillingCurrencyOptionValue(key)
+}
+
+func ValidateBillingCurrencyOption(key, value string) error {
+	fixed, ok := fixedBillingCurrencyOptionValue(key)
+	if !ok {
+		return nil
 	}
+	if key == "Price" || key == "USDExchangeRate" || key == "general_setting.custom_currency_exchange_rate" || key == "QuotaPerUnit" {
+		parsed, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
+		expected, _ := strconv.ParseFloat(fixed, 64)
+		if err == nil && parsed == expected {
+			return nil
+		}
+	} else if strings.TrimSpace(value) == fixed {
+		return nil
+	}
+	return fmt.Errorf("%s is fixed to %s because billing currency is CNY", key, fixed)
 }

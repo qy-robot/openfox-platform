@@ -18,7 +18,12 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import assert from 'node:assert/strict'
 
-import { describe, expect, test } from 'vitest'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+
+import {
+  DEFAULT_CURRENCY_CONFIG,
+  useSystemConfigStore,
+} from '@/stores/system-config-store'
 
 import { parseTiersFromExpr } from '../lib/billing-expr'
 import { getBillingModeLabelKey } from '../lib/billing-mode'
@@ -53,6 +58,18 @@ const summaryOptions = {
   usdExchangeRate: 6,
   groupRatioMultiplier: 2,
 }
+
+const previousCurrency = useSystemConfigStore.getState().config.currency
+
+beforeAll(() => {
+  useSystemConfigStore.getState().setConfig({
+    currency: { ...DEFAULT_CURRENCY_CONFIG, quotaDisplayType: 'USD' },
+  })
+})
+
+afterAll(() => {
+  useSystemConfigStore.getState().setConfig({ currency: previousCurrency })
+})
 
 describe('expression price summaries', () => {
   test('keeps request prices unchanged by token units and separates mixed billing units', () => {
@@ -218,12 +235,12 @@ describe('expression price summaries', () => {
       { tokenUnit: 'M' }
     )
     expect(summary?.primaryEntries[0]?.value).toBe(0)
-    expect(summary?.primaryEntries[0]?.formattedRange).toBe('$0 – $0.8')
+    expect(summary?.primaryEntries[0]?.formattedRange).toBe('¥0 – ¥0.8')
   })
 })
 
 describe('task dynamic pricing', () => {
-  test('treats task coefficients as dollars per unit without a token divisor', () => {
+  test('treats task coefficients as CNY per unit without a token divisor', () => {
     const model = pricingModel({
       billing_mode: 'tiered_expr',
       billing_expr:
@@ -242,7 +259,7 @@ describe('task dynamic pricing', () => {
     assert.equal(summary.tier?.label, 'std')
     assert.equal(summary.primaryEntries[0]?.value, 0.4)
     assert.equal(summary.primaryEntries[0]?.unit, 'second')
-    assert.match(summary.primaryEntries[0]?.formatted ?? '', /0[.,]4/)
+    assert.match(summary.primaryEntries[0]?.formatted ?? '', /0[.,]8/)
   })
 
   test('falls back for a non-canonical task expression', () => {
@@ -276,10 +293,10 @@ describe('task dynamic pricing', () => {
     const summary = getDynamicPricingSummary(model, summaryOptions)
 
     assert.ok(summary)
-    assert.match(summary.primaryEntries[0]?.formattedRange ?? '', /0[.,]4/)
     assert.match(summary.primaryEntries[0]?.formattedRange ?? '', /0[.,]8/)
+    assert.match(summary.primaryEntries[0]?.formattedRange ?? '', /1[.,]6/)
     assert.match(summary.primaryEntries[0]?.formattedRange ?? '', /\S – \S/)
-    assert.match(summary.primaryEntries[0]?.formatted ?? '', /0[.,]4/)
+    assert.match(summary.primaryEntries[0]?.formatted ?? '', /0[.,]8/)
   })
 
   test('omits a task price range when every tier has the same unit price', () => {
@@ -369,7 +386,7 @@ describe('task dynamic pricing', () => {
         shortLabel: 'Input',
         labelKind: 'i18n',
         value: 2,
-        formatted: '$2',
+        formatted: '¥2',
         unit: 'token',
         variable: {
           key: 'p',
@@ -544,7 +561,7 @@ describe('task dynamic pricing', () => {
 
     assert.ok(example)
     assert.equal(example.label, '720p · 5s')
-    assert.match(example.formatted, /1[.,]0584/)
+    assert.match(example.formatted, /2[.,]1168/)
   })
 
   test('returns null when the expression is not canonical or examples are missing', () => {
@@ -703,7 +720,7 @@ describe('shared plugin price summaries', () => {
       field: 'seconds',
       minValue: 0.4,
       maxValue: 1.2,
-      formattedRange: '$0.4 – $1.2',
+      formattedRange: '¥0.8 – ¥2.4',
       unit: 'second',
     })
   })
@@ -793,7 +810,7 @@ describe('shared plugin price summaries', () => {
     ).toEqual(['credits', 'images'])
     expect(getCardExamplePrice(model, summaryOptions)).toEqual({
       label: 'Beta sample',
-      formatted: '$3',
+      formatted: '¥6',
     })
   })
 })

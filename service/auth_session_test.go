@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -32,7 +35,7 @@ func setupAuthSessionTestDB(t *testing.T) *model.User {
 	sqlDB, err := db.DB()
 	require.NoError(t, err)
 	sqlDB.SetMaxOpenConns(1)
-	require.NoError(t, db.AutoMigrate(&model.User{}, &model.UserSession{}, &model.AuthFlow{}))
+	require.NoError(t, db.AutoMigrate(&model.User{}, &model.UserSession{}, &model.AuthFlow{}, &model.DesktopDeviceGrant{}, &model.Token{}))
 	model.DB = db
 	common.RedisEnabled = false
 	common.UserSessionActiveLimit = common.DefaultUserSessionActiveLimit
@@ -378,6 +381,99 @@ func TestIndependentRedisSessionRevokeConvergesAfterCacheTTL(t *testing.T) {
 	common.RDB = clientB
 	_, _, err = ValidateLoginSession(identity)
 	assert.ErrorIs(t, err, ErrLoginSessionRevoked)
+}
+
+func TestCentralLogoutFailsClosedAfterOldRedisSessionCacheRefill(t *testing.T) {
+	useTestSessionSecret(t)
+	user := setupAuthSessionTestDB(t)
+	serverA, clientA, _, _ := useIndependentAuthSessionRedis(t)
+	common.RDB = clientA
+
+	var accountActive atomic.Bool
+	accountActive.Store(true)
+	accountServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/internal/session-status", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		if accountActive.Load() {
+			_, _ = w.Write([]byte(`{"success":true,"data":{"active":true}}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"success":true,"data":{"active":false}}`))
+	}))
+	t.Cleanup(accountServer.Close)
+	t.Setenv("ROBO_ACCOUNT_MODE", "central")
+	t.Setenv("ROBO_ACCOUNT_URL", accountServer.URL)
+	t.Setenv("ROBO_ACCOUNT_ISSUER", "https://account.example.com")
+	t.Setenv("ROBO_ACCOUNT_INTERNAL_TOKEN", "internal-secret")
+
+	bundle, err := CreateCentralBrowserLoginSession(user.Id, user.AuthVersion, CentralSessionAuthority{
+		Issuer: "https://account.example.com", Subject: "acct_1", SessionID: "account-session", AuthVersion: 1,
+	}, "127.0.0.1", "warm-cache-test")
+	require.NoError(t, err)
+	identity, err := ParseAccessToken(bundle.AccessToken)
+	require.NoError(t, err)
+	cacheKey := cachedLoginSessionKey(t, serverA)
+	serverA.HSet(cacheKey,
+		"AuthorityIssuer", "", "AuthoritySubject", "", "AuthoritySessionID", "",
+		"AuthorityAuthVersion", "0", "CacheSchema", "2",
+	)
+	_, _, err = ValidateLoginSession(identity)
+	require.NoError(t, err)
+	assert.Equal(t, "3", serverA.HGet(cacheKey, "CacheSchema"))
+	assert.Equal(t, "acct_1", serverA.HGet(cacheKey, "AuthoritySubject"))
+	assert.Equal(t, "account-session", serverA.HGet(cacheKey, "AuthoritySessionID"))
+
+	accountActive.Store(false)
+	_, _, err = ValidateLoginSession(identity)
+	assert.ErrorIs(t, err, ErrLoginSessionRevoked)
+}
+
+func TestCurrentRedisSessionCacheWithoutCentralAuthorityFailsClosed(t *testing.T) {
+	useTestSessionSecret(t)
+	user := setupAuthSessionTestDB(t)
+	serverA, clientA, _, _ := useIndependentAuthSessionRedis(t)
+	common.RDB = clientA
+	accountServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"success":true,"data":{"active":true}}`))
+	}))
+	t.Cleanup(accountServer.Close)
+	t.Setenv("ROBO_ACCOUNT_MODE", "central")
+	t.Setenv("ROBO_ACCOUNT_URL", accountServer.URL)
+	t.Setenv("ROBO_ACCOUNT_ISSUER", "https://account.example.com")
+	t.Setenv("ROBO_ACCOUNT_INTERNAL_TOKEN", "internal-secret")
+
+	bundle, err := CreateCentralBrowserLoginSession(user.Id, user.AuthVersion, CentralSessionAuthority{
+		Issuer: "https://account.example.com", Subject: "acct_1", SessionID: "account-session", AuthVersion: 1,
+	}, "127.0.0.1", "missing-authority-test")
+	require.NoError(t, err)
+	identity, err := ParseAccessToken(bundle.AccessToken)
+	require.NoError(t, err)
+	cacheKey := cachedLoginSessionKey(t, serverA)
+	serverA.HSet(cacheKey,
+		"AuthorityIssuer", "", "AuthoritySubject", "", "AuthoritySessionID", "",
+		"AuthorityAuthVersion", "0", "CacheSchema", "3",
+	)
+
+	_, _, err = ValidateLoginSession(identity)
+	assert.ErrorIs(t, err, ErrLoginSessionRevoked)
+}
+
+func TestCentralModeRequiresAuthorityForFederatedLoginMethods(t *testing.T) {
+	t.Setenv("ROBO_ACCOUNT_MODE", "central")
+	for _, loginMethod := range []string{CentralBrowserLoginMethod, DesktopLoginMethod} {
+		for _, session := range []*model.UserSession{
+			{LoginMethod: loginMethod},
+			{LoginMethod: loginMethod, AuthorityIssuer: "https://account.example.com"},
+		} {
+			err := validateCentralSessionAuthority(session)
+			assert.ErrorIs(t, err, ErrLoginSessionRevoked, loginMethod)
+		}
+	}
+	assert.NoError(t, validateCentralSessionAuthority(&model.UserSession{LoginMethod: "password"}))
+
+	t.Setenv("ROBO_ACCOUNT_MODE", "local")
+	assert.NoError(t, validateCentralSessionAuthority(&model.UserSession{LoginMethod: DesktopLoginMethod}))
 }
 
 func TestIndependentRedisAuthVersionAdvanceConvergesAfterCacheTTL(t *testing.T) {

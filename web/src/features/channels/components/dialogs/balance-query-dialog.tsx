@@ -30,13 +30,12 @@ import { Dialog } from '@/components/dialog'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { IconBadge } from '@/components/ui/icon-badge'
-import { formatCurrencyFromUSD } from '@/lib/currency'
 import { formatTimestampToDate } from '@/lib/format'
 import { handleServerError } from '@/lib/handle-server-error'
 import { createServerError } from '@/lib/server-error-message'
 
 import { getCodexUsage, updateChannelBalance } from '../../api'
-import { channelsQueryKeys } from '../../lib'
+import { channelsQueryKeys, formatBalance } from '../../lib'
 import { useChannels } from '../channels-provider'
 import {
   CodexUsageDialog,
@@ -55,6 +54,7 @@ export function BalanceQueryDialog(props: BalanceQueryDialogProps) {
   const queryClient = useQueryClient()
   const [isQuerying, setIsQuerying] = useState(false)
   const [balance, setBalance] = useState<number | null>(null)
+  const [balanceCurrency, setBalanceCurrency] = useState<string | undefined>()
   const [balanceUpdatedTime, setBalanceUpdatedTime] = useState<number | null>(
     null
   )
@@ -101,6 +101,7 @@ export function BalanceQueryDialog(props: BalanceQueryDialogProps) {
         const now = Math.floor(Date.now() / 1000)
 
         setBalance(newBalance)
+        setBalanceCurrency(response.currency)
         setBalanceUpdatedTime(now)
         toast.success(t('Balance updated successfully'))
 
@@ -130,18 +131,12 @@ export function BalanceQueryDialog(props: BalanceQueryDialogProps) {
 
   const handleClose = () => {
     setBalance(null)
+    setBalanceCurrency(undefined)
     setBalanceUpdatedTime(null)
     setRawResponse(null)
     setCodexUsageResponse(null)
     props.onOpenChange(false)
   }
-
-  const formatBalance = (bal: number) =>
-    formatCurrencyFromUSD(bal, {
-      digitsLarge: 2,
-      digitsSmall: 4,
-      abbreviate: false,
-    })
 
   const formatDate = (timestamp: number) => {
     if (!timestamp) return 'Never'
@@ -216,8 +211,11 @@ export function BalanceQueryDialog(props: BalanceQueryDialogProps) {
               </div>
               <div className='text-2xl font-bold'>
                 {balance !== null
-                  ? formatBalance(balance)
+                  ? formatBalance(balance, { currency: balanceCurrency })
                   : formatBalance(currentRow.balance)}
+              </div>
+              <div className='text-muted-foreground mt-1 text-xs'>
+                {balanceCurrency || t('Currency unknown')}
               </div>
               <div className='text-muted-foreground mt-2 text-xs'>
                 {t('Last updated:')}{' '}

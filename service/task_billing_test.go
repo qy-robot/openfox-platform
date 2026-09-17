@@ -55,6 +55,10 @@ func TestMain(m *testing.M) {
 		&model.UserSubscription{},
 		&model.SystemTask{},
 		&model.SystemTaskLock{},
+		&model.Team{},
+		&model.TeamMember{},
+		&model.TeamMonthlyUsage{},
+		&model.TeamQuotaReservation{},
 	); err != nil {
 		panic("failed to migrate: " + err.Error())
 	}
@@ -79,6 +83,10 @@ func truncate(t *testing.T) {
 		model.DB.Exec("DELETE FROM user_subscriptions")
 		model.DB.Exec("DELETE FROM system_task_locks")
 		model.DB.Exec("DELETE FROM system_tasks")
+		model.DB.Exec("DELETE FROM team_quota_reservations")
+		model.DB.Exec("DELETE FROM team_monthly_usages")
+		model.DB.Exec("DELETE FROM team_members")
+		model.DB.Exec("DELETE FROM teams")
 	})
 }
 
@@ -1411,6 +1419,31 @@ func TestSettle_PerCallBilling_SkipsTotalTokens(t *testing.T) {
 	assert.Equal(t, tokenRemain, getTokenRemainQuota(t, tokenID))
 	assert.Equal(t, preConsumed, task.Quota)
 	assert.Equal(t, int64(0), countLogs(t))
+}
+
+func TestSettle_PerCallTeamBillingClosesOpenReservation(t *testing.T) {
+	truncate(t)
+	ctx := context.Background()
+	const userID, teamID, preConsumed = 39, 39, 40
+	seedUser(t, userID, 0)
+	require.NoError(t, model.DB.Create(&model.Team{Id: teamID, Name: "per-call team", JoinCode: "PERCALLTEAM", Quota: 60, CreatedBy: userID}).Error)
+	require.NoError(t, model.DB.Create(&model.TeamMonthlyUsage{TeamId: teamID, UserId: userID, Month: model.CurrentTeamMonth(), Quota: preConsumed}).Error)
+	require.NoError(t, model.DB.Create(&model.TeamQuotaReservation{RequestId: "per-call-team", TeamId: teamID, UserId: userID, Month: model.CurrentTeamMonth(), Quota: preConsumed, Status: model.TeamReservationReserved}).Error)
+
+	task := makeTask(userID, 0, preConsumed, 0, BillingSourceTeam, 0)
+	task.Status = model.TaskStatusSuccess
+	task.PrivateData.BillingContext.PerCallBilling = true
+	task.PrivateData.Execution = &model.TaskExecutionSnapshot{RequestID: "per-call-team"}
+	settled := settleTaskBillingOnComplete(ctx, &mockAdaptor{adjustReturn: 10}, task, &relaycommon.TaskInfo{Status: model.TaskStatusSuccess, TotalTokens: 999})
+
+	assert.True(t, settled)
+	var reservation model.TeamQuotaReservation
+	require.NoError(t, model.DB.Where("request_id = ?", "per-call-team").First(&reservation).Error)
+	assert.Equal(t, model.TeamReservationSettled, reservation.Status)
+	assert.Equal(t, preConsumed, reservation.Quota)
+	var team model.Team
+	require.NoError(t, model.DB.First(&team, teamID).Error)
+	assert.Equal(t, 60, team.Quota)
 }
 
 func TestSettle_NonPerCallBilling_AppliesAdaptorAdjustment(t *testing.T) {

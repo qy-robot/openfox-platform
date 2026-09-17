@@ -16,18 +16,40 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link } from '@tanstack/react-router'
+import { Link, useSearch } from '@tanstack/react-router'
+import { useLayoutEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useTheme } from '@/context/theme-provider'
 import { useStatus } from '@/hooks/use-status'
 
 import { AuthLayout } from '../auth-layout'
+import {
+  getAccountRegistrationURL,
+  navigateToAccountRegistration,
+} from '../central-account-navigation'
 import { TermsFooter } from '../components/terms-footer'
 import { SignUpForm } from './components/sign-up-form'
 
 export function SignUp() {
   const { t } = useTranslation()
-  const { status } = useStatus()
+  const { status, loading } = useStatus()
+  const { resolvedTheme } = useTheme()
+  const { continue: continuation } = useSearch({ from: '/(auth)/sign-up' })
+  const centralAccountEnabled = status?.account_auth_enabled === true
+  const registrationURL = getAccountRegistrationURL({
+    accountCenterURL: status?.account_center_url,
+    continuation,
+    theme: resolvedTheme,
+  })
+
+  useLayoutEffect(() => {
+    if (centralAccountEnabled) {
+      navigateToAccountRegistration(registrationURL)
+    }
+  }, [centralAccountEnabled, registrationURL])
+
+  if (centralAccountEnabled || (loading && !status)) return null
 
   return (
     <AuthLayout>

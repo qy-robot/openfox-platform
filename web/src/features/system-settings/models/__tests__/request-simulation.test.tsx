@@ -51,7 +51,7 @@ describe('request simulation', () => {
       { target: { value: '2' } }
     )
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Simulated request cost: $0.08'
+      'Simulated request cost: ¥0.08'
     )
     fireEvent.change(
       screen.getByRole('spinbutton', { name: 'Billable image count' }),
@@ -76,12 +76,12 @@ describe('request simulation', () => {
     )
     await user.click(screen.getByRole('button', { name: 'Request simulation' }))
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Simulated request cost: $4'
+      'Simulated request cost: ¥4'
     )
     await user.click(screen.getByRole('combobox', { name: 'Audio' }))
     await user.click(screen.getByRole('option', { name: 'No' }))
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Simulated request cost: $2'
+      'Simulated request cost: ¥2'
     )
   })
   test('only supplies request context after opening and recalculates body and header rules', async () => {
@@ -97,14 +97,14 @@ describe('request simulation', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Request simulation' }))
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Simulated request cost: $2'
+      'Simulated request cost: ¥2'
     )
     fireEvent.input(
       screen.getByRole('textbox', { name: 'Simulated request body' }),
       { target: { value: '{"priority":true}' } }
     )
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Simulated request cost: $4'
+      'Simulated request cost: ¥4'
     )
     const headers = screen.getByRole('group', {
       name: 'Simulated request headers',
@@ -114,7 +114,7 @@ describe('request simulation', () => {
       target: { value: '{" TiEr ": " fast "}' },
     })
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Simulated request cost: $12'
+      'Simulated request cost: ¥12'
     )
     expect(
       within(screen.getByRole('status')).getAllByText(/Matched/)
@@ -144,7 +144,7 @@ describe('request simulation', () => {
       { target: { value: '{}' } }
     )
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Simulated request cost: $2'
+      'Simulated request cost: ¥2'
     )
   })
 
@@ -184,7 +184,7 @@ describe('request simulation', () => {
     )
     await user.click(screen.getByRole('button', { name: 'Request simulation' }))
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Simulated request cost: $2'
+      'Simulated request cost: ¥2'
     )
     view.rerender(
       <RequestSimulation
@@ -194,7 +194,7 @@ describe('request simulation', () => {
       />
     )
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Simulated request cost: $4'
+      'Simulated request cost: ¥4'
     )
   })
 
@@ -216,7 +216,7 @@ describe('request simulation', () => {
     })
     fireEvent.blur(screen.getByLabelText('Input tokens'))
     expect(screen.getByText(/Estimated cost/).parentElement).toHaveTextContent(
-      '$2'
+      '¥2'
     )
     onBillingExprChange.mockClear()
     onRequestRuleExprChange.mockClear()
@@ -226,10 +226,10 @@ describe('request simulation', () => {
       { target: { value: '{"priority":true}' } }
     )
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Simulated request cost: $4'
+      'Simulated request cost: ¥4'
     )
     expect(screen.getByText(/Estimated cost/).parentElement).toHaveTextContent(
-      '$2'
+      '¥2'
     )
     expect(onBillingExprChange).not.toHaveBeenCalled()
     expect(onRequestRuleExprChange).not.toHaveBeenCalled()

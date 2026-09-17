@@ -26,6 +26,7 @@ import {
   parseSidebarModulesAdmin,
   serializeSidebarModulesAdmin,
 } from '@/features/system-settings/maintenance/config'
+import { ROLE } from '@/lib/roles'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { useSidebarConfig } from '../use-sidebar-config'
@@ -45,7 +46,12 @@ afterEach(() => {
   useAuthStore.getState().auth.reset()
 })
 
-function sidebarFor(admin?: object, user?: object, canConfigure = true) {
+function sidebarFor(
+  admin?: object,
+  user?: object,
+  canConfigure = true,
+  role: number = ROLE.USER
+) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
@@ -55,7 +61,7 @@ function sidebarFor(admin?: object, user?: object, canConfigure = true) {
   useAuthStore.getState().auth.setUser({
     id: 1,
     username: 'alice',
-    role: 1,
+    role,
     permissions: { sidebar_settings: canConfigure },
     sidebar_modules: user ? JSON.stringify(user) : '',
   })
@@ -73,7 +79,65 @@ function sidebarFor(admin?: object, user?: object, canConfigure = true) {
   return result
 }
 
+describe('role-based sidebar visibility', () => {
+  it('removes the entire Chat group for every role', () => {
+    const userSidebar = sidebarFor()
+    const adminSidebar = sidebarFor(undefined, undefined, true, ROLE.ADMIN)
+
+    for (const sidebar of [userSidebar, adminSidebar]) {
+      expect(sidebar.result.current.some((group) => group.id === 'chat')).toBe(
+        false
+      )
+      expect(
+        sidebar.result.current
+          .flatMap((group) => group.items)
+          .some((item) => item.title === 'Playground')
+      ).toBe(false)
+    }
+  })
+
+  it('shows users only their usage logs while keeping admin log tools', () => {
+    const userTitles = sidebarFor()
+      .result.current.flatMap((group) => group.items)
+      .map((item) => item.title)
+    const adminTitles = sidebarFor(undefined, undefined, true, ROLE.ADMIN)
+      .result.current.flatMap((group) => group.items)
+      .map((item) => item.title)
+
+    expect(userTitles).toContain('Usage Logs')
+    expect(userTitles).not.toContain('Audit Logs')
+    expect(userTitles).not.toContain('Task Logs')
+    expect(adminTitles).toEqual(
+      expect.arrayContaining(['Usage Logs', 'Audit Logs', 'Task Logs'])
+    )
+  })
+})
+
 describe('security sidebar visibility', () => {
+  it('replaces legacy identity pages with the central account entry', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) =>
+        key === 'status'
+          ? JSON.stringify({ account_auth_enabled: true })
+          : null,
+      setItem: () => undefined,
+      removeItem: () => undefined,
+    })
+
+    const { result } = sidebarFor()
+    const items =
+      result.current.find((group) => group.id === 'personal')?.items ?? []
+
+    expect(items.map((item) => item.title)).toEqual([
+      'Wallet',
+      'Teams',
+      'Account center',
+    ])
+    expect(items[2]).toMatchObject({
+      url: 'https://account.openzrob.com/account/profile',
+    })
+  })
+
   it('old configurations show Security & Access immediately after Profile and keep API Keys', () => {
     const { result } = sidebarFor(
       { personal: { enabled: true, personal: true, topup: true } },
@@ -83,7 +147,7 @@ describe('security sidebar visibility', () => {
       result.current
         .find((group) => group.id === 'personal')
         ?.items.map((item) => item.title)
-    ).toEqual(['Wallet', 'Profile', 'Security & Access'])
+    ).toEqual(['Wallet', 'Teams', 'Profile', 'Security & Access'])
     expect(
       result.current
         .flatMap((group) => group.items)
@@ -128,7 +192,7 @@ describe('audit log sidebar entry', () => {
     expect(config.console.audit).toBe(true)
     config.console.audit = false
     const saved = parseSidebarModulesAdmin(serializeSidebarModulesAdmin(config))
-    const { result } = sidebarFor(saved)
+    const { result } = sidebarFor(saved, undefined, true, ROLE.ADMIN)
     const titles = result.current
       .flatMap((group) => group.items)
       .map((item) => item.title)
@@ -139,7 +203,9 @@ describe('audit log sidebar entry', () => {
   it('legacy configurations show a separate Audit Logs link immediately after Usage Logs', () => {
     const { result } = sidebarFor(
       { console: { enabled: true, log: true } },
-      { console: { enabled: true, log: true } }
+      { console: { enabled: true, log: true } },
+      true,
+      ROLE.ADMIN
     )
     const items =
       result.current.find((group) => group.id === 'general')?.items ?? []
@@ -162,7 +228,7 @@ describe('audit log sidebar entry', () => {
   ])(
     'admin and personal visibility rules can hide Audit Logs (%j, %j)',
     (admin, user) => {
-      const { result } = sidebarFor(admin, user)
+      const { result } = sidebarFor(admin, user, true, ROLE.ADMIN)
       expect(
         result.current
           .flatMap((group) => group.items)
@@ -172,7 +238,12 @@ describe('audit log sidebar entry', () => {
   )
 
   it('hiding Usage Logs does not hide the independently configured Audit Logs entry', () => {
-    const { result } = sidebarFor({ console: { enabled: true, log: false } })
+    const { result } = sidebarFor(
+      { console: { enabled: true, log: false } },
+      undefined,
+      true,
+      ROLE.ADMIN
+    )
     const titles = result.current
       .flatMap((group) => group.items)
       .map((item) => item.title)

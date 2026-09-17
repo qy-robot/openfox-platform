@@ -34,14 +34,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import type { CreemProduct } from '@/features/wallet/types'
 
 import { safeNumberFieldProps } from '../utils/numeric-field'
@@ -51,7 +43,7 @@ const creemProductDialogSchema = z.object({
   productId: z.string().min(1, 'Product ID is required'),
   price: z.number().min(0.01, 'Price must be greater than 0'),
   quota: z.number().min(1, 'Quota must be at least 1'),
-  currency: z.enum(['USD', 'EUR']),
+  currency: z.literal('CNY'),
 })
 
 type CreemProductDialogFormValues = z.infer<typeof creemProductDialogSchema>
@@ -84,7 +76,7 @@ export function CreemProductDialog({
       productId: '',
       price: 0,
       quota: 0,
-      currency: 'USD',
+      currency: 'CNY',
     },
   })
 
@@ -97,7 +89,7 @@ export function CreemProductDialog({
         productId: '',
         price: 0,
         quota: 0,
-        currency: 'USD',
+        currency: 'CNY',
       })
     }
   }, [editData, form, open])
@@ -184,36 +176,10 @@ export function CreemProductDialog({
           />
 
           <div className='grid gap-4 sm:grid-cols-2'>
-            <FormField
-              control={form.control}
-              name='currency'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('Currency')}</FormLabel>
-                  <Select
-                    items={[
-                      { value: 'USD', label: 'USD ($)' },
-                      { value: 'EUR', label: 'EUR (€)' },
-                    ]}
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('Select currency')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent alignItemWithTrigger={false}>
-                      <SelectGroup>
-                        <SelectItem value='USD'>USD ($)</SelectItem>
-                        <SelectItem value='EUR'>EUR (€)</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormItem>
+              <FormLabel>{t('Currency')}</FormLabel>
+              <Input value='CNY (¥)' readOnly aria-label={t('Currency')} />
+            </FormItem>
 
             <FormField
               control={form.control}

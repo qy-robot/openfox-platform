@@ -179,4 +179,43 @@ describe('API key Auto group form mapping', () => {
       'Auto groups must not contain duplicates'
     )
   })
+
+  test('binds team funding modes to a team and preserves fallback order', () => {
+    for (const fundingMode of [
+      'team_only',
+      'team_first',
+      'personal_first',
+    ] as const) {
+      const defaults = {
+        ...getApiKeyFormDefaultValues(false),
+        name: fundingMode,
+        funding_mode: fundingMode,
+        team_id: 42,
+      }
+
+      expect(transformFormDataToPayload(defaults)).toMatchObject({
+        funding_mode: fundingMode,
+        team_id: 42,
+      })
+      expect(getApiKeyFormSchema(t).safeParse(defaults).success).toBe(true)
+    }
+  })
+
+  test('rejects team funding without a team and clears team for personal-only', () => {
+    const invalid = {
+      ...getApiKeyFormDefaultValues(false),
+      name: 'missing-team',
+      funding_mode: 'personal_first' as const,
+      team_id: 0,
+    }
+    expect(getApiKeyFormSchema(t).safeParse(invalid).success).toBe(false)
+
+    expect(
+      transformFormDataToPayload({
+        ...invalid,
+        funding_mode: 'personal_only',
+        team_id: 42,
+      }).team_id
+    ).toBe(0)
+  })
 })

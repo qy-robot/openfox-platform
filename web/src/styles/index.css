@@ -730,3 +730,20 @@ For commercial licensing, please contact support@quantumnous.com
     display: none;
   }
 }
+
+/* RoboCoding public product surfaces reuse the active theme tokens. */
+.robo-home {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--primary) 4%, var(--background)),
+    var(--background) 65%
+  );
+}
+.robo-workspace {
+  transform: rotate(-1deg);
+}
+@media (max-width: 639px) {
+  .robo-workspace {
+    transform: none;
+  }
+}

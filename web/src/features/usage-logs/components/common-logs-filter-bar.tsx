@@ -41,7 +41,6 @@ import {
 } from '@/components/ui/tooltip'
 import { getGroups } from '@/features/users/api'
 import { useMediaQuery } from '@/hooks'
-import { getUserGroups } from '@/lib/api'
 import { requireServerSuccess } from '@/lib/server-error-message'
 
 import { LOG_TYPE_ALL_VALUE, LOG_TYPE_FILTERS } from '../constants'
@@ -131,19 +130,11 @@ export function CommonLogsFilterBar<TData>(
     queryFn: async () => requireServerSuccess(await getGroups()),
     enabled: isAdmin,
   })
-  const { data: userGroups } = useQuery({
-    queryKey: ['user-groups'],
-    queryFn: async () => requireServerSuccess(await getUserGroups()),
-    enabled: !isAdmin,
-  })
   const groupOptions = useMemo(() => {
-    const groups = isAdmin
-      ? (adminGroups?.data ?? [])
-      : Object.keys(userGroups?.data ?? {})
-    return groups
+    return (adminGroups?.data ?? [])
       .filter((group) => group !== 'auto')
       .map((group) => ({ label: group, value: group }))
-  }, [isAdmin, adminGroups, userGroups])
+  }, [adminGroups])
 
   const searchState = useMemo<CommonLogDraft>(() => {
     const { start, end } = getDefaultTimeRange()
@@ -164,18 +155,22 @@ export function CommonLogsFilterBar<TData>(
         ? new Date(searchParams.startTime)
         : start,
       endTime: searchParams.endTime ? new Date(searchParams.endTime) : end,
-      channel: searchParams.channel || undefined,
       model: searchParams.model || undefined,
-      token: searchParams.token || undefined,
-      group: searchParams.group || undefined,
-      username: searchParams.username || undefined,
-      requestId: searchParams.requestId || undefined,
-      upstreamRequestId: searchParams.upstreamRequestId || undefined,
+      ...(isAdmin && {
+        channel: searchParams.channel || undefined,
+        token: searchParams.token || undefined,
+        group: searchParams.group || undefined,
+        username: searchParams.username || undefined,
+        requestId: searchParams.requestId || undefined,
+        upstreamRequestId: searchParams.upstreamRequestId || undefined,
+      }),
     }
     return {
       sourceKey: buildSearchSourceKey(sourceValues),
       filters,
-      logType: getLogTypeValue(searchParams.type),
+      logType: isAdmin
+        ? getLogTypeValue(searchParams.type)
+        : LOG_TYPE_ALL_VALUE,
     }
   }, [
     searchParams.startTime,
@@ -188,6 +183,7 @@ export function CommonLogsFilterBar<TData>(
     searchParams.requestId,
     searchParams.upstreamRequestId,
     searchParams.type,
+    isAdmin,
   ])
   const [draft, setDraft] = useState<CommonLogDraft>(() => searchState)
   const activeDraft =
@@ -212,27 +208,34 @@ export function CommonLogsFilterBar<TData>(
 
   const handleApply = useCallback(
     (nextFilters: CommonLogFilters = filters) => {
-      const filterParams = buildSearchParams(nextFilters, 'common')
+      const appliedFilters = isAdmin
+        ? nextFilters
+        : {
+            startTime: nextFilters.startTime,
+            endTime: nextFilters.endTime,
+            model: nextFilters.model,
+          }
+      const filterParams = buildSearchParams(appliedFilters, 'common')
       navigate({
         to: '/usage-logs/$section',
         params: { section: 'common' },
         search: {
           ...filterParams,
-          type: [logType],
+          ...(isAdmin && { type: [logType] }),
           page: 1,
         },
       })
       queryClient.invalidateQueries({ queryKey: ['logs'] })
       queryClient.invalidateQueries({ queryKey: ['usage-logs-stats'] })
     },
-    [filters, logType, navigate, queryClient]
+    [filters, isAdmin, logType, navigate, queryClient]
   )
 
   const handleReset = useCallback(() => {
     const { start, end } = getDefaultTimeRange()
     const resetFilters: CommonLogFilters = { startTime: start, endTime: end }
     const resetSearch = {
-      type: [LOG_TYPE_ALL_VALUE],
+      ...(isAdmin && { type: [LOG_TYPE_ALL_VALUE] }),
       startTime: start.getTime(),
       endTime: end.getTime(),
     }
@@ -252,7 +255,7 @@ export function CommonLogsFilterBar<TData>(
     })
     queryClient.invalidateQueries({ queryKey: ['logs'] })
     queryClient.invalidateQueries({ queryKey: ['usage-logs-stats'] })
-  }, [navigate, queryClient])
+  }, [isAdmin, navigate, queryClient])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -297,7 +300,7 @@ export function CommonLogsFilterBar<TData>(
   )
 
   const statsBar = <CommonLogsStats />
-  const sensitiveToggle = (
+  const sensitiveToggle = isAdmin ? (
     <Tooltip>
       <TooltipTrigger
         render={
@@ -316,7 +319,7 @@ export function CommonLogsFilterBar<TData>(
         {sensitiveVisible ? t('Hide') : t('Show')}
       </TooltipContent>
     </Tooltip>
-  )
+  ) : undefined
 
   const dateRangeFilter = (
     <LogsFilterField wide>
@@ -492,27 +495,29 @@ export function CommonLogsFilterBar<TData>(
         <>
           {dateRangeFilter}
           {modelFilter}
-          {groupFilter}
-          {typeFilter}
+          {isAdmin && groupFilter}
+          {isAdmin && typeFilter}
         </>
       }
-      advancedFilters={advancedFilters}
+      advancedFilters={isAdmin ? advancedFilters : undefined}
       mobilePinnedFilters={dateRangeFilter}
       mobileFilters={
         <>
           {modelFilter}
-          {groupFilter}
-          {typeFilter}
-          {advancedFilters}
+          {isAdmin && groupFilter}
+          {isAdmin && typeFilter}
+          {isAdmin && advancedFilters}
         </>
       }
       mobileFilterCount={
-        [filters.model, filters.group, hasTypeFilter].filter(Boolean).length +
-        expandedFilterCount
+        isAdmin
+          ? [filters.model, filters.group, hasTypeFilter].filter(Boolean)
+              .length + expandedFilterCount
+          : [filters.model].filter(Boolean).length
       }
-      hasAdvancedActiveFilters={hasExpandedFilters}
-      advancedFilterCount={expandedFilterCount}
-      hasActiveFilters={hasAdditionalFilters}
+      hasAdvancedActiveFilters={isAdmin && hasExpandedFilters}
+      advancedFilterCount={isAdmin ? expandedFilterCount : 0}
+      hasActiveFilters={isAdmin ? hasAdditionalFilters : !!filters.model}
       onSearch={() => handleApply()}
       searchLoading={fetchingLogs > 0}
       onReset={handleReset}

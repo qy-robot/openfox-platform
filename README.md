@@ -1,8 +1,8 @@
-# RoboCodingAI Platform
+# RoboCoding Platform
 
 by擎云机器人
 
-RoboCodingAI product fork. See [product ownership and initialization status](ROBOCODINGAI.md). Original upstream documentation and license information follow unchanged below.
+RoboCoding product fork. See [product ownership and initialization status](ROBOCODINGAI.md). Original upstream documentation and license information follow unchanged below.
 
 ---
 

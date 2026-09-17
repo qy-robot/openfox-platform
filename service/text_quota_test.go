@@ -116,6 +116,7 @@ func runFixedPriceAccountingCases(t *testing.T, db, logDB *gorm.DB) {
 		unit                                      billingexpr.BillingUnit
 		requestedImages, actualImages             int
 	}{
+		{name: "RMB token prices charge 0.0036 yuan", expression: `tier("CNY", p * 2 + c * 8)`, estimate: 2000, usage: &dto.Usage{PromptTokens: 1000, CompletionTokens: 200, TotalTokens: 1200}, want: 1800, unit: billingexpr.BillingUnitToken},
 		{name: "missing usage charges once", expression: flat, want: 5000, unit: billingexpr.BillingUnitRequest},
 		{name: "zero usage charges once", expression: flat, usage: &dto.Usage{}, want: 5000, unit: billingexpr.BillingUnitRequest},
 		{name: "stream charges once", expression: flat, stream: true, usage: &dto.Usage{PromptTokens: 100, CompletionTokens: 20, TotalTokens: 120}, want: 5000, unit: billingexpr.BillingUnitRequest},
@@ -960,6 +961,11 @@ func TestCalculateTextQuotaSummaryKeepsPrePRClaudeOpenRouterBilling(t *testing.T
 	require.True(t, summary.IsClaudeUsageSemantic)
 	require.Equal(t, 172, summary.PromptTokens)
 	require.Equal(t, 798, summary.Quota)
+	// A supplier's monetary cost cannot change RMB retail billing or invent tokens.
+	usage.Cost = 100.0
+	withForeignCost := calculateTextQuotaSummary(ctx, relayInfo, usage)
+	require.Equal(t, summary.Quota, withForeignCost.Quota)
+	require.Equal(t, 0, withForeignCost.CacheCreationTokens)
 }
 
 func TestComposeTieredTextQuotaKeepsToolCallSurcharges(t *testing.T) {
@@ -967,7 +973,7 @@ func TestComposeTieredTextQuotaKeepsToolCallSurcharges(t *testing.T) {
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 
-	// 11 $/1K => 0.011 per completed image output, matching the prior fixed low-tier charge.
+	// 11 CNY/1K => 0.011 per completed image output, matching the prior fixed low-tier charge.
 	operation_setting.SetToolPriceForTest(dto.BuildInToolImageGeneration, 11.0)
 	t.Cleanup(func() {
 		operation_setting.DeleteToolPriceForTest(dto.BuildInToolImageGeneration)
@@ -1013,8 +1019,8 @@ func TestComposeTieredTextQuotaKeepsToolCallSurcharges(t *testing.T) {
 		ActualQuotaAfterGroup:  1000,
 	})
 
-	require.Equal(t, int64(13000), summary.ToolCallSurchargeQuota.Round(0).IntPart())
-	require.Equal(t, 14000, quota)
+	require.Equal(t, int64(60250), summary.ToolCallSurchargeQuota.Round(0).IntPart())
+	require.Equal(t, 61250, quota)
 }
 
 func TestComposeTieredTextQuotaFallbackKeepsToolCallSurcharges(t *testing.T) {
@@ -1047,8 +1053,8 @@ func TestComposeTieredTextQuotaFallbackKeepsToolCallSurcharges(t *testing.T) {
 	summary := calculateTextQuotaSummary(ctx, relayInfo, usage)
 	quota := composeTieredTextQuota(relayInfo, summary, 1250, nil)
 
-	require.Equal(t, int64(12500), summary.ToolCallSurchargeQuota.Round(0).IntPart())
-	require.Equal(t, 13750, quota)
+	require.Equal(t, int64(91250), summary.ToolCallSurchargeQuota.Round(0).IntPart())
+	require.Equal(t, 92500, quota)
 }
 
 func TestComposeTieredTextQuotaErrorFallbackUsesPreConsumedQuota(t *testing.T) {
@@ -1086,8 +1092,8 @@ func TestComposeTieredTextQuotaErrorFallbackUsesPreConsumedQuota(t *testing.T) {
 	preConsumedFallback := 2000
 	quota := composeTieredTextQuota(relayInfo, summary, preConsumedFallback, nil)
 
-	require.Equal(t, int64(12500), summary.ToolCallSurchargeQuota.Round(0).IntPart())
-	require.Equal(t, 14500, quota)
+	require.Equal(t, int64(91250), summary.ToolCallSurchargeQuota.Round(0).IntPart())
+	require.Equal(t, 93250, quota)
 }
 
 // TestTryTieredSettleRecordsClampOnOverflow guards that an oversized tiered
@@ -1192,7 +1198,7 @@ func TestCalculateTextToolCallSurchargeGeneralizedBuiltInTools(t *testing.T) {
 	}
 
 	surcharge := calculateTextToolCallSurcharge(ctx, relayInfo, summary)
-	expected := decimal.NewFromFloat((10.0*2 + 5.0*3) / 1000).Mul(decimal.NewFromFloat(common.QuotaPerUnit))
+	expected := decimal.NewFromFloat((73.0*2 + 5.0*3) / 1000).Mul(decimal.NewFromFloat(common.QuotaPerUnit))
 	assert.True(t, expected.Equal(surcharge), "got %s want %s", surcharge, expected)
 	require.Len(t, summary.ToolSurchargeItems, 2)
 	assert.Equal(t, "my_fn", summary.ToolSurchargeItems[0].Name)
@@ -1200,7 +1206,7 @@ func TestCalculateTextToolCallSurchargeGeneralizedBuiltInTools(t *testing.T) {
 	assert.Equal(t, 5.0, summary.ToolSurchargeItems[0].Price)
 	assert.Equal(t, dto.BuildInToolWebSearchPreview, summary.ToolSurchargeItems[1].Name)
 	assert.Equal(t, 2, summary.ToolSurchargeItems[1].Count)
-	assert.Equal(t, 10.0, summary.ToolSurchargeItems[1].Price)
+	assert.Equal(t, 73.0, summary.ToolSurchargeItems[1].Price)
 }
 
 func TestCalculateTextToolCallSurchargeKeepsSearchPreviewFallbackWithCustomFunctions(t *testing.T) {
@@ -1231,7 +1237,7 @@ func TestCalculateTextToolCallSurchargeKeepsSearchPreviewFallbackWithCustomFunct
 	require.Len(t, summary.ToolSurchargeItems, 2)
 	assert.Equal(t, "my_fn", summary.ToolSurchargeItems[0].Name)
 	assert.Equal(t, dto.BuildInToolWebSearchPreview, summary.ToolSurchargeItems[1].Name)
-	expected := decimal.NewFromFloat((5.0 + 25.0) / 1000).
+	expected := decimal.NewFromFloat((5.0 + 182.5) / 1000).
 		Mul(decimal.NewFromFloat(common.QuotaPerUnit))
 	assert.True(t, expected.Equal(surcharge), "got %s want %s", surcharge, expected)
 }
@@ -1277,8 +1283,8 @@ func TestCalculateTextToolCallSurchargeMergesSameNameAndPrice(t *testing.T) {
 	require.Len(t, summary.ToolSurchargeItems, 1)
 	assert.Equal(t, dto.BuildInToolWebSearch, summary.ToolSurchargeItems[0].Name)
 	assert.Equal(t, 5, summary.ToolSurchargeItems[0].Count)
-	assert.Equal(t, 10.0, summary.ToolSurchargeItems[0].Price)
-	expected := decimal.NewFromFloat(10.0 * 5 / 1000).Mul(decimal.NewFromFloat(common.QuotaPerUnit))
+	assert.Equal(t, 73.0, summary.ToolSurchargeItems[0].Price)
+	expected := decimal.NewFromFloat(73.0 * 5 / 1000).Mul(decimal.NewFromFloat(common.QuotaPerUnit))
 	assert.True(t, expected.Equal(surcharge), "got %s want %s", surcharge, expected)
 }
 
@@ -1342,7 +1348,7 @@ func TestCalculateTextQuotaSummaryDoesNotApplyRequestMultipliersToToolSurcharge(
 
 	summary := calculateTextQuotaSummary(ctx, relayInfo, &dto.Usage{})
 
-	expected := decimal.NewFromFloat(10.0 / 1000).Mul(decimal.NewFromFloat(common.QuotaPerUnit))
+	expected := decimal.NewFromFloat(73.0 / 1000).Mul(decimal.NewFromFloat(common.QuotaPerUnit))
 	assert.True(t, expected.Equal(summary.ToolCallSurchargeQuota))
 	assert.Equal(t, common.QuotaFromDecimal(expected), summary.Quota)
 }
@@ -1356,12 +1362,12 @@ func TestCalculateTextToolCallSurchargeGeminiGoogleSearch(t *testing.T) {
 	summary := &textQuotaSummary{ModelName: "gemini-2.5-flash", GroupRatio: 1}
 
 	surcharge := calculateTextToolCallSurcharge(ctx, relayInfo, summary)
-	expected := decimal.NewFromFloat(14.0 / 1000).Mul(decimal.NewFromFloat(common.QuotaPerUnit))
+	expected := decimal.NewFromFloat(102.2 / 1000).Mul(decimal.NewFromFloat(common.QuotaPerUnit))
 	assert.True(t, expected.Equal(surcharge), "got %s want %s", surcharge, expected)
 	require.Len(t, summary.ToolSurchargeItems, 1)
 	assert.Equal(t, dto.BuildInToolGoogleSearch, summary.ToolSurchargeItems[0].Name)
 	assert.Equal(t, 1, summary.ToolSurchargeItems[0].Count)
-	assert.Equal(t, 14.0, summary.ToolSurchargeItems[0].Price)
+	assert.Equal(t, 102.2, summary.ToolSurchargeItems[0].Price)
 }
 
 func TestCalculateTextToolCallSurchargeGeminiFunctionCall(t *testing.T) {
@@ -1414,7 +1420,7 @@ func TestCalculateTextToolCallSurchargeImageGenerationDefaultPrice(t *testing.T)
 	summary := &textQuotaSummary{ModelName: "gpt-5.1", GroupRatio: 1.5}
 
 	surcharge := calculateTextToolCallSurcharge(ctx, relayInfo, summary)
-	expected := decimal.NewFromFloat(150.0).
+	expected := decimal.NewFromFloat(1095.0).
 		Mul(decimal.NewFromInt(2)).
 		Div(decimal.NewFromInt(1000)).
 		Mul(decimal.NewFromFloat(1.5)).
@@ -1423,7 +1429,7 @@ func TestCalculateTextToolCallSurchargeImageGenerationDefaultPrice(t *testing.T)
 	require.Len(t, summary.ToolSurchargeItems, 1)
 	assert.Equal(t, dto.BuildInToolImageGeneration, summary.ToolSurchargeItems[0].Name)
 	assert.Equal(t, 2, summary.ToolSurchargeItems[0].Count)
-	assert.Equal(t, 150.0, summary.ToolSurchargeItems[0].Price)
+	assert.Equal(t, 1095.0, summary.ToolSurchargeItems[0].Price)
 }
 
 func TestCalculateTextToolCallSurchargeImageGenerationExplicitZeroDisables(t *testing.T) {
@@ -1474,9 +1480,9 @@ func TestCalculateTextQuotaSummaryImageGenerationUsesStructuredSurcharge(t *test
 	require.Len(t, summary.ToolSurchargeItems, 1)
 	assert.Equal(t, dto.BuildInToolImageGeneration, summary.ToolSurchargeItems[0].Name)
 	assert.Equal(t, 1, summary.ToolSurchargeItems[0].Count)
-	assert.Equal(t, 150.0, summary.ToolSurchargeItems[0].Price)
+	assert.Equal(t, 1095.0, summary.ToolSurchargeItems[0].Price)
 
-	expectedSurcharge := decimal.NewFromFloat(150.0 / 1000).Mul(decimal.NewFromFloat(common.QuotaPerUnit))
+	expectedSurcharge := decimal.NewFromFloat(1095.0 / 1000).Mul(decimal.NewFromFloat(common.QuotaPerUnit))
 	assert.True(t, expectedSurcharge.Equal(summary.ToolCallSurchargeQuota),
 		"got %s want %s", summary.ToolCallSurchargeQuota, expectedSurcharge)
 	assert.Greater(t, summary.Quota, 0)

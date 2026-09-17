@@ -79,16 +79,16 @@ it('shows localized schema explanations in the price table and calculator', asyn
 
 it('uses count unit labels in the price matrix and calculator without changing the charge', async () => {
   renderPricing({ en: 'song', zh: '首' })
-  expect(within(screen.getByRole('table')).getByText('$/song')).toBeVisible()
+  expect(within(screen.getByRole('table')).getByText('¥/song')).toBeVisible()
   expect(
     screen.getByText(
-      'Additional charge: $1 + Song generation unit price: 1 song × $11/song = $12'
+      'Additional charge: ¥1 + Song generation unit price: 1 song × ¥11/song = ¥12'
     )
   ).toBeVisible()
   await act(() => i18next.changeLanguage('zhCN'))
-  expect(within(screen.getByRole('table')).getByText('$/首')).toBeVisible()
+  expect(within(screen.getByRole('table')).getByText('¥/首')).toBeVisible()
   expect(screen.getByText('首')).toBeVisible()
-  expect(screen.getByText(/1 首 × \$11\/首 = \$12/)).toBeVisible()
+  expect(screen.getByText(/1 首 × ¥11\/首 = ¥12/)).toBeVisible()
 })
 
 it('identifies pricing conditions and keeps the additional charge unchanged when sample usage changes', async () => {
@@ -98,7 +98,7 @@ it('identifies pricing conditions and keeps the additional charge unchanged when
   ).toBeVisible()
   expect(
     screen.getByText(
-      'Additional charge: $1 + Song generation unit price: 1 unit × $11/unit = $12'
+      'Additional charge: ¥1 + Song generation unit price: 1 unit × ¥11/unit = ¥12'
     )
   ).toBeVisible()
   const user = userEvent.setup()
@@ -109,7 +109,7 @@ it('identifies pricing conditions and keeps the additional charge unchanged when
   await user.type(quantity, '2')
   expect(
     screen.getByText(
-      'Additional charge: $1 + Song generation unit price: 2 unit × $11/unit = $23'
+      'Additional charge: ¥1 + Song generation unit price: 2 unit × ¥11/unit = ¥23'
     )
   ).toBeVisible()
 })
@@ -294,7 +294,7 @@ it.each(['image', 'video'] as const)(
       screen.queryByRole('spinbutton', { name: `Usage · ${absentLabel}` })
     ).not.toBeInTheDocument()
     if (kind === 'image') {
-      expect(screen.getByText('$/image')).toBeVisible()
+      expect(screen.getByText('¥/image')).toBeVisible()
       expect(
         screen.queryByRole('combobox', { name: 'Resolution' })
       ).not.toBeInTheDocument()

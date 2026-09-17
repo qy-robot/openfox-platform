@@ -57,7 +57,12 @@ function parseJsonArray(data: unknown): unknown[] {
 
 function parsePaymentMethods(
   data: unknown,
-  stripeMinTopup: number
+  stripeMinTopup: number,
+  availability: {
+    online: boolean
+    stripe: boolean
+    waffoPancake: boolean
+  }
 ): PaymentMethod[] {
   return parseJsonArray(data)
     .filter(
@@ -80,7 +85,12 @@ function parsePaymentMethods(
             : normalizedMinTopup,
       }
     })
-    .filter((item) => item.name && item.type && item.type !== 'waffo')
+    .filter((item) => {
+      if (!item.name || !item.type || item.type === 'waffo') return false
+      if (item.type === 'stripe') return availability.stripe
+      if (item.type === 'waffo_pancake') return availability.waffoPancake
+      return availability.online
+    })
 }
 
 function parseWaffoPayMethods(data: unknown): WaffoPayMethod[] {
@@ -100,25 +110,28 @@ function parseWaffoPayMethods(data: unknown): WaffoPayMethod[] {
     .filter((item) => item.name)
 }
 
-function parseCreemProducts(data: unknown): CreemProduct[] {
+export function normalizeCreemProducts(data: unknown): CreemProduct[] {
   return parseJsonArray(data)
     .filter(
       (item): item is Record<string, unknown> =>
         !!item && typeof item === 'object'
     )
-    .map((item) => {
-      const currency: CreemProduct['currency'] =
-        item.currency === 'EUR' ? 'EUR' : 'USD'
-
-      return {
+    .map((item): CreemProduct | null => {
+      if (String(item.currency).trim().toUpperCase() !== 'CNY') return null
+      const price = Number(item.price)
+      const quota = Number(item.quota)
+      if (!Number.isFinite(price) || price <= 0) return null
+      if (!Number.isFinite(quota) || quota <= 0) return null
+      const product = {
         name: typeof item.name === 'string' ? item.name : '',
         productId: typeof item.productId === 'string' ? item.productId : '',
-        price: Number(item.price) || 0,
-        quota: Number(item.quota) || 0,
-        currency,
+        price,
+        quota,
+        currency: 'CNY' as const,
       }
+      return product.name && product.productId ? product : null
     })
-    .filter((item) => item.name && item.productId)
+    .filter((item): item is CreemProduct => item !== null)
 }
 
 function parseAmountOptions(data: unknown): number[] {
@@ -185,11 +198,16 @@ export function useTopupInfo() {
         ...response.data,
         pay_methods: parsePaymentMethods(
           response.data.pay_methods,
-          response.data.stripe_min_topup
+          response.data.stripe_min_topup,
+          {
+            online: response.data.enable_online_topup,
+            stripe: response.data.enable_stripe_topup,
+            waffoPancake: response.data.enable_waffo_pancake_topup === true,
+          }
         ),
         amount_options: parseAmountOptions(response.data.amount_options),
         discount: parseDiscountMap(response.data.discount),
-        creem_products: parseCreemProducts(response.data.creem_products),
+        creem_products: normalizeCreemProducts(response.data.creem_products),
         waffo_pay_methods: parseWaffoPayMethods(
           response.data.waffo_pay_methods
         ),

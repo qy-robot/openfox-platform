@@ -38,7 +38,8 @@ func TestStripeWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 	require.False(t, isStripeWebhookEnabled())
 
 	setting.StripeWebhookSecret = "whsec_test"
-	require.True(t, isStripeWebhookEnabled())
+	require.False(t, isStripeWebhookEnabled())
+	require.False(t, isStripeTopUpEnabled(), "new Stripe payments stay disabled until a CNY-native checkout is implemented")
 
 	setting.StripePriceId = ""
 	require.False(t, isStripeWebhookEnabled())
@@ -57,7 +58,7 @@ func TestCreemWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 
 	setting.CreemWebhookSecret = ""
 	setting.CreemApiKey = "creem_api_key"
-	setting.CreemProducts = `[{"productId":"prod_123"}]`
+	setting.CreemProducts = `[{"productId":"prod_123","currency":"CNY"}]`
 	require.False(t, isCreemWebhookEnabled())
 
 	setting.CreemWebhookSecret = "creem_secret"
@@ -74,6 +75,7 @@ func TestWaffoWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 	originalAPIKey := setting.WaffoApiKey
 	originalPrivateKey := setting.WaffoPrivateKey
 	originalPublicCert := setting.WaffoPublicCert
+	originalCurrency := setting.WaffoCurrency
 	originalSandboxAPIKey := setting.WaffoSandboxApiKey
 	originalSandboxPrivateKey := setting.WaffoSandboxPrivateKey
 	originalSandboxPublicCert := setting.WaffoSandboxPublicCert
@@ -83,12 +85,14 @@ func TestWaffoWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 		setting.WaffoApiKey = originalAPIKey
 		setting.WaffoPrivateKey = originalPrivateKey
 		setting.WaffoPublicCert = originalPublicCert
+		setting.WaffoCurrency = originalCurrency
 		setting.WaffoSandboxApiKey = originalSandboxAPIKey
 		setting.WaffoSandboxPrivateKey = originalSandboxPrivateKey
 		setting.WaffoSandboxPublicCert = originalSandboxPublicCert
 	})
 
 	setting.WaffoEnabled = true
+	setting.WaffoCurrency = operation_setting.BillingCurrency
 	setting.WaffoSandbox = false
 	setting.WaffoApiKey = ""
 	setting.WaffoPrivateKey = "private"
@@ -123,16 +127,16 @@ func TestWaffoPancakeWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 		setting.WaffoPancakeProductID = originalProductID
 	})
 
-	// Presence of all three credentials enables the gateway. Webhook public
-	// keys are bundled in the SDK and there is no separate Enabled toggle —
-	// clear any of the three fields to disable.
+	// New USD-only Pancake checkouts are disabled, while configured webhooks
+	// remain active so already-created orders can still settle.
 	setting.WaffoPancakeMerchantID = ""
 	setting.WaffoPancakePrivateKey = "private"
 	setting.WaffoPancakeProductID = "product"
 	require.False(t, isWaffoPancakeWebhookEnabled())
 
 	setting.WaffoPancakeMerchantID = "merchant"
-	require.True(t, isWaffoPancakeWebhookEnabled())
+	require.False(t, isWaffoPancakeWebhookEnabled())
+	require.False(t, isWaffoPancakeTopUpEnabled())
 
 	setting.WaffoPancakeProductID = ""
 	require.False(t, isWaffoPancakeWebhookEnabled())

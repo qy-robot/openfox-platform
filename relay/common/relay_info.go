@@ -89,6 +89,8 @@ type RelayInfo struct {
 	UsingGroup        string // 使用的分组，当auto跨分组重试时，会变动
 	UserGroup         string // 用户所在分组
 	TokenUnlimited    bool
+	FundingMode       string
+	TeamId            int
 	StartTime         time.Time
 	FirstResponseTime time.Time
 	isFirstResponse   bool
@@ -587,6 +589,8 @@ func genBaseRelayInfo(c *gin.Context, request dto.Request) *RelayInfo {
 		TokenId:        common.GetContextKeyInt(c, constant.ContextKeyTokenId),
 		TokenKey:       common.GetContextKeyString(c, constant.ContextKeyTokenKey),
 		TokenUnlimited: common.GetContextKeyBool(c, constant.ContextKeyTokenUnlimited),
+		FundingMode:    common.GetContextKeyString(c, constant.ContextKeyTokenFundingMode),
+		TeamId:         common.GetContextKeyInt(c, constant.ContextKeyTokenTeamId),
 		TokenGroup:     tokenGroup,
 
 		isFirstResponse: true,

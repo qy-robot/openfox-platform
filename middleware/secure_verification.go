@@ -47,7 +47,13 @@ func RequireSecurityProof(c *gin.Context, operation service.VerificationOperatio
 		securityProofError(c, "SECURITY_PROOF_REQUIRED", "需要安全验证")
 		return nil
 	}
-	authorization, err := service.ConsumeOperationProof(raw, identity, operation)
+	var authorization *model.AuthFlowAuthorization
+	var err error
+	if principal, central := GetCentralPrincipal(c); central {
+		authorization, err = service.ConsumeCentralOperationProof(raw, identity, principal, operation)
+	} else {
+		authorization, err = service.ConsumeOperationProof(raw, identity, operation)
+	}
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrAuthTokenExpired):
@@ -56,6 +62,8 @@ func RequireSecurityProof(c *gin.Context, operation service.VerificationOperatio
 			securityProofError(c, "SECURITY_PROOF_SCOPE_MISMATCH", "安全验证范围不匹配")
 		case errors.Is(err, service.ErrVerificationUnavailable):
 			securityProofError(c, "SECURITY_METHOD_UNAVAILABLE", service.ErrVerificationUnavailable.Error())
+		case errors.Is(err, service.ErrCentralAccountUnavailable):
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"success": false, "code": "AUTH_SERVICE_UNAVAILABLE", "message": "account service is unavailable"})
 		case errors.Is(err, service.ErrProofMethod):
 			securityProofError(c, "SECURITY_PROOF_METHOD_MISMATCH", "安全验证方式不匹配")
 		case errors.Is(err, service.ErrProofConsumed):

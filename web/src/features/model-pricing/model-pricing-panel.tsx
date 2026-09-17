@@ -36,8 +36,6 @@ import {
   type ModelPricingEditorPanelHandle,
 } from '@/features/system-settings/models/model-pricing-sheet'
 import { handleServerError } from '@/lib/handle-server-error'
-import { usePricingPreferencesStore } from '@/stores/pricing-preferences-store'
-import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import {
   useCanEditModelPricing,
@@ -45,11 +43,7 @@ import {
   useSaveModelPricing,
   type ModelPricingEntry,
 } from './api'
-import {
-  getSitePricingCurrency,
-  isValidPricingCurrency,
-  USD_PRICING_CURRENCY,
-} from './currency'
+import { CNY_PRICING_CURRENCY } from './currency'
 import { modelPricingDisplay, pricingFromDraft, pricingRow } from './pricing'
 
 export function ModelPricingPanel(props: {
@@ -57,10 +51,6 @@ export function ModelPricingPanel(props: {
   onDirtyChange?: (dirty: boolean) => void
 }) {
   const { t } = useTranslation()
-  const currencyConfig = useSystemConfigStore((state) => state.config.currency)
-  const currencyPreference = usePricingPreferencesStore(
-    (state) => state.currency
-  )
   const canEdit = useCanEditModelPricing()
   const query = useModelPricing([props.modelName], Boolean(props.modelName))
   const save = useSaveModelPricing()
@@ -130,11 +120,7 @@ export function ModelPricingPanel(props: {
   }
   if (!editData || !entry) return <LoadingState />
   const effectivePricing = modelPricingDisplay(entry)
-  const siteCurrency = getSitePricingCurrency(currencyConfig)
-  const currency =
-    currencyPreference === 'site' && isValidPricingCurrency(siteCurrency)
-      ? siteCurrency
-      : USD_PRICING_CURRENCY
+  const currency = CNY_PRICING_CURRENCY
   const current = pricingRow(entry.model_name, entry.effective)
   const currentLanes = createInitialLaneState(current)
   const details = buildPreviewRows(

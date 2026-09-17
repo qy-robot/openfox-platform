@@ -182,7 +182,7 @@ export function UpstreamRatioSyncTable(props: UpstreamRatioSyncTableProps) {
         containerClassName='min-h-0 flex-1 rounded-md'
         tableContainerClassName='h-full min-h-0'
         tableHeaderClassName='[background-color:var(--table-header)]'
-          tableBodyClassName='[&>tr]:h-14'
+        tableBodyClassName='[&>tr]:h-14'
         splitHeaderScrollClassName='h-full'
         bodyContainerClassName='[scrollbar-gutter:stable]'
         splitHeader
@@ -250,7 +250,7 @@ export function UpstreamRatioSyncTable(props: UpstreamRatioSyncTableProps) {
             </SelectContent>
           </Select>
           <span className='text-muted-foreground text-xs sm:ml-auto'>
-            USD / {t('1M token')}
+            CNY / {t('1M token')}
           </span>
         </div>
         {content}

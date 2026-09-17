@@ -154,7 +154,7 @@ afterEach(() => {
 it('shows desktop remaining and used amounts side by side without labels, with the currency only in the header', () => {
   renderQuota()
   expect(
-    screen.getByRole('columnheader', { name: 'Quota ($)' })
+    screen.getByRole('columnheader', { name: 'Quota (¥)' })
   ).toBeInTheDocument()
   const trigger = screen.getByRole('button', {
     name: /Remaining 80; Remaining percentage 40%; Used amount 120/,
@@ -212,17 +212,18 @@ it('shows unlimited with cumulative usage and explains it on demand', async () =
   )
 })
 
-it('keeps small custom-currency amounts exact and shows full values in the detail', async () => {
+it('keeps small CNY amounts exact and ignores legacy display preferences', async () => {
   useSystemConfigStore.getState().setConfig({
     currency: {
       ...DEFAULT_CURRENCY_CONFIG,
       quotaDisplayType: 'CUSTOM',
       customCurrencySymbol: '🐱',
+      customCurrencyExchangeRate: 7.2,
     },
   })
   renderQuota({ ...key, remain_quota: 1900, used_quota: 1100 })
   expect(
-    screen.getByRole('columnheader', { name: 'Quota (🐱)' })
+    screen.getByRole('columnheader', { name: 'Quota (¥)' })
   ).toBeInTheDocument()
   const button = screen.getByRole('button')
   expect(button).toHaveTextContent('0.0038')
@@ -360,7 +361,7 @@ it('combines creation and last use while keeping expiry, models and IP restricti
   ).toBeInTheDocument()
   const timeCell = screen.getByRole('cell', { name: /Created.*Last Used/ })
   expect(within(timeCell).getByText('Last Used')).toBeInTheDocument()
-  const quotaHeader = screen.getByRole('columnheader', { name: 'Quota ($)' })
+  const quotaHeader = screen.getByRole('columnheader', { name: 'Quota (¥)' })
   const quotaTrigger = screen.getByRole('button', {
     name: /Remaining 80; Remaining percentage 40%; Used amount 120/,
   })
@@ -457,8 +458,8 @@ it('keeps full mobile information without group or quota section headings', asyn
   try {
     await renderKeysPage()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
-    expect(screen.queryByText('额度 ($)')).not.toBeInTheDocument()
-    expect(screen.getByText('($)')).toBeInTheDocument()
+    expect(screen.queryByText('额度 (¥)')).not.toBeInTheDocument()
+    expect(screen.getByText('(¥)')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /剩余 80;/ })).toBeInTheDocument()
     expect(screen.getByText('80')).toBeInTheDocument()
     expect(screen.getByText('120')).toBeInTheDocument()
@@ -496,7 +497,7 @@ it('keeps mobile quota readable and opens complete model and IP restrictions by 
   const quota = screen.getByRole('button', {
     name: /Unlimited; Used amount 4,490.16/,
   })
-  expect(quota).toHaveTextContent('Remaining($)UnlimitedUsed amount4,490.16')
+  expect(quota).toHaveTextContent('Remaining(¥)UnlimitedUsed amount4,490.16')
   expect(quota.parentElement).toHaveClass('w-full')
   expect(quota.parentElement).not.toHaveClass('max-w-45')
   expect(quota.querySelector('[data-slot="api-key-quota-values"]')).toHaveClass(

@@ -30,6 +30,8 @@ export default defineConfig({
     },
   },
   test: {
+    // Bound jsdom concurrency to avoid memory pressure on shared build hosts.
+    maxWorkers: 2,
     environment: 'jsdom',
     server: {
       deps: { inline: [/@lobehub\//, /antd-style/] },

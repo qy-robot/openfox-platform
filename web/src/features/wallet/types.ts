@@ -72,8 +72,8 @@ export interface CreemProduct {
   price: number
   /** Quota amount to credit */
   quota: number
-  /** Currency (USD or EUR) */
-  currency: 'USD' | 'EUR'
+  /** Platform billing currency */
+  currency: 'CNY'
 }
 
 /**
@@ -259,8 +259,12 @@ export interface TopupRecord {
   user_id: number
   /** Topup amount (quota) */
   amount: number
+  /** Exact quota credited to the wallet; authoritative for CNY entitlement display */
+  credited_quota?: number
   /** Payment amount (actual money paid) */
   money: number
+  /** Original audited currency for legacy amount and payment fields */
+  currency?: string
   /** Trade/order number */
   trade_no: string
   /** Payment method type */

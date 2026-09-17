@@ -48,6 +48,9 @@ func (s *BillingSession) Settle(actualQuota int) error {
 	}
 	delta := actualQuota - s.preConsumedQuota
 	if delta == 0 {
+		if err := s.funding.Settle(0); err != nil {
+			return err
+		}
 		s.settled = true
 		return nil
 	}
@@ -78,6 +81,44 @@ func (s *BillingSession) Settle(actualQuota int) error {
 	}
 	s.settled = true
 	return tokenErr
+}
+
+// PrepareAsyncTeamSettlement aligns the live team reservation with the quota
+// persisted on an asynchronous task while deliberately leaving it open. The
+// polling winner later performs the single terminal settle or refund.
+func (s *BillingSession) PrepareAsyncTeamSettlement(actualQuota int) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if actualQuota < 0 || s.settled || s.refunded || s.fundingSettled {
+		return errors.New("billing session cannot prepare asynchronous team settlement")
+	}
+	team, ok := s.funding.(*TeamFunding)
+	if !ok {
+		return errors.New("asynchronous team settlement requires team funding")
+	}
+	delta := actualQuota - s.preConsumedQuota
+	if err := model.ResizeReservedTeamQuota(team.requestId, actualQuota); err != nil {
+		return err
+	}
+	if delta != 0 && !s.relayInfo.IsPlayground {
+		var err error
+		if delta > 0 {
+			err = model.DecreaseTokenQuota(s.relayInfo.TokenId, s.relayInfo.TokenKey, delta)
+		} else {
+			err = model.IncreaseTokenQuota(s.relayInfo.TokenId, s.relayInfo.TokenKey, -delta)
+		}
+		if err != nil {
+			if rollbackErr := model.ResizeReservedTeamQuota(team.requestId, s.preConsumedQuota); rollbackErr != nil {
+				common.SysLog(fmt.Sprintf("error rolling back asynchronous team reservation (requestId=%s): %s", team.requestId, rollbackErr.Error()))
+			}
+			return err
+		}
+	}
+	team.consumed = actualQuota
+	s.preConsumedQuota = actualQuota
+	s.tokenConsumed += delta
+	s.syncRelayInfo()
+	return nil
 }
 
 // Refund 退还所有预扣费，幂等安全，异步执行。
@@ -141,6 +182,9 @@ func (s *BillingSession) needsRefundLocked() bool {
 	}
 	// 订阅可能在 tokenConsumed=0 时仍预扣了额度
 	if sub, ok := s.funding.(*SubscriptionFunding); ok && sub.preConsumed > 0 {
+		return true
+	}
+	if team, ok := s.funding.(*TeamFunding); ok && team.consumed > 0 {
 		return true
 	}
 	return false
@@ -234,6 +278,12 @@ func (s *BillingSession) preConsume(c *gin.Context, quota int) *types.NewAPIErro
 				types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 				types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}
+		if errors.Is(err, model.ErrTeamQuotaInsufficient) || errors.Is(err, model.ErrTeamMonthlyLimit) {
+			return types.NewErrorWithStatusCode(err, types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+		}
+		if errors.Is(err, model.ErrTeamMembershipInvalid) {
+			return types.NewErrorWithStatusCode(err, types.ErrorCodeAccessDenied, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+		}
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "no active subscription") || strings.Contains(errMsg, "subscription quota insufficient") {
 			return types.NewErrorWithStatusCode(fmt.Errorf("订阅额度不足或未配置订阅: %s", errMsg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
@@ -283,6 +333,14 @@ func (s *BillingSession) reserveFunding(delta int, requireAvailableQuota bool) e
 			)
 		}
 		return nil
+	case *TeamFunding:
+		if err := funding.PreConsume(delta); err != nil {
+			if errors.Is(err, model.ErrTeamQuotaInsufficient) || errors.Is(err, model.ErrTeamMonthlyLimit) {
+				return types.NewErrorWithStatusCode(err, types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+			}
+			return types.NewError(err, types.ErrorCodeUpdateDataError, types.ErrOptionWithSkipRetry())
+		}
+		return nil
 	default:
 		return types.NewError(fmt.Errorf("unsupported funding source: %s", s.funding.Source()), types.ErrorCodeUpdateDataError, types.ErrOptionWithSkipRetry())
 	}
@@ -299,6 +357,12 @@ func (s *BillingSession) rollbackFundingReserve(delta int) {
 	case *SubscriptionFunding:
 		if err := model.PostConsumeUserSubscriptionDelta(funding.subscriptionId, -int64(delta)); err != nil {
 			common.SysLog("error rolling back subscription funding reserve: " + err.Error())
+		}
+	case *TeamFunding:
+		if err := model.RollbackTeamQuotaDelta(funding.requestId, delta); err != nil {
+			common.SysLog("error rolling back team funding reserve: " + err.Error())
+		} else {
+			funding.consumed -= delta
 		}
 	}
 }
@@ -433,45 +497,90 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		return session, nil
 	}
 
-	switch pref {
-	case "subscription_only":
-		return trySubscription()
-	case "wallet_only":
-		return tryWallet()
-	case "wallet_first":
-		session, err := tryWallet()
-		if err != nil {
-			if err.GetErrorCode() == types.ErrorCodeInsufficientUserQuota {
-				return trySubscription()
-			}
-			return nil, err
+	tryTeam := func() (*BillingSession, *types.NewAPIError) {
+		teamConsume := max(preConsumedQuota, 1)
+		session := &BillingSession{
+			relayInfo: relayInfo,
+			funding: &TeamFunding{
+				requestId: relayInfo.RequestId,
+				teamId:    relayInfo.TeamId,
+				userId:    relayInfo.UserId,
+			},
 		}
-		return session, nil
-	case "subscription_first":
-		fallthrough
-	default:
-		hasSub, subCheckErr := model.HasActiveUserSubscription(relayInfo.UserId)
-		if subCheckErr != nil {
-			return nil, types.NewError(subCheckErr, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
-		}
-		if !hasSub {
-			return tryWallet()
-		}
-		session, apiErr := trySubscription()
-		if apiErr != nil {
-			if apiErr.GetErrorCode() == types.ErrorCodeInsufficientUserQuota {
-				// 仅当用户的活跃订阅允许钱包回退时才回退到钱包，否则返回订阅额度不足错误
-				allowOverflow, overflowErr := model.UserActiveSubscriptionsAllowWalletOverflow(relayInfo.UserId)
-				if overflowErr != nil {
-					return nil, types.NewError(overflowErr, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
-				}
-				if allowOverflow {
-					return tryWallet()
-				}
-				return nil, apiErr
-			}
+		if apiErr := session.preConsume(c, teamConsume); apiErr != nil {
 			return nil, apiErr
 		}
 		return session, nil
+	}
+
+	tryPersonal := func() (*BillingSession, *types.NewAPIError) {
+		switch pref {
+		case "subscription_only":
+			return trySubscription()
+		case "wallet_only":
+			return tryWallet()
+		case "wallet_first":
+			session, err := tryWallet()
+			if err != nil {
+				if err.GetErrorCode() == types.ErrorCodeInsufficientUserQuota {
+					return trySubscription()
+				}
+				return nil, err
+			}
+			return session, nil
+		case "subscription_first":
+			fallthrough
+		default:
+			hasSub, subCheckErr := model.HasActiveUserSubscription(relayInfo.UserId)
+			if subCheckErr != nil {
+				return nil, types.NewError(subCheckErr, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
+			}
+			if !hasSub {
+				return tryWallet()
+			}
+			session, apiErr := trySubscription()
+			if apiErr != nil {
+				if apiErr.GetErrorCode() == types.ErrorCodeInsufficientUserQuota {
+					// 仅当用户的活跃订阅允许钱包回退时才回退到钱包，否则返回订阅额度不足错误
+					allowOverflow, overflowErr := model.UserActiveSubscriptionsAllowWalletOverflow(relayInfo.UserId)
+					if overflowErr != nil {
+						return nil, types.NewError(overflowErr, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
+					}
+					if allowOverflow {
+						return tryWallet()
+					}
+					return nil, apiErr
+				}
+				return nil, apiErr
+			}
+			return session, nil
+		}
+	}
+
+	mode := model.NormalizeTokenFundingMode(relayInfo.FundingMode)
+	if mode != model.TokenFundingPersonalOnly {
+		if err := model.ValidateTeamFunding(relayInfo.UserId, relayInfo.TeamId, mode); err != nil {
+			return nil, types.NewErrorWithStatusCode(err, types.ErrorCodeAccessDenied, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+		}
+	}
+	switch mode {
+	case model.TokenFundingPersonalOnly:
+		return tryPersonal()
+	case model.TokenFundingTeamOnly:
+		return tryTeam()
+	case model.TokenFundingTeamFirst:
+		session, apiErr := tryTeam()
+		if apiErr != nil && apiErr.GetErrorCode() == types.ErrorCodeInsufficientUserQuota {
+			return tryPersonal()
+		}
+		return session, apiErr
+	case model.TokenFundingPersonalFirst:
+		session, apiErr := tryPersonal()
+		if apiErr != nil && apiErr.GetErrorCode() == types.ErrorCodeInsufficientUserQuota {
+			return tryTeam()
+		}
+		return session, apiErr
+	default:
+		return nil, types.NewErrorWithStatusCode(errors.New("invalid token funding mode"), types.ErrorCodeAccessDenied, http.StatusForbidden, types.ErrOptionWithSkipRetry())
 	}
 }

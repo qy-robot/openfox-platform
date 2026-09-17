@@ -35,6 +35,7 @@ type tokenAPIResponse struct {
 
 type tokenPageResponse struct {
 	Items []tokenResponseItem `json:"items"`
+	Total int                 `json:"total"`
 }
 
 type tokenResponseItem struct {
@@ -461,6 +462,39 @@ func TestGetAllTokensMasksKeyInResponse(t *testing.T) {
 	if strings.Contains(recorder.Body.String(), token.Key) {
 		t.Fatalf("list response leaked raw token key: %s", recorder.Body.String())
 	}
+}
+
+func TestDesktopRelayCredentialsStayOutOfAPITokenManagement(t *testing.T) {
+	db := setupTokenControllerTestDB(t)
+	managed := seedToken(t, db, 1, "managed-token", "managed1234token5678")
+	desktop := seedToken(t, db, 1, "robocoding desktop", "desktop1234relay5678")
+	desktop.DesktopSessionID = "desktop-session"
+	require.NoError(t, db.Model(desktop).Update("desktop_session_id", desktop.DesktopSessionID).Error)
+
+	ctx, recorder := newAuthenticatedContext(t, http.MethodGet, "/api/token/?p=1&size=10", nil, 1)
+	GetAllTokens(ctx)
+
+	response := decodeAPIResponse(t, recorder)
+	require.True(t, response.Success, response.Message)
+	var page tokenPageResponse
+	require.NoError(t, common.Unmarshal(response.Data, &page))
+	require.Equal(t, 1, page.Total)
+	require.Len(t, page.Items, 1)
+	assert.Equal(t, managed.Id, page.Items[0].ID)
+	assert.NotContains(t, recorder.Body.String(), desktop.GetMaskedKey())
+
+	searchCtx, searchRecorder := newAuthenticatedContext(t, http.MethodGet, "/api/token/search?keyword=robocoding%20desktop&p=1&size=10", nil, 1)
+	SearchTokens(searchCtx)
+	searchResponse := decodeAPIResponse(t, searchRecorder)
+	require.True(t, searchResponse.Success, searchResponse.Message)
+	require.NoError(t, common.Unmarshal(searchResponse.Data, &page))
+	assert.Zero(t, page.Total)
+	assert.Empty(t, page.Items)
+
+	detailCtx, detailRecorder := newAuthenticatedContext(t, http.MethodGet, "/api/token/"+strconv.Itoa(desktop.Id), nil, 1)
+	detailCtx.Params = gin.Params{{Key: "id", Value: strconv.Itoa(desktop.Id)}}
+	GetToken(detailCtx)
+	assert.False(t, decodeAPIResponse(t, detailRecorder).Success)
 }
 
 func TestSearchTokensMasksKeyInResponse(t *testing.T) {

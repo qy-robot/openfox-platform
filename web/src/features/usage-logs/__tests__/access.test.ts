@@ -17,11 +17,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import assert from 'node:assert/strict'
+
 import { describe, test } from 'vitest'
 
 import { ROLE } from '@/lib/roles'
 
+import { canAccessUsageLogsSection } from '../access'
 import { resolveLogsViewAccess } from '../components/usage-logs-provider'
+
+describe('usage log route access', () => {
+  test('limits regular users to their common usage logs', () => {
+    assert.equal(canAccessUsageLogsSection('common', ROLE.USER), true)
+    assert.equal(canAccessUsageLogsSection('audit', ROLE.USER), false)
+    assert.equal(canAccessUsageLogsSection('task', ROLE.USER), false)
+    assert.equal(canAccessUsageLogsSection('drawing', ROLE.USER), false)
+  })
+
+  test('allows admins to open audit and task log routes', () => {
+    assert.equal(canAccessUsageLogsSection('audit', ROLE.ADMIN), true)
+    assert.equal(canAccessUsageLogsSection('task', ROLE.ADMIN), true)
+    assert.equal(canAccessUsageLogsSection('drawing', ROLE.SUPER_ADMIN), true)
+  })
+})
 
 describe('usage log access tier', () => {
   test('keeps users and elevated self views on the self tier', () => {

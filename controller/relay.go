@@ -441,6 +441,19 @@ func RelayMidjourney(c *gin.Context) {
 		})
 		return
 	}
+	mode := model.NormalizeTokenFundingMode(relayInfo.FundingMode)
+	readOnlyMode := relayInfo.RelayMode == relayconstant.RelayModeMidjourneyNotify ||
+		relayInfo.RelayMode == relayconstant.RelayModeMidjourneyTaskFetch ||
+		relayInfo.RelayMode == relayconstant.RelayModeMidjourneyTaskFetchByCondition ||
+		relayInfo.RelayMode == relayconstant.RelayModeMidjourneyTaskImageSeed
+	if mode != model.TokenFundingPersonalOnly && !readOnlyMode {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"description": "team funding is not supported for legacy Midjourney submission routes",
+			"type":        "invalid_request_error",
+			"code":        4,
+		})
+		return
+	}
 
 	var mjErr *taskdto.MidjourneyResponse
 	switch relayInfo.RelayMode {
@@ -706,6 +719,12 @@ func executeTaskSubmissionWith(
 		diagnostics.failed("submit", "missing_result", taskErr, false)
 		return nil, taskErr
 	}
+	if result.Immediate != nil && result.Immediate.Status == model.TaskStatusFailure {
+		// A provider-declared submission failure never becomes billable work.
+		// Normalize before the team reservation is persisted or finalized.
+		result.Quota = 0
+		relayInfo.PriceData.Quota = 0
+	}
 	if requestErr := c.Request.Context().Err(); requestErr != nil {
 		diagnostics.cancelled("before_reserve", retryParam.GetRetry()+1)
 		return nil, service.TaskErrorWrapperLocal(requestErr, "request_cancelled", http.StatusRequestTimeout)
@@ -722,6 +741,14 @@ func executeTaskSubmissionWith(
 			taskErr = service.TaskErrorWrapperLocal(errors.New("insufficient quota for adjusted task cost"), string(types.ErrorCodeInsufficientUserQuota), http.StatusForbidden)
 			diagnostics.failed("reserve", "insufficient_quota", taskErr, false)
 			return nil, taskErr
+		}
+		if relayInfo.BillingSource == service.BillingSourceTeam {
+			if prepareErr := service.PrepareAsyncTaskBilling(relayInfo, result.Quota); prepareErr != nil {
+				common.SysError("prepare asynchronous team task billing error: " + prepareErr.Error())
+				taskErr = service.TaskErrorWrapperLocal(errors.New("failed to prepare team task billing"), "task_billing_preparation_failed", http.StatusInternalServerError)
+				diagnostics.failed("reserve", "billing_error", taskErr, false)
+				return nil, taskErr
+			}
 		}
 		diagnostics.reserve("reserve_complete", result.Quota)
 	}
@@ -780,11 +807,15 @@ func executeTaskSubmissionWith(
 	diagnostics.durable(task)
 	diagnostics.settleStart(task, result.Quota)
 
-	if settleErr := service.SettleBilling(c, relayInfo, result.Quota); settleErr != nil {
-		common.SysError("settle task billing error: " + settleErr.Error())
-		taskErr = service.TaskErrorWrapperLocal(errors.New("failed to settle task billing"), "task_billing_settlement_failed", http.StatusInternalServerError)
-		diagnostics.failed("settle", "billing_error", taskErr, true)
-		return nil, taskErr
+	deferTeamSettlement := relayInfo.BillingSource == service.BillingSourceTeam && task.Status != model.TaskStatusSuccess && task.Status != model.TaskStatusFailure
+	if !deferTeamSettlement {
+		settleErr := service.SettleBilling(c, relayInfo, result.Quota)
+		if settleErr != nil {
+			common.SysError("settle task billing error: " + settleErr.Error())
+			taskErr = service.TaskErrorWrapperLocal(errors.New("failed to settle task billing"), "task_billing_settlement_failed", http.StatusInternalServerError)
+			diagnostics.failed("settle", "billing_error", taskErr, true)
+			return nil, taskErr
+		}
 	}
 	service.LogTaskConsumption(c, relayInfo, task)
 	diagnostics.complete(task, result.Quota)

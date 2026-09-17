@@ -19,11 +19,15 @@ func SetApiRouter(router *gin.Engine) {
 	apiRouter.Use(middleware.AccessTokenAudit())
 	apiRouter.Use(middleware.BodyStorageCleanup()) // 清理请求体存储
 	apiRouter.Use(middleware.GlobalAPIRateLimit())
+	apiRouter.Use(middleware.CentralAccountLegacyGuard())
 	anonymousRequestBodyLimit := middleware.AnonymousRequestBodyLimit()
+	setDesktopRouter(apiRouter)
 	{
 		apiRouter.GET("/setup", controller.GetSetup)
 		apiRouter.POST("/setup", anonymousRequestBodyLimit, controller.PostSetup)
 		apiRouter.GET("/status", controller.GetStatus)
+		apiRouter.GET("/account/sso/start", middleware.DisableCache(), controller.CentralAccountSSOStart)
+		apiRouter.POST("/account/sso/exchange", middleware.CriticalRateLimit(), middleware.DisableCache(), anonymousRequestBodyLimit, controller.CentralAccountSSOExchange)
 		apiRouter.GET("/uptime/status", controller.GetUptimeKumaStatus)
 		apiRouter.GET("/models", middleware.UserAuth(), controller.DashboardListModels)
 		apiRouter.GET("/status/test", middleware.AdminAuth(), controller.TestStatus)
@@ -58,6 +62,28 @@ func SetApiRouter(router *gin.Engine) {
 		// Standard OAuth providers (GitHub, Discord, OIDC, LinuxDO, Telegram) - unified route
 		apiRouter.GET("/oauth/:provider", middleware.CriticalRateLimit(), middleware.DisableCache(), middleware.TryUserAuth(), controller.HandleOAuth)
 		apiRouter.GET("/ratio_config", middleware.CriticalRateLimit(), controller.GetRatioConfig)
+
+		teamRoute := apiRouter.Group("/teams")
+		teamRoute.Use(middleware.DisableCache(), middleware.UserAuth())
+		{
+			teamRoute.GET("", controller.ListMyTeams)
+			teamRoute.GET("/self", controller.ListMyTeams)
+			teamRoute.POST("", middleware.UserCriticalRateLimit("team-create"), controller.CreateTeam)
+			teamRoute.POST("/join", middleware.UserCriticalRateLimit("team-join"), controller.RequestJoinTeam)
+			teamRoute.POST("/join/invite", middleware.UserCriticalRateLimit("team-join"), controller.JoinTeamByInvite)
+			teamRoute.GET("/:id", controller.GetTeam)
+			teamRoute.POST("/:id/fund", middleware.CriticalRateLimit(), middleware.UserCriticalRateLimit("team-fund"), controller.FundTeam)
+			teamRoute.GET("/:id/usage", controller.GetTeamUsage)
+			teamRoute.GET("/:id/members", controller.ListTeamMembers)
+			teamRoute.PATCH("/:id/members/:user_id", middleware.UserCriticalRateLimit("team-manage"), controller.UpdateTeamMember)
+			teamRoute.DELETE("/:id/members/:user_id", middleware.UserCriticalRateLimit("team-manage"), controller.RemoveTeamMember)
+			teamRoute.GET("/:id/join-requests", controller.ListTeamJoinRequests)
+			teamRoute.POST("/:id/join-requests/:request_id/approve", middleware.UserCriticalRateLimit("team-manage"), controller.DecideTeamJoinRequest)
+			teamRoute.DELETE("/:id/join-requests/:request_id", middleware.UserCriticalRateLimit("team-manage"), controller.DecideTeamJoinRequest)
+			teamRoute.GET("/:id/invites", controller.ListTeamInvites)
+			teamRoute.POST("/:id/invites", middleware.UserCriticalRateLimit("team-manage"), controller.CreateTeamInvite)
+			teamRoute.DELETE("/:id/invites/:invite_id", middleware.UserCriticalRateLimit("team-manage"), controller.RevokeTeamInvite)
+		}
 
 		apiRouter.POST("/stripe/webhook", anonymousRequestBodyLimit, controller.StripeWebhook)
 		apiRouter.POST("/creem/webhook", anonymousRequestBodyLimit, controller.CreemWebhook)

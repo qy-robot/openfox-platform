@@ -31,25 +31,32 @@ import { NavigationProgress } from '@/components/navigation-progress'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeCustomizationProvider } from '@/context/theme-customization-provider'
 import { saveAffiliateCode } from '@/features/auth/lib/storage'
+import { markCentralSignedOutIfEnabled } from '@/features/auth/sign-in/central-reauth'
 import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
 import { getSetupStatus } from '@/features/setup/api'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import {
+  beginExplicitSignOut,
   bootstrapAuthentication,
   clearAuthenticatedClientState,
   clearAuthentication,
+  finishExplicitSignOut,
 } from '@/lib/auth-session'
 import { subscribeAuthSessionEvents } from '@/lib/auth-session-sync'
+import { getIndependentAppURL } from '@/lib/independent-apps'
 import { resolveLegacyRoute } from '@/lib/legacy-route'
+import { shouldBootstrapPlatform } from '@/lib/platform-bootstrap'
+import { readCachedStatus, statusQueryOptions } from '@/lib/status-query'
 import { useAuthStore } from '@/stores/auth-store'
 
 function RootComponent() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const bootstrapPlatform = shouldBootstrapPlatform(window.location.pathname)
 
   // Load system configuration (logo, system name, etc.) from backend
-  useSystemConfig({ autoLoad: true })
+  useSystemConfig({ autoLoad: bootstrapPlatform })
 
   useEffect(() => {
     const aff = new URLSearchParams(window.location.search).get('aff')?.trim()
@@ -85,8 +92,12 @@ function RootComponent() {
         }
 
         if (currentSID && event.sid === currentSID) {
+          beginExplicitSignOut()
+          markCentralSignedOutIfEnabled()
           clearAuthenticatedClientState(queryClient, false)
-          void navigate({ to: '/sign-in', replace: true })
+          void navigate({ to: '/sign-in', replace: true }).finally(
+            finishExplicitSignOut
+          )
         }
       }),
     [navigate, queryClient]
@@ -114,16 +125,29 @@ export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
   // 应用初始化与路由解析前统一校验会话
-  beforeLoad: async ({ location }) => {
+  beforeLoad: async ({ context, location }) => {
     const legacyTarget = resolveLegacyRoute(location.href)
     if (legacyTarget) {
       throw redirect({ href: legacyTarget, replace: true })
     }
 
     const pathname = location?.pathname || ''
+    const independentTarget = getIndependentAppURL(pathname)
+    if (independentTarget) {
+      throw redirect({ href: independentTarget, replace: true })
+    }
+    if (!shouldBootstrapPlatform(pathname)) return
+    const cachedStatus = readCachedStatus()
+    const status = await context.queryClient
+      .fetchQuery(statusQueryOptions)
+      .catch(() => cachedStatus)
+    const centralAccountEnabled =
+      (status ?? cachedStatus)?.account_auth_enabled === true
     const needsSetupCheck =
       !setupStatusChecked && !pathname.startsWith('/setup')
-    const authBootstrap = bootstrapAuthentication()
+    const authBootstrap = centralAccountEnabled
+      ? Promise.resolve()
+      : bootstrapAuthentication()
 
     // 只检查 setup 状态（如果需要）
     if (needsSetupCheck) {

@@ -316,6 +316,10 @@ func FetchUpstreamRatios(c *gin.Context) {
 			if chItem.ID != 0 {
 				uniqueName = fmt.Sprintf("%s(%d)", chItem.Name, chItem.ID)
 			}
+			if isOpenRouter || isModelsDev {
+				ch <- upstreamResult{Name: uniqueName, Err: "上游目录以美元计价；请直接配置人民币售价"}
+				return
+			}
 
 			ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(req.Timeout)*time.Second)
 			defer cancel()
@@ -365,6 +369,10 @@ func FetchUpstreamRatios(c *gin.Context) {
 				return
 			}
 			defer resp.Body.Close()
+			if resp.Header.Get("X-Billing-Currency") != "CNY" || resp.Header.Get("X-Quota-Per-Unit") != strconv.FormatFloat(common.QuotaPerUnit, 'f', -1, 64) {
+				ch <- upstreamResult{Name: uniqueName, Err: "仅支持明确声明人民币币种及相同账本精度的价格来源"}
+				return
+			}
 			if resp.StatusCode != http.StatusOK {
 				logger.LogWarn(c.Request.Context(), "non-200 from "+chItem.Name+": "+resp.Status)
 				ch <- upstreamResult{Name: uniqueName, Err: resp.Status}
@@ -894,7 +902,7 @@ func convertOpenRouterToRatioData(reader io.Reader) (map[string]any, error) {
 		}
 
 		// Normal case: promptPrice > 0
-		ratio := promptPrice * 1000 * ratio_setting.USD
+		ratio := promptPrice * 500000
 		ratio = roundRatioValue(ratio)
 		modelRatioMap[m.ID] = ratio
 
@@ -1077,7 +1085,7 @@ func convertModelsDevToRatioData(reader io.Reader) (map[string]any, error) {
 			continue
 		}
 
-		modelRatio := candidate.Input * float64(ratio_setting.USD) / modelsDevInputCostRatioBase
+		modelRatio := candidate.Input * 500 / modelsDevInputCostRatioBase
 		modelRatioMap[modelName] = roundRatioValue(modelRatio)
 
 		if candidate.Output != nil {

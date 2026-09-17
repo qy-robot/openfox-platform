@@ -42,6 +42,7 @@ export type VisualPrice = {
   variable: Exclude<TokenVariable, 'len'>
   value: string
   origin?: ExpressionNode
+  originalValue?: string
 }
 export type VisualPricingNode =
   | (Origin & {
@@ -136,6 +137,44 @@ function readVisualCondition(node: ExpressionNode): VisualCondition | null {
   }
 }
 
+function readVisualTokenPrices(
+  node: ExpressionNode,
+  multiplier = 1
+): VisualPrice[] | null {
+  if (node.kind === 'binary' && node.operator === '+') {
+    const left = readVisualTokenPrices(node.left, multiplier)
+    const right = readVisualTokenPrices(node.right, multiplier)
+    return left && right ? [...left, ...right] : null
+  }
+  if (node.kind !== 'binary' || node.operator !== '*') return null
+
+  if (node.right.kind === 'literal' && typeof node.right.value === 'number') {
+    const coefficient = node.right.value * multiplier
+    if (
+      node.left.kind === 'variable' &&
+      node.left.name !== 'len' &&
+      node.left.name !== 'image_count' &&
+      Number.isFinite(coefficient) &&
+      coefficient >= 0
+    ) {
+      const value = String(coefficient)
+      return [
+        {
+          variable: node.left.name,
+          value,
+          originalValue: value,
+          ...(multiplier === 1 ? { origin: node } : {}),
+        },
+      ]
+    }
+    return readVisualTokenPrices(node.left, coefficient)
+  }
+  if (node.left.kind === 'literal' && typeof node.left.value === 'number') {
+    return readVisualTokenPrices(node.right, node.left.value * multiplier)
+  }
+  return null
+}
+
 function readVisualPricing(node: ExpressionNode): VisualPricingNode | null {
   const identity = { id: `pricing-${node.start}-${node.end}`, origin: node }
   if (node.kind === 'conditional') {
@@ -170,26 +209,12 @@ function readVisualPricing(node: ExpressionNode): VisualPricingNode | null {
       fixedPrice: String(body.args[0].value),
     }
   }
-  for (const term of flattenBinary(node.args[1], '+')) {
-    if (
-      term.kind !== 'binary' ||
-      term.operator !== '*' ||
-      term.left.kind !== 'variable' ||
-      term.left.name === 'len' ||
-      term.left.name === 'image_count' ||
-      term.right.kind !== 'literal' ||
-      typeof term.right.value !== 'number' ||
-      term.right.value < 0
-    ) {
-      return null
-    }
-    const variable = term.left.name
+  const parsedPrices = readVisualTokenPrices(body)
+  if (!parsedPrices) return null
+  for (const price of parsedPrices) {
+    const variable = price.variable
     if (prices.some((price) => price.variable === variable)) return null
-    prices.push({
-      variable: term.left.name,
-      value: String(term.right.value),
-      origin: term,
-    })
+    prices.push(price)
   }
   return {
     ...identity,
@@ -412,6 +437,22 @@ function writeVisualPricing(
       message: 'Include at least one price variable.',
     })
   }
+  const origin = node.origin
+  if (
+    origin?.kind === 'call' &&
+    origin.name === 'tier' &&
+    node.prices.every(
+      (price) =>
+        price.originalValue !== undefined && price.value === price.originalValue
+    )
+  ) {
+    const label = origin.args[0]
+    const labelText =
+      label.kind === 'literal' && label.value === node.label
+        ? source.slice(label.start, label.end)
+        : JSON.stringify(node.label)
+    return patchSource(source, origin, [{ node: label, text: labelText }])
+  }
   const terms: string[] = []
   const valuePatches: { node: ExpressionNode; text: string }[] = []
   for (const price of node.prices) {
@@ -436,7 +477,6 @@ function writeVisualPricing(
       )
     } else terms.push(`${price.variable} * ${price.value}`)
   }
-  const origin = node.origin
   if (origin?.kind === 'call' && origin.name === 'tier') {
     const label = origin.args[0]
     const labelText =

@@ -18,16 +18,17 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { z } from 'zod'
 
+import { isCentralAccountMode } from '@/features/auth/sign-in/central-reauth'
 import {
+  normalizeAdminPermissions,
   type PermissionCatalog,
   type AdminPermissionMatrix,
-  normalizeAdminPermissions,
 } from '@/lib/admin-permissions'
 import { quotaUnitsToDollars } from '@/lib/format'
 import { ROLE } from '@/lib/roles'
 
 import { DEFAULT_GROUP } from '../constants'
-import { type UserFormData, type User } from '../types'
+import type { UserFormData, User } from '../types'
 
 // ============================================================================
 // Form Schema
@@ -98,6 +99,11 @@ export function transformFormDataToPayload(
   if (userId === undefined) {
     payload.role = role
   } else {
+    if (isCentralAccountMode()) {
+      delete payload.username
+      delete payload.display_name
+      delete payload.password
+    }
     // For update: quota is adjusted atomically via /api/user/manage, not sent here
     payload.group = data.group
     payload.remark = data.remark || undefined

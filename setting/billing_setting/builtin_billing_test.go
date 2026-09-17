@@ -42,10 +42,10 @@ func TestGPT6AstraBuiltinBilling(t *testing.T) {
 		request                        string
 		quota                          int
 	}{
-		{"standard", 1000, 100, 0, 0, `{}`, 7500},
-		{"client flex cannot discount standard pricing", 1000, 100, 0, 0, `{"service_tier":"flex"}`, 7500},
-		{"cache at context boundary", 272000, 1000, 200000, 20000, `{}`, 510000},
-		{"whole request above boundary", 272001, 1000, 200000, 20000, `{}`, 1007510},
+		{"standard", 1000, 100, 0, 0, `{}`, 54750},
+		{"client flex cannot discount standard pricing", 1000, 100, 0, 0, `{"service_tier":"flex"}`, 54750},
+		{"cache at context boundary", 272000, 1000, 200000, 20000, `{}`, 3723000},
+		{"whole request above boundary", 272001, 1000, 200000, 20000, `{}`, 7354823},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			usage := &dto.Usage{
@@ -132,7 +132,7 @@ func TestImageModelBuiltinPricesAndOverrides(t *testing.T) {
 			result, err := billingexpr.ComputeTieredQuota(&billingexpr.BillingSnapshot{ExprString: expression, ExprHash: billingexpr.ExprHashString(expression), GroupRatio: 1, QuotaPerUnit: 500000},
 				service.BuildTieredTokenParams(usage, false, billingexpr.UsedVars(expression)))
 			require.NoError(t, err)
-			assert.Equal(t, 4113, result.ActualQuotaAfterGroup)
+			assert.Equal(t, 30021, result.ActualQuotaAfterGroup)
 			encoded, err := common.Marshal(map[string]float64{name: 0})
 			require.NoError(t, err)
 			require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(string(encoded)))

@@ -679,6 +679,9 @@ func TestAuditDatabaseMatrix(t *testing.T) {
 						legacy := "released-token"
 						require.NoError(t, db.Create(&releasedAuditUser{Username: "released-owner", Password: "placeholder", AccessToken: &legacy, AffCode: "released-aff", Quota: 1234}).Error)
 						require.NoError(t, db.Create(&releasedAuditLog{UserId: 1, Type: model.LogTypeLogin, Content: "historical login", CreatedAt: 100, RequestId: "legacy-request"}).Error)
+						require.NoError(t, model.InitBillingCurrencyMigrationDatabases())
+						_, err := model.MigrateLegacyUSDLedgerToCNY("7.3", true)
+						require.NoError(t, err)
 					}
 					for range 2 {
 						require.NoError(t, model.InitDB())
@@ -698,7 +701,7 @@ func TestAuditDatabaseMatrix(t *testing.T) {
 						require.NotNil(t, legacyUser)
 						var user model.User
 						require.NoError(t, db.First(&user, 1).Error)
-						assert.Equal(t, 1234, user.Quota)
+						assert.Equal(t, 9008, user.Quota, "legacy balance retains its RMB value after explicit currency migration")
 						var old model.Log
 						require.NoError(t, db.First(&old).Error)
 						assert.Equal(t, "historical login", old.Content)

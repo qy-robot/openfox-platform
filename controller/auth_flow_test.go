@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/oauth"
 	"github.com/QuantumNous/new-api/service"
@@ -815,4 +816,98 @@ func TestOAuthBindProviderErrorConsumesSessionBoundFlow(t *testing.T) {
 	assert.ErrorIs(t, err, model.ErrAuthFlowConsumed)
 	assert.Zero(t, provider.exchangeCalls)
 	assert.Zero(t, provider.userInfoCalls)
+}
+
+func TestDesktopHTTPLoginPaymentSelectionAndLogout(t *testing.T) {
+	previousDB := model.DB
+	initModelListColumnNames(t)
+	model.DB = previousDB
+	setupAuthFlowControllerTest(t)
+	oldOrigin := system_setting.ServerAddress
+	system_setting.ServerAddress = "https://platform.example"
+	t.Cleanup(func() { system_setting.ServerAddress = oldOrigin })
+	require.NoError(t, model.DB.AutoMigrate(&model.DesktopDeviceGrant{}, &model.Token{}, &model.Team{}, &model.TeamMember{}))
+	user := &model.User{Username: "desktop-http", Password: "unused-password-hash", DisplayName: "Desktop", Role: common.RoleCommonUser, Status: common.UserStatusEnabled, Group: "default", AuthVersion: 1, Quota: 10000}
+	require.NoError(t, model.DB.Create(user).Error)
+	browser, err := service.CreateLoginSession(user.Id, "password", "127.0.0.1", "browser")
+	require.NoError(t, err)
+	router := gin.New()
+	router.POST("/api/desktop/device/code", CreateDesktopDeviceCode)
+	router.POST("/api/desktop/device/token", ExchangeDesktopDeviceCode)
+	router.POST("/api/desktop/device/authorization", middleware.UserAuth(), ApproveDesktopDevice)
+	router.POST("/api/desktop/refresh", RefreshDesktopSession)
+	router.POST("/api/desktop/relay-token", middleware.UserAuth(), CreateDesktopRelayToken)
+	router.DELETE("/api/desktop/session", middleware.UserAuth(), DeleteDesktopSession)
+	router.GET("/v1/models", middleware.TokenAuth(), func(c *gin.Context) { c.Status(http.StatusNoContent) })
+	request := func(method, path, body, bearer string) (int, map[string]any) {
+		req := httptest.NewRequest(method, path, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		if bearer != "" {
+			req.Header.Set("Authorization", "Bearer "+bearer)
+		}
+		res := httptest.NewRecorder()
+		router.ServeHTTP(res, req)
+		result := map[string]any{}
+		if res.Body.Len() > 0 {
+			require.NoError(t, common.Unmarshal(res.Body.Bytes(), &result))
+		}
+		return res.Code, result
+	}
+	verifier := strings.Repeat("z", 43)
+	sum := sha256.Sum256([]byte(verifier))
+	challenge := base64.RawURLEncoding.EncodeToString(sum[:])
+	status, result := request("POST", "/api/desktop/device/code", fmt.Sprintf(`{"device_name":"Laptop","code_challenge":%q}`, challenge), "")
+	require.Equal(t, http.StatusOK, status)
+	data := result["data"].(map[string]any)
+	assert.True(t, strings.HasPrefix(data["verification_uri_complete"].(string), "https://platform.example/desktop/authorize?user_code="))
+	deviceCode, userCode := data["device_code"].(string), data["user_code"].(string)
+	approval := fmt.Sprintf(`{"user_code":%q,"approve":true}`, userCode)
+	status, _ = request("POST", "/api/desktop/device/authorization", approval, "")
+	assert.Equal(t, http.StatusUnauthorized, status)
+	status, _ = request("POST", "/api/desktop/device/authorization", approval, browser.AccessToken)
+	require.Equal(t, http.StatusOK, status)
+	status, result = request("POST", "/api/desktop/device/token", fmt.Sprintf(`{"device_code":%q,"code_verifier":%q}`, deviceCode, verifier), "")
+	require.Equal(t, http.StatusOK, status)
+	data = result["data"].(map[string]any)
+	access, refresh := data["access_token"].(string), data["refresh_token"].(string)
+	sid := data["session"].(map[string]any)["sid"].(string)
+	status, result = request("POST", "/api/desktop/refresh", fmt.Sprintf(`{"refresh_token":%q,"session_id":%q}`, refresh, sid), "")
+	require.Equal(t, http.StatusOK, status)
+	access = result["data"].(map[string]any)["access_token"].(string)
+	assert.NotEqual(t, refresh, result["data"].(map[string]any)["refresh_token"])
+	status, result = request("POST", "/api/desktop/relay-token", `{"funding_mode":"personal_only","team_id":0}`, access)
+	require.Equal(t, http.StatusOK, status)
+	personalKey := result["data"].(map[string]any)["key"].(string)
+	nearExpiry := time.Now().Unix() + 60
+	require.NoError(t, model.DB.Model(&model.Token{}).Where("key = ?", strings.TrimPrefix(personalKey, "sk-")).Update("expired_time", nearExpiry).Error)
+	status, result = request("POST", "/api/desktop/relay-token", `{"funding_mode":"personal_only","team_id":0}`, access)
+	require.Equal(t, http.StatusOK, status)
+	assert.Equal(t, personalKey, result["data"].(map[string]any)["key"], "the same app session and payment source must reuse its relay credential")
+	assert.Greater(t, int64(result["data"].(map[string]any)["expires_at"].(float64)), nearExpiry)
+	status, _ = request("GET", "/v1/models", "", personalKey)
+	require.Equal(t, http.StatusNoContent, status)
+	team, err := model.CreateTeam(user.Id, "Test team")
+	require.NoError(t, err)
+	status, _ = request("POST", "/api/desktop/relay-token", fmt.Sprintf(`{"funding_mode":"team_only","team_id":%d}`, team.Id), access)
+	assert.Equal(t, http.StatusBadRequest, status, "first team use requires explicit confirmation")
+	status, result = request("POST", "/api/desktop/relay-token", fmt.Sprintf(`{"funding_mode":"team_only","team_id":%d,"confirm_team":true}`, team.Id), access)
+	require.Equal(t, http.StatusOK, status)
+	teamKey := result["data"].(map[string]any)["key"].(string)
+	assert.NotEqual(t, personalKey, teamKey)
+	status, _ = request("POST", "/api/desktop/relay-token", fmt.Sprintf(`{"funding_mode":"team_first","team_id":%d,"confirm_team":true}`, team.Id), access)
+	assert.Equal(t, http.StatusBadRequest, status, "desktop cannot silently opt into personal fallback")
+	var activeRelayCredentials int64
+	require.NoError(t, model.DB.Model(&model.Token{}).Where("desktop_session_id = ?", sid).Count(&activeRelayCredentials).Error)
+	require.EqualValues(t, 2, activeRelayCredentials)
+	status, _ = request("DELETE", "/api/desktop/session", "", access)
+	require.Equal(t, http.StatusOK, status)
+	for _, key := range []string{personalKey, teamKey} {
+		status, _ = request("GET", "/v1/models", "", key)
+		assert.Equal(t, http.StatusUnauthorized, status)
+	}
+	var disabledRelayCredentials int64
+	require.NoError(t, model.DB.Model(&model.Token{}).
+		Where("desktop_session_id = ? AND status = ?", sid, common.TokenStatusDisabled).
+		Count(&disabledRelayCredentials).Error)
+	assert.EqualValues(t, 2, disabledRelayCredentials)
 }

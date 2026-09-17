@@ -13,7 +13,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// Tool call prices ($/1K calls, admin-configurable)
+// Tool call prices (CNY/1K calls, admin-configurable)
 // DB key: tool_price_setting.prices
 //
 // Key format:
@@ -28,12 +28,12 @@ import (
 const ToolPriceOptionKey = "tool_price_setting.prices"
 
 const (
-	defaultWebSearchToolPrice        = 10.0
-	defaultWebSearchPreviewToolPrice = 10.0
-	defaultFileSearchToolPrice       = 2.5
-	defaultGoogleSearchToolPrice     = 14.0
-	defaultImageGenerationToolPrice  = 150.0
-	defaultSearchPreviewModelPrice   = 25.0
+	defaultWebSearchToolPrice        = 73.0
+	defaultWebSearchPreviewToolPrice = 73.0
+	defaultFileSearchToolPrice       = 18.25
+	defaultGoogleSearchToolPrice     = 102.2
+	defaultImageGenerationToolPrice  = 1095.0
+	defaultSearchPreviewModelPrice   = 182.5
 )
 
 // seedHardcodedToolPrices injects compile-time built-in fallbacks (tool
@@ -187,7 +187,7 @@ func RebuildToolPriceIndex() {
 	currentIndex.Store(idx)
 }
 
-// GetToolPriceForModel returns the price ($/1K calls) for a tool given a model name.
+// GetToolPriceForModel returns the price (CNY/1K calls) for a tool given a model name.
 // Lookup: longest prefix match → tool default → 0.
 func GetToolPriceForModel(toolName, modelName string) float64 {
 	idx := currentIndex.Load()
@@ -238,12 +238,12 @@ func DeleteToolPriceForTest(name string) {
 // ---------------------------------------------------------------------------
 
 const (
-	Gemini25FlashPreviewInputAudioPrice     = 1.00
-	Gemini25FlashProductionInputAudioPrice  = 1.00
-	Gemini25FlashLitePreviewInputAudioPrice = 0.50
-	Gemini25FlashNativeAudioInputAudioPrice = 3.00
-	Gemini20FlashInputAudioPrice            = 0.70
-	GeminiRoboticsER15InputAudioPrice       = 1.00
+	Gemini25FlashPreviewInputAudioPrice     = 7.30
+	Gemini25FlashProductionInputAudioPrice  = 7.30
+	Gemini25FlashLitePreviewInputAudioPrice = 3.65
+	Gemini25FlashNativeAudioInputAudioPrice = 21.90
+	Gemini20FlashInputAudioPrice            = 5.11
+	GeminiRoboticsER15InputAudioPrice       = 7.30
 )
 
 func GetGeminiInputAudioPricePerMillionTokens(modelName string) float64 {

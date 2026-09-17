@@ -12,7 +12,7 @@ The expression is the billing contract between the administrator and the system.
 
 2. **Variables are opt-in** — `p` (prompt) and `c` (completion) are the base. Cache (`cr`, `cc`, `cc1h`), image (`img`), and audio (`ai`, `ao`) variables are optional. If omitted, those tokens are included in `p`/`c` and priced at their rate. The system automatically detects which variables the expression uses (via AST introspection) and adjusts token normalization accordingly.
 
-3. **Prices are real prices** — Token coefficients are actual $/1M tokens prices as published by providers. `p * 2.5` means $2.50 per 1M prompt tokens; `fixed(0.01)` means $0.01 per request. No ratio conversion or `/2` convention is required.
+3. **Prices are real prices** — Token coefficients are actual ¥/1M tokens prices configured by the operator. `p * 2.5` means ¥2.50 per 1M prompt tokens; `fixed(0.01)` means ¥0.01 per request. No ratio conversion or `/2` convention is required.
 
 4. **Upstream-agnostic** — The expression doesn't need to know whether the upstream API is OpenAI-format (prompt_tokens includes cache) or Claude-format (input_tokens excludes cache). The system normalizes token counts before evaluation based on the upstream response format.
 
@@ -59,16 +59,16 @@ Powered by [expr-lang/expr](https://github.com/expr-lang/expr). Expressions are 
 
 | 表达式 | `p` 的值 | 说明 |
 |--------|---------|------|
-| `p * 3 + c * 15` | 1000 | 没用 `cr`/`img`，所以缓存和图片都包含在 `p` 里，全按 $3 计费 |
-| `p * 3 + c * 15 + cr * 0.3` | 800 | 用了 `cr`，缓存 200 从 `p` 中扣除，按 $0.3 单独计费；图片仍在 `p` 里按 $3 计费 |
+| `p * 3 + c * 15` | 1000 | 没用 `cr`/`img`，所以缓存和图片都包含在 `p` 里，全按 ¥3 计费 |
+| `p * 3 + c * 15 + cr * 0.3` | 800 | 用了 `cr`，缓存 200 从 `p` 中扣除，按 ¥0.3 单独计费；图片仍在 `p` 里按 ¥3 计费 |
 | `p * 3 + c * 15 + cr * 0.3 + img * 2` | 700 | 用了 `cr` 和 `img`，都从 `p` 中扣除，各自按自己的价格计费 |
 
 输出侧同理（假设 completion_tokens=500，其中包含 100 audio output）：
 
 | 表达式 | `c` 的值 | 说明 |
 |--------|---------|------|
-| `p * 3 + c * 15` | 500 | 没用 `ao`，音频输出包含在 `c` 里按 $15 计费 |
-| `p * 3 + c * 15 + ao * 50` | 400 | 用了 `ao`，音频 100 从 `c` 中扣除按 $50 计费 |
+| `p * 3 + c * 15` | 500 | 没用 `ao`，音频输出包含在 `c` 里按 ¥15 计费 |
+| `p * 3 + c * 15 + ao * 50` | 400 | 用了 `ao`，音频 100 从 `c` 中扣除按 ¥50 计费 |
 
 #### 图片缓存与兼容性
 
@@ -81,7 +81,7 @@ OpenAI 兼容图片接口可报告
 再按表达式引用的变量从 `p` 中扣除各互不重叠的类别。`len` 保持原始输入总长度。
 例如总输入 1000、图片输入 600、缓存总量 300、图片缓存 200：
 `p * 5 + cr * 1.25 + img * 8 + img_cr * 2 + c * 30` 对应
-`p=300, cr=100, img=400, img_cr=200`；输出 100 时费用为 $0.008225。
+`p=300, cr=100, img=400, img_cr=200`；输出 100 时费用为 ¥0.008225。
 
 缺少图片缓存明细时，`img_cr=0`，缓存总量继续进入 `cr`，沿用原有通用缓存计费，
 不推测图片缓存比例。不引用 `img_cr` 的既有表达式保持原有归一化行为。
@@ -102,7 +102,7 @@ Anthropic 的独立缓存计数语义不采用这一 OpenAI 图片拆分。
 管理界面先用该快照显示左右对照预览，确认后才更新草稿；取消不改变原草稿。
 保存仍使用现有 `PATCH /api/option/model_pricing` 及 `expected_version` 冲突检查。
 
-倍率转换以 `ModelRatio * 1000000 / QuotaPerUnit` 得到 USD/百万 tokens 的基础单价，
+倍率转换以 `ModelRatio * 1000000 / QuotaPerUnit` 得到 CNY/百万 tokens 的基础单价，
 保留输出、缓存读取、适用的缓存创建和图片输入的生效倍率及显式零值。
 常规按次价格转换为 `tier("request", fixed(price))`。旧价格字段继续保存，供切回旧模式使用。
 转换后的预扣及舍入采用表达式规则，不保证旧模式每笔舍入结果完全一致。
@@ -126,7 +126,7 @@ Anthropic 的独立缓存计数语义不采用这一 OpenAI 图片拆分。
 图片和普通音频规则均可自动迁移，具体规则如下；任务插件、视频、Realtime，以及依赖上游 cost
 反推缓存写入用量的 OpenRouter Claude 分支仍返回具体原因，不按渠道类型或未知端点一概拦截。
 
-Gemini 音频输入使用旧结算实际采用的美元单价生成 `ai`，不乘普通输入倍率，因此普通输入价为零时
+Gemini 音频输入使用旧结算实际采用的人民币单价生成 `ai`，不乘普通输入倍率，因此普通输入价为零时
 仍保留独立音频费用。普通音频的 `ai` 单价为基础输入价乘 AudioRatio，`ao` 再乘 AudioCompletionRatio，
 缺省倍率按 1 处理，显式零保留。普通音频结算不使用缓存/图片倍率；模型同时配置这些价格时，
 转换生成音频请求与纯文本请求两个分支。音频分支使用 `max(len - ai, 0)` 计量普通输入，避免纯文本
@@ -160,7 +160,7 @@ Ali JSON 和 multipart 请求都明确发送该生效数量。每次渠道重试
 | Function | Signature | Purpose |
 |----------|-----------|---------|
 | `tier` | `tier(name, value) → float64` | Records which pricing tier matched; must wrap the cost expression |
-| `fixed` | `fixed(amount) → float64` | A USD price per request, used only as the complete price in `tier(name, fixed(amount))` |
+| `fixed` | `fixed(amount) → float64` | A CNY price per request, used only as the complete price in `tier(name, fixed(amount))` |
 | `param` | `param(path) → any` | Reads a JSON path from the request body (uses gjson) |
 | `header` | `header(key) → string` | Reads a request header value |
 | `has` | `has(source, substr) → bool` | Substring check |
@@ -201,7 +201,7 @@ tier("base", p * 0.43 + c * 3.06 + img * 0.78 + ai * 3.81 + ao * 15.11)
 ### Fixed Request Prices
 
 `tier("request", fixed(0.01))` replaces all token charges in the selected leaf
-with a $0.01 base price for one successful HTTP/SSE request. Other leaves may
+with a ¥0.01 base price for one successful HTTP/SSE request. Other leaves may
 still use token pricing. Group ratios and request multipliers continue to apply;
 existing tool surcharges are calculated separately and added as before. A stream
 does not incur a fixed fee per chunk. Realtime and task usage expressions reject
@@ -226,7 +226,7 @@ policy. Settlement evaluation errors retain the reservation and its estimated
 billing unit.
 
 Evaluation results expose `billing_unit` (`token` or `request`) and, for a
-request-priced leaf, `fixed_price` in USD before multipliers. Pre-consume snapshots
+request-priced leaf, `fixed_price` in CNY before multipliers. Pre-consume snapshots
 carry `estimated_billing_unit` and `estimated_fixed_price`; consume logs append
 the actual values to `other`. An explicit zero price is present in these fields.
 Older snapshots and logs need no migration. The expression remains the sole
@@ -351,12 +351,12 @@ Task usage billing has a deliberately different conversion rule from token
 billing:
 
 ```
-task quota = expression output in USD * QuotaPerUnit * groupRatio
-token quota = expression output in $/1M tokens / 1,000,000 * QuotaPerUnit * groupRatio
+task quota = expression output in CNY * QuotaPerUnit * groupRatio
+token quota = expression output in ¥/1M tokens / 1,000,000 * QuotaPerUnit * groupRatio
 ```
 
-In other words, a task expression already returns the request's dollar cost.
-For example, `u("seconds") * 0.4` means $0.40 per second. Engine semantics do
+In other words, a task expression already returns the request's yuan cost.
+For example, `u("seconds") * 0.4` means ¥0.40 per second. Engine semantics do
 not divide task output by one million.
 
 The visual editor generates, and public pricing displays recognize, exactly
@@ -376,18 +376,18 @@ u("mode") == "pro"
 tier("base", 0.1 + u("seconds") * 0.4 + u("clips") * 0.05)
 
 # Upstream token overlay (doubao Seedance tokens)
-# The editor takes a $/1M token input and emits the / 1000000 literal.
-# Engine semantics are unchanged: the expression still returns USD.
+# The editor takes a ¥/1M token input and emits the / 1000000 literal.
+# Engine semantics are unchanged: the expression still returns CNY.
 tier("base", u("tokens") * 9.8 / 1000000)
 
 # Vendor credit overlay (kling resource-pack units)
-# The coefficient is the real $/credit price; no /1M scale.
+# The coefficient is the real ¥/credit price; no /1M scale.
 tier("base", u("units") * 0.14)
 ```
 
 The tier body is an optional non-negative constant plus one or more
 `u("<number field>") * <unit price>` terms. Token-unit fields use the
-canonical scaled shape `u("<field>") * <dollars per 1M tokens> / 1000000`.
+canonical scaled shape `u("<field>") * <yuans per 1M tokens> / 1000000`.
 Credit, second, and count fields keep the bare `u("<field>") * <unit price>`
 shape. Tier conditions are equality checks
 between declared enum fields and values, optionally joined by `&&`, with
@@ -493,7 +493,7 @@ The system normalizes `p` to mean "tokens not separately priced" by subtracting 
 
 Example: `p * 2.5 + c * 15 + cr * 0.25`
 - Expression uses `cr` → cache read tokens subtracted from `p`
-- Expression doesn't use `img` → image tokens stay in `p`, priced at $2.50
+- Expression doesn't use `img` → image tokens stay in `p`, priced at ¥2.50
 
 ### `len` — Context Length Variable
 
@@ -507,7 +507,7 @@ This ensures that heavy cache usage doesn't cause the tier condition to incorrec
 
 ### Quota Conversion
 
-Expression coefficients are $/1M tokens. Conversion to internal quota:
+Expression coefficients are ¥/1M tokens. Conversion to internal quota:
 
 ```
 quota = exprOutput / 1,000,000 * QuotaPerUnit * groupRatio

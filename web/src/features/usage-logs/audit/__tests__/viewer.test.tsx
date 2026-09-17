@@ -40,6 +40,10 @@ import zhTW from '@/i18n/locales/zh-TW.json'
 import zh from '@/i18n/locales/zh.json'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
+import {
+  DEFAULT_CURRENCY_CONFIG,
+  useSystemConfigStore,
+} from '@/stores/system-config-store'
 
 import { AuditLogs } from '..'
 import { AuditLogViewer } from '../components/audit-log-viewer'
@@ -55,7 +59,7 @@ it.each([
       failure_reason: 'invalid_parameters',
     },
     'Adjust user quota',
-    'Requested quota: $1 · Invalid adjustment parameters',
+    'Requested quota: ¥1 · Invalid adjustment parameters',
   ],
   [
     'user.quota_add',
@@ -68,7 +72,7 @@ it.each([
       to: 1000000,
     },
     'Increase quota for user “quota-owner”',
-    'Requested quota: $1 · $1 → $2',
+    'Requested quota: ¥1 · ¥1 → ¥2',
   ],
   [
     'user.quota_subtract',
@@ -81,7 +85,7 @@ it.each([
       to: 500000,
     },
     'Decrease quota for user “quota-owner”',
-    'Requested quota: $1 · $2 → $1',
+    'Requested quota: ¥1 · ¥2 → ¥1',
   ],
   [
     'user.quota_override',
@@ -93,7 +97,7 @@ it.each([
       to: 0,
     },
     'Override quota for user “quota-owner”',
-    'Requested quota: $0 · $1 → $0',
+    'Requested quota: ¥0 · ¥1 → ¥0',
   ],
   ['token.create', { id: 11, name: '1' }, 'Create API token “1”', ''],
   [
@@ -400,12 +404,18 @@ beforeEach(() => {
     setItem: () => undefined,
     removeItem: () => undefined,
   })
+  useSystemConfigStore.getState().setConfig({
+    currency: { ...DEFAULT_CURRENCY_CONFIG, quotaDisplayType: 'USD' },
+  })
 })
 afterEach(() => {
   cleanup()
   useAuthStore.getState().auth.reset()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  useSystemConfigStore.getState().setConfig({
+    currency: { ...DEFAULT_CURRENCY_CONFIG },
+  })
 })
 function renderViewer(scope: 'all' | 'self' = 'self') {
   const client = new QueryClient({

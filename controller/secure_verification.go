@@ -25,7 +25,13 @@ func GetVerificationMethods(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "message": "当前认证方式不支持安全验证"})
 		return
 	}
-	requirements, err := service.GetVerificationRequirements(identity, c.Query("scope"))
+	var requirements *service.VerificationRequirements
+	var err error
+	if principal, central := middleware.GetCentralPrincipal(c); central {
+		requirements, err = service.GetCentralVerificationRequirements(identity, principal, c.Query("scope"))
+	} else {
+		requirements, err = service.GetVerificationRequirements(identity, c.Query("scope"))
+	}
 	if err != nil {
 		writeSecurityOperationError(c, err)
 		return
@@ -94,6 +100,14 @@ func writeSecurityOperationError(c *gin.Context, err error) {
 	case errors.Is(err, service.ErrVerificationFlowRequired):
 		status = http.StatusBadRequest
 		code, message = "SECURITY_VERIFICATION_FLOW_REQUIRED", service.ErrVerificationFlowRequired.Error()
+	case errors.Is(err, service.ErrCentralReauthenticationRequired):
+		c.Set("security_error_code", "AUTH_REAUTH_REQUIRED")
+		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "code": "AUTH_REAUTH_REQUIRED", "message": "Please sign in again to continue."})
+		return
+	case errors.Is(err, service.ErrCentralAccountUnavailable):
+		c.Set("security_error_code", "AUTH_SERVICE_UNAVAILABLE")
+		c.JSON(http.StatusServiceUnavailable, gin.H{"success": false, "code": "AUTH_SERVICE_UNAVAILABLE", "message": "account service is unavailable"})
+		return
 	case errors.Is(err, service.ErrProofMethod):
 		code, message = "SECURITY_PROOF_METHOD_MISMATCH", "This verification method is not allowed for this action."
 	case errors.Is(err, service.ErrProofScope):
@@ -145,7 +159,13 @@ func UniversalVerify(c *gin.Context) {
 		common.ApiErrorMsg(c, "参数错误")
 		return
 	}
-	proof, err := service.VerifySecurityInput(identity, request)
+	var proof *service.SecurityProof
+	var err error
+	if principal, central := middleware.GetCentralPrincipal(c); central {
+		proof, err = service.VerifyCentralSecurityInput(identity, principal, request)
+	} else {
+		proof, err = service.VerifySecurityInput(identity, request)
+	}
 	if err != nil {
 		writeSecurityOperationError(c, err)
 		return

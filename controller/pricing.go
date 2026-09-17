@@ -2,6 +2,7 @@ package controller
 
 import (
 	"maps"
+	"strconv"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
@@ -36,6 +37,8 @@ func filterPricingByUsableGroups(pricing []model.Pricing, usableGroup map[string
 }
 
 func GetPricing(c *gin.Context) {
+	c.Header("X-Billing-Currency", "CNY")
+	c.Header("X-Quota-Per-Unit", strconv.FormatFloat(common.QuotaPerUnit, 'f', -1, 64))
 	pricing := model.GetPricing()
 	userId, exists := c.Get("id")
 	usableGroup := map[string]string{}

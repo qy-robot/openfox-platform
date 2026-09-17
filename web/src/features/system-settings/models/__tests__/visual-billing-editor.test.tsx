@@ -88,7 +88,7 @@ test('shows chained tiers as peer rules and edits a later rule without changing 
   }
   await user.click(expand)
   expect(expand).toHaveAttribute('aria-expanded', 'false')
-  expect(expand).toHaveTextContent('Output: $10')
+  expect(expand).toHaveTextContent('Output: ¥10')
   await user.click(expand)
   expect(short.getByRole('textbox', { name: 'Output price' })).toHaveValue('10')
   expect(short.getByRole('textbox', { name: 'Condition value' })).toHaveValue(
@@ -451,7 +451,7 @@ describe('visual time billing editor', () => {
       expect(onRequestRuleExprChange).not.toHaveBeenCalled()
     }
   )
-  test('converts request price input currency without rewriting untouched USD prices', () => {
+  test('keeps request price inputs in native CNY despite legacy currency props', () => {
     const onBillingExprChange = vi.fn()
     const props = {
       billingExpr: 'tier("request", fixed(0.0100))',
@@ -467,14 +467,14 @@ describe('visual time billing editor', () => {
     )
     expect(
       screen.getByRole('textbox', { name: 'Price per request' })
-    ).toHaveValue('0.07')
+    ).toHaveValue('0.01')
     expect(onBillingExprChange).not.toHaveBeenCalled()
     fireEvent.change(
       screen.getByRole('textbox', { name: 'Price per request' }),
       { target: { value: '0.14' } }
     )
     expect(onBillingExprChange).toHaveBeenLastCalledWith(
-      'tier("request", fixed(0.02))'
+      'tier("request", fixed(0.14))'
     )
     rerender(
       <TieredPricingEditor
@@ -484,7 +484,7 @@ describe('visual time billing editor', () => {
     )
     expect(
       screen.getByRole('textbox', { name: 'Price per request' })
-    ).toHaveValue('0.02')
+    ).toHaveValue('0.14')
     expect(onBillingExprChange).toHaveBeenCalledTimes(1)
   })
   test('opens mixed request and token prices visually without rewriting the expression', () => {
@@ -630,7 +630,7 @@ describe('visual time billing editor', () => {
   })
 })
 
-test('keeps exact source and independent request rules through mode and currency changes', async () => {
+test('keeps exact source and independent request rules through mode and legacy currency props', async () => {
   const onBillingExprChange = vi.fn()
   const onRequestRuleExprChange = vi.fn()
   const rule = '(header("x-plan") == "fast" ? 2.00 : 1)'
@@ -660,7 +660,7 @@ test('keeps exact source and independent request rules through mode and currency
       'textbox',
       { name: 'Input price' }
     )
-  ).toHaveValue('21')
+  ).toHaveValue('3')
   expect(screen.getAllByRole('textbox', { name: 'Start' })[0]).toHaveValue('9')
   expect(onBillingExprChange).not.toHaveBeenCalled()
   expect(onRequestRuleExprChange).not.toHaveBeenCalled()
@@ -672,7 +672,7 @@ test('keeps exact source and independent request rules through mode and currency
     { target: { value: '28' } }
   )
   expect(onBillingExprChange).toHaveBeenLastCalledWith(
-    expression.replace('p * 3', 'p * 4')
+    expression.replace('p * 3', 'p * 28')
   )
   expect(onRequestRuleExprChange).not.toHaveBeenCalled()
 })

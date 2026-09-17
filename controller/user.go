@@ -645,6 +645,10 @@ func GetUserModels(c *gin.Context) {
 }
 
 func UpdateUser(c *gin.Context) {
+	if service.CentralAccountEnabled() {
+		updateCentralAccountProductUser(c)
+		return
+	}
 	var updatedUser model.User
 	err := common.DecodeJson(c.Request.Body, &updatedUser)
 	if err != nil || updatedUser.Id == 0 {
@@ -715,6 +719,87 @@ func UpdateUser(c *gin.Context) {
 	return
 }
 
+func updateCentralAccountProductUser(c *gin.Context) {
+	var raw map[string]any
+	if err := common.DecodeJson(c.Request.Body, &raw); err != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	allowed := map[string]bool{"id": true, "group": true, "remark": true, "admin_permissions": true}
+	for key := range raw {
+		if !allowed[key] {
+			c.JSON(http.StatusConflict, gin.H{"success": false, "code": "CENTRAL_ACCOUNT_IDENTITY_FIELD", "message": "identity fields are managed by the account center"})
+			return
+		}
+	}
+	encoded, err := common.Marshal(raw)
+	if err != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	var request struct {
+		ID               int                        `json:"id"`
+		Group            *string                    `json:"group"`
+		Remark           *string                    `json:"remark"`
+		AdminPermissions map[string]map[string]bool `json:"admin_permissions"`
+	}
+	if common.Unmarshal(encoded, &request) != nil || request.ID <= 0 {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	origin, err := model.GetUserById(request.ID, false)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if !canManageTargetRole(c.GetInt("role"), origin.Role) {
+		common.ApiErrorI18n(c, i18n.MsgUserNoPermissionHigherLevel)
+		return
+	}
+	updates := map[string]any{}
+	if request.Group != nil {
+		group := strings.TrimSpace(*request.Group)
+		if group == "" || len(group) > 64 {
+			common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+			return
+		}
+		updates["group"] = group
+	}
+	if request.Remark != nil {
+		if len([]rune(*request.Remark)) > 255 {
+			common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+			return
+		}
+		updates["remark"] = *request.Remark
+	}
+	authzTouched := false
+	if err := model.DB.Transaction(func(tx *gorm.DB) error {
+		if len(updates) > 0 {
+			if err := tx.Model(&model.User{}).Where("id = ?", request.ID).Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+		touched, err := updateAdminPermissionsForUserInTx(c, tx, request.ID, origin.Role, request.AdminPermissions)
+		authzTouched = touched
+		return err
+	}); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if authzTouched {
+		if err := authz.ReloadPolicy(); err != nil {
+			common.ApiError(c, err)
+			return
+		}
+	}
+	if err := model.PublishUserAuthCache(request.ID); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	recordManageAuditFor(c, request.ID, "user.update", map[string]any{"username": origin.Username, "id": request.ID})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": ""})
+}
+
 func AdminClearUserBinding(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -760,6 +845,10 @@ func UpdateSelf(c *gin.Context) {
 	var requestData map[string]any
 	if err := common.DecodeJson(c.Request.Body, &requestData); err != nil {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	if service.CentralAccountEnabled() {
+		updateCentralAccountSelf(c, requestData)
 		return
 	}
 
@@ -825,7 +914,6 @@ func UpdateSelf(c *gin.Context) {
 		common.ApiSuccessI18n(c, i18n.MsgUpdateSuccess, nil)
 		return
 	}
-
 	// 原有的用户信息更新逻辑
 	var user model.User
 	requestDataBytes, err := common.Marshal(requestData)
@@ -907,6 +995,47 @@ func UpdateSelf(c *gin.Context) {
 	return
 }
 
+func updateCentralAccountSelf(c *gin.Context, requestData map[string]any) {
+	allowed := map[string]bool{"sidebar_modules": true, "language": true}
+	if len(requestData) == 0 {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	for key := range requestData {
+		if !allowed[key] {
+			c.JSON(http.StatusConflict, gin.H{"success": false, "code": "CENTRAL_ACCOUNT_IDENTITY_FIELD", "message": "identity fields are managed by the account center"})
+			return
+		}
+	}
+	user, err := model.GetUserById(c.GetInt("id"), false)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	setting := user.GetSetting()
+	if value, ok := requestData["sidebar_modules"]; ok {
+		modules, valid := value.(string)
+		if !valid {
+			common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+			return
+		}
+		setting.SidebarModules = modules
+	}
+	if value, ok := requestData["language"]; ok {
+		language, valid := value.(string)
+		if !valid {
+			common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+			return
+		}
+		setting.Language = language
+	}
+	if err := model.UpdateUserSetting(user.Id, setting); err != nil {
+		common.ApiErrorI18n(c, i18n.MsgUpdateFailed)
+		return
+	}
+	common.ApiSuccessI18n(c, i18n.MsgUpdateSuccess, nil)
+}
+
 func DeleteUser(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -967,6 +1096,10 @@ func DeleteSelf(c *gin.Context) {
 }
 
 func CreateUser(c *gin.Context) {
+	if service.CentralAccountEnabled() {
+		c.JSON(http.StatusConflict, gin.H{"success": false, "code": "CENTRAL_ACCOUNT_PROVISIONING_REQUIRED", "message": "users are provisioned on first account-center sign in"})
+		return
+	}
 	var user model.User
 	err := common.DecodeJson(c.Request.Body, &user)
 	user.Username = strings.TrimSpace(user.Username)
@@ -1054,6 +1187,10 @@ func ManageUser(c *gin.Context) {
 
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	if service.CentralAccountEnabled() && req.Action == "delete" {
+		c.JSON(http.StatusConflict, gin.H{"success": false, "code": "CENTRAL_ACCOUNT_UNLINK_REQUIRED", "message": "central-account users cannot be deleted from this product"})
 		return
 	}
 	if req.Action == "add_quota" {

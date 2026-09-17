@@ -29,7 +29,49 @@ type Token struct {
 	Group              string         `json:"group" gorm:"default:''"`
 	CrossGroupRetry    bool           `json:"cross_group_retry"` // 跨分组重试，仅auto分组有效
 	AutoGroups         string         `json:"-" gorm:"type:text"`
+	FundingMode        string         `json:"funding_mode" gorm:"type:varchar(24)"`
+	TeamId             int            `json:"team_id" gorm:"index"`
+	DesktopSessionID   string         `json:"-" gorm:"type:varchar(64);index"`
 	DeletedAt          gorm.DeletedAt `gorm:"index"`
+}
+
+const (
+	TokenFundingPersonalOnly  = "personal_only"
+	TokenFundingTeamOnly      = "team_only"
+	TokenFundingTeamFirst     = "team_first"
+	TokenFundingPersonalFirst = "personal_first"
+)
+
+func NormalizeTokenFundingMode(mode string) string {
+	mode = strings.TrimSpace(mode)
+	if mode == "" {
+		return TokenFundingPersonalOnly
+	}
+	return mode
+}
+
+func ValidateTeamFunding(userID, teamID int, mode string) error {
+	mode = NormalizeTokenFundingMode(mode)
+	switch mode {
+	case TokenFundingPersonalOnly:
+		if teamID != 0 {
+			return errors.New("personal_only funding cannot specify team_id")
+		}
+		return nil
+	case TokenFundingTeamOnly, TokenFundingTeamFirst, TokenFundingPersonalFirst:
+		if teamID <= 0 {
+			return errors.New("team_id is required for team funding")
+		}
+		if _, err := GetTeamMembership(teamID, userID); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrTeamMembershipInvalid
+			}
+			return err
+		}
+		return nil
+	default:
+		return errors.New("invalid funding_mode")
+	}
 }
 
 func (token *Token) GetAutoGroups() ([]string, error) {
@@ -105,9 +147,15 @@ func (token *Token) GetIpLimits() []string {
 
 func GetAllUserTokens(userId int, startIdx int, num int) ([]*Token, error) {
 	var tokens []*Token
-	var err error
-	err = DB.Where("user_id = ?", userId).Order("id desc").Limit(num).Offset(startIdx).Find(&tokens).Error
+	err := userManagedTokens(DB).Where("user_id = ?", userId).Order("id desc").Limit(num).Offset(startIdx).Find(&tokens).Error
 	return tokens, err
+}
+
+// Desktop relay credentials are implementation details bound to an app login
+// session. They are not user-managed API keys and must stay outside token
+// management, search, pagination, and limits.
+func userManagedTokens(db *gorm.DB) *gorm.DB {
+	return db.Where("desktop_session_id IS NULL OR desktop_session_id = ?", "")
 }
 
 // sanitizeLikePattern 校验并清洗用户输入的 LIKE 搜索模式。
@@ -183,7 +231,7 @@ func SearchUserTokens(userId int, keyword string, token string, offset int, limi
 		}
 	}
 
-	baseQuery := DB.Model(&Token{}).Where("user_id = ?", userId)
+	baseQuery := userManagedTokens(DB.Model(&Token{})).Where("user_id = ?", userId)
 
 	// 非空才加 LIKE 条件，空则跳过（不过滤该字段）
 	if keyword != "" {
@@ -263,7 +311,7 @@ func GetTokenByIds(id int, userId int) (*Token, error) {
 	}
 	token := Token{Id: id, UserId: userId}
 	var err error = nil
-	err = DB.First(&token, "id = ? and user_id = ?", id, userId).Error
+	err = userManagedTokens(DB).First(&token, "id = ? and user_id = ?", id, userId).Error
 	return &token, err
 }
 
@@ -313,7 +361,8 @@ func (token *Token) Update() (err error) {
 		common.SysLog("failed to invalidate token cache before update: " + cacheErr.Error())
 	}
 	return DB.Model(token).Select("name", "status", "expired_time", "remain_quota", "unlimited_quota",
-		"model_limits_enabled", "model_limits", "allow_ips", "group", "cross_group_retry", "auto_groups").Updates(token).Error
+		"model_limits_enabled", "model_limits", "allow_ips", "group", "cross_group_retry", "auto_groups",
+		"funding_mode", "team_id", "desktop_session_id").Updates(token).Error
 }
 
 func (token *Token) SelectUpdate() (err error) {
@@ -437,7 +486,7 @@ func decreaseTokenQuota(id int, quota int) (err error) {
 // CountUserTokens returns total number of tokens for the given user, used for pagination
 func CountUserTokens(userId int) (int64, error) {
 	var total int64
-	err := DB.Model(&Token{}).Where("user_id = ?", userId).Count(&total).Error
+	err := userManagedTokens(DB.Model(&Token{})).Where("user_id = ?", userId).Count(&total).Error
 	return total, err
 }
 
@@ -450,7 +499,7 @@ func BatchDeleteTokens(ids []int, userId int) (int, error) {
 	tx := DB.Begin()
 
 	var tokens []Token
-	if err := tx.Where("user_id = ? AND id IN (?)", userId, ids).Find(&tokens).Error; err != nil {
+	if err := userManagedTokens(tx).Where("user_id = ? AND id IN (?)", userId, ids).Find(&tokens).Error; err != nil {
 		tx.Rollback()
 		return 0, err
 	}
@@ -458,7 +507,7 @@ func BatchDeleteTokens(ids []int, userId int) (int, error) {
 		common.SysLog("failed to invalidate token cache before batch delete: " + err.Error())
 	}
 
-	if err := tx.Where("user_id = ? AND id IN (?)", userId, ids).Delete(&Token{}).Error; err != nil {
+	if err := userManagedTokens(tx).Where("user_id = ? AND id IN (?)", userId, ids).Delete(&Token{}).Error; err != nil {
 		tx.Rollback()
 		return 0, err
 	}
@@ -472,7 +521,7 @@ func BatchDeleteTokens(ids []int, userId int) (int, error) {
 
 func GetTokenKeysByIds(ids []int, userId int) ([]Token, error) {
 	var tokens []Token
-	err := DB.Select("id", commonKeyCol).
+	err := userManagedTokens(DB.Select("id", commonKeyCol)).
 		Where("user_id = ? AND id IN (?)", userId, ids).
 		Find(&tokens).Error
 	return tokens, err

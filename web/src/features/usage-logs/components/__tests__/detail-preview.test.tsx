@@ -101,9 +101,9 @@ beforeEach(async () => {
     resources: { en },
     interpolation: { escapeValue: false },
   })
-  useSystemConfigStore
-    .getState()
-    .setConfig({ currency: { ...DEFAULT_CURRENCY_CONFIG } })
+  useSystemConfigStore.getState().setConfig({
+    currency: { ...DEFAULT_CURRENCY_CONFIG, quotaDisplayType: 'USD' },
+  })
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   client.setQueryData(['status'], {}, { updatedAt: Date.now() + 60_000 })
   client.setQueryData(
@@ -137,7 +137,7 @@ test.each([
       matched_tier: 'free',
       expr_b64: btoa('tier("free", fixed(0))'),
     },
-    expected: 'free · Per-call $0/request',
+    expected: 'free · Per-call ¥0/request',
   },
   {
     name: 'fixed expression trace outside the display grammar',
@@ -150,17 +150,17 @@ test.each([
         'param("fast") == true ? tier("priority", fixed(0.01)) : tier("tokens", p * 2)'
       ),
     },
-    expected: 'priority · Per-call $0.01/request',
+    expected: 'priority · Per-call ¥0.01/request',
   },
   {
     name: 'per-call',
     other: { model_price: 0.25 },
-    expected: 'Per-call · $0.25',
+    expected: 'Per-call · ¥0.25',
   },
   {
     name: 'standard',
     other: { model_ratio: 1, completion_ratio: 2 },
-    expected: 'Standard · $2 / $4/M',
+    expected: 'Standard · ¥2 / ¥4/M',
   },
   {
     name: 'zero price fallback',
@@ -199,7 +199,7 @@ test.each([true, false])(
       { model_price: 0.25, admin_info: { task_plugin: plugin } },
       isAdmin
     )
-    expect(preview.textContent).toBe('Per-call · $0.25')
+    expect(preview.textContent).toBe('Per-call · ¥0.25')
     fireEvent.click(preview)
     const dialog = within(await screen.findByRole('dialog'))
     if (isAdmin) {
@@ -217,29 +217,29 @@ test.each([
   {
     expression: 'tier("music", u("clips") * 0.25)',
     tier: 'music',
-    expected: 'music · clips $0.25/unit',
+    expected: 'music · clips ¥0.25/unit',
   },
   {
     expression:
       'u("mode") == "pro" ? tier("pro", u("seconds") * 0.8) : tier("std", u("seconds") * 0.4)',
     tier: 'pro',
-    expected: 'pro · seconds $0.8/second',
+    expected: 'pro · seconds ¥0.8/second',
   },
   {
     expression: 'tier("tokens", u("tokens") * 9.8 / 1000000)',
     tier: 'tokens',
-    expected: 'tokens · tokens $9.8/1M token',
+    expected: 'tokens · tokens ¥9.8/1M token',
   },
   {
     expression: 'tier("free", u("clips") * 0)',
     tier: 'free',
-    expected: 'free · clips $0/unit',
+    expected: 'free · clips ¥0/unit',
   },
   {
     expression: 'tier("mixed", 0.1 + u("clips") * 0.25 + u("units") * 0.14)',
     tier: 'mixed',
     expected:
-      'mixed · clips $0.25/unit · units $0.14/credit · Additional charge $0.1/request',
+      'mixed · clips ¥0.25/unit · units ¥0.14/credit · Additional charge ¥0.1/request',
   },
 ])(
   'task expression $tier shows its recorded unit price',
@@ -294,11 +294,11 @@ test('task log prices use localized unit labels from pricing metadata', async ()
     expr_b64: btoa('tier("images", u("images") * 0.25)'),
     matched_tier: 'images',
   })
-  expect(preview).toHaveTextContent('images · images $0.25/image')
+  expect(preview).toHaveTextContent('images · images ¥0.25/image')
   await act(() => i18n.changeLanguage('zh-CN'))
   expect(
     screen.getByRole('button', { name: /images · images/ })
-  ).toHaveTextContent('images · images $0.25/张')
+  ).toHaveTextContent('images · images ¥0.25/张')
 })
 
 test('task log prices select the executing provider’s schema', () => {
@@ -334,7 +334,7 @@ test('task log prices select the executing provider’s schema', () => {
       task_plugin: { key: 'beta', name: 'Beta', version: '1.0.0' },
     },
   })
-  expect(preview).toHaveTextContent('images · images $0.25/image')
+  expect(preview).toHaveTextContent('images · images ¥0.25/image')
 })
 
 test.each(['missing schema', 'unsupported expression', 'unknown tier'])(

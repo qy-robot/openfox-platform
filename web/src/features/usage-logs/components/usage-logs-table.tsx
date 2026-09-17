@@ -20,6 +20,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
+import { useMemo } from 'react'
 
 import {
   DataTablePage,
@@ -60,7 +61,7 @@ function getColumnVisibilityStorageKey(
   logCategory: LogCategory,
   viewAccess: LogsViewAccess
 ): string {
-  return `usage-logs:${logCategory}:${viewAccess}:column-visibility`
+  return `usage-logs:${logCategory}:${viewAccess}:v2:column-visibility`
 }
 
 function deserializeLogTypeFilter(value: unknown): unknown[] {
@@ -85,7 +86,14 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
     viewAccess,
   } = useLogsViewScope()
   const isMobile = useMediaQuery('(max-width: 640px)')
-  const searchParams = route.useSearch()
+  const routeSearch = route.useSearch()
+  const searchParams = useMemo(() => isAdmin ? routeSearch : {
+    startTime: routeSearch.startTime,
+    endTime: routeSearch.endTime,
+    model: routeSearch.model,
+    page: routeSearch.page,
+    pageSize: routeSearch.pageSize,
+  }, [isAdmin, routeSearch])
 
   const {
     columnFilters,
@@ -94,7 +102,7 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
     onPaginationChange,
     ensurePageInRange,
   } = useTableUrlState({
-    search: route.useSearch(),
+    search: searchParams,
     navigate: route.useNavigate(),
     pagination: { defaultPage: 1, defaultPageSize: isMobile ? 20 : 100 },
     globalFilter: { enabled: false },
@@ -196,7 +204,9 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
       isFetching={isFetching}
       emptyTitle={t('No Logs Found')}
       emptyDescription={t(
-        'No usage logs available. Logs will appear here once API calls are made.'
+        isAdmin
+          ? 'No usage logs available. Logs will appear here once API calls are made.'
+          : 'Usage records will appear here after you use a model.'
       )}
       skeletonKeyPrefix='usage-log-skeleton'
       applyHeaderSize
@@ -208,6 +218,11 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
           table={table}
           isLoading={isLoadingData}
           logCategory={logCategory}
+          emptyDescription={
+            isAdmin
+              ? undefined
+              : t('Usage records will appear here after you use a model.')
+          }
         />
       }
       toolbar={
