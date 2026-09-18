@@ -113,7 +113,19 @@ func CentralAccountSSOExchange(c *gin.Context) {
 		Issuer: token.Issuer, Subject: principal.Subject, SessionID: principal.SessionID, AuthVersion: principal.AuthVersion,
 	}, c.ClientIP(), c.Request.UserAgent())
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "code": "AUTH_SESSION_REVOKED", "message": "account session is no longer active"})
+		switch {
+		case errors.Is(err, service.ErrLoginSessionRevoked):
+			c.JSON(http.StatusUnauthorized, gin.H{"success": false, "code": "AUTH_SESSION_REVOKED", "message": "account session is no longer active"})
+		case errors.Is(err, service.ErrLoginSessionInvalid):
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "code": "AUTH_PRODUCT_ACCOUNT_DISABLED", "message": "AI account is disabled"})
+		default:
+			status, code := service.AuthSessionErrorCode(err)
+			if status == http.StatusInternalServerError {
+				status = http.StatusServiceUnavailable
+				code = "AUTH_SERVICE_UNAVAILABLE"
+			}
+			c.JSON(status, gin.H{"success": false, "code": code, "message": "could not create AI login session"})
+		}
 		return
 	}
 	service.WriteRefreshCookie(c, bundle.RefreshToken)

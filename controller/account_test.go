@@ -224,6 +224,50 @@ func TestCentralAccountSSOExchangeCreatesBoundLocalSession(t *testing.T) {
 	assert.Equal(t, int64(7), session.AuthorityAuthVersion)
 }
 
+func TestCentralAccountSSOExchangeDoesNotMislabelDisabledProductAccount(t *testing.T) {
+	previousDB, previousRedis, previousSecret := model.DB, common.RedisEnabled, common.SessionSecret
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, db.AutoMigrate(&model.User{}, &model.AccountProductIdentity{}, &model.UserSession{}))
+	model.DB, common.RedisEnabled, common.SessionSecret = db, false, "account-exchange-disabled-test-secret"
+	t.Cleanup(func() {
+		model.DB, common.RedisEnabled, common.SessionSecret = previousDB, previousRedis, previousSecret
+	})
+	user := &model.User{Username: "acct-disabled", Password: common.GetRandomString(32), Status: common.UserStatusDisabled, Role: common.RoleCommonUser, Group: "default", AuthVersion: 1}
+	require.NoError(t, db.Create(user).Error)
+	require.NoError(t, db.Create(&model.AccountProductIdentity{Issuer: "https://account.example.com", Subject: "acct-disabled", UserID: user.Id}).Error)
+	accountServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/oauth/token":
+			_, _ = w.Write([]byte(`{"success":true,"data":{"access_token":"account-opaque-token","expires_at":9999999999,"issuer":"https://account.example.com","subject":"acct-disabled"}}`))
+		case "/v1/internal/introspect":
+			_, _ = w.Write([]byte(`{"success":true,"data":{"active":true,"issuer":"https://account.example.com","audience":"platform","sessionId":"account-session","authVersion":7,"principal":{"subject":"acct-disabled","displayName":"Disabled"}}}`))
+		case "/v1/internal/session-status":
+			_, _ = w.Write([]byte(`{"success":true,"data":{"active":true}}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(accountServer.Close)
+	t.Setenv("ROBO_ACCOUNT_MODE", "central")
+	t.Setenv("ROBO_ACCOUNT_URL", accountServer.URL)
+	t.Setenv("ROBO_ACCOUNT_ISSUER", "https://account.example.com")
+	t.Setenv("ROBO_ACCOUNT_CLIENT_ID", "platform")
+	t.Setenv("ROBO_ACCOUNT_INTERNAL_TOKEN", "internal-secret")
+	t.Setenv("ROBO_ACCOUNT_REDIRECT_URIS", "https://ai.example.com/account/callback")
+	router := gin.New()
+	router.POST("/api/account/sso/exchange", CentralAccountSSOExchange)
+	request := httptest.NewRequest(http.MethodPost, "/api/account/sso/exchange", strings.NewReader(`{"code":"one-time-code","codeVerifier":"`+strings.Repeat("v", 43)+`","redirectUri":"https://ai.example.com/account/callback"}`))
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+
+	assert.Equal(t, http.StatusForbidden, response.Code, response.Body.String())
+	assert.Contains(t, response.Body.String(), "AUTH_PRODUCT_ACCOUNT_DISABLED")
+	assert.NotContains(t, response.Body.String(), "AUTH_SESSION_REVOKED")
+}
+
 func TestCentralVerificationHandlersReturnServiceUnavailableOnAccountOutage(t *testing.T) {
 	t.Setenv("ROBO_ACCOUNT_MODE", "central")
 	t.Setenv("ROBO_ACCOUNT_URL", "http://example.com")

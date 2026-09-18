@@ -404,6 +404,13 @@
 - 验证：认证/首页/下载相关 27 项测试、`bun run typecheck`、`bun run build:check`、`git diff --check` 通过。
 - 未完成 / 下一步：本轮未执行生产发布或正式域名浏览器验收；生产切换仍需按发布流程构建并部署，认证后工作台保留原数据密集型主题。
 
+### 2026-09-18T21:22:57+08:00 | Codex | 收口 Account SSO 错误边界
+
+- 分支/基线：`robo/main` / `795a3a9dfd6a`；范围仅中央 SSO 交换错误映射。
+- 完成：Account 会话撤销继续返回 `AUTH_SESSION_REVOKED`；平台本地用户停用返回 `AUTH_PRODUCT_ACCOUNT_DISABLED`/403；会话限额和内部错误不再伪装成账号会话失效。
+- 证据：`GOWORK=off go test ./controller ./service -run 'TestCentralAccountSSOExchange|TestCreateCentral|TestValidateCentral' -count=1` 通过；新增 disabled product account 回归；无 schema/数据库迁移。
+- 未完成/下一步：需将平台子模块提交推送后，按线上兼容版本重新构建部署并核对 Account/AI/工作台实际 SSO；工作台仍直接向 Account introspection，不依赖平台会话。
+
 ### 2026-09-18T20:13:06+08:00 | Codex | 公共首页与下载页精简发布
 
 - 基线 / 发布：从线上 `platform-e1c334a10eeb-eadcca5b848b` 源码归档恢复，隔离提交 `f13d1bfb332bbcf8d52c5c8a10c08784c74af625`；发布 `platform-f13d1bfb332b-81100608b4f9`。
