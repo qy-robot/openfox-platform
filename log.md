@@ -418,3 +418,10 @@
 - 验证：Web build check/test、Go test/vet/build、Linux amd64 构建全部通过；dry-run 通过；上线后运行二进制 SHA256 `cceb18e77d79534cbc8629fa03b134a02753f82de3b846471bd56cc97691f840` 与产物一致，服务及公网健康通过。
 - 备份 / 回滚：前置备份 `20260918T121227Z`；上一版本 `platform-e1c334a10eeb-eadcca5b848b`，未执行数据库迁移，支持二进制回滚。
 - 限制：未进行正式浏览器逐页目视验收、Safari 矩阵或 Desktop 安装包发布；平台工作树原有混合改动保留未提交。
+
+### 2026-09-18T22:18:27+08:00 | Codex | 中央账号重置后的旧会话回收与找回入口收口
+
+- 基线：`robo/main`，发布源 `69f48ef192ff660d2dbfd3802c5619cc4366fc4c`，线上 `platform-69f48ef192ff-20150e7286bf`。
+- 已完成：中央 Account auth version 变化后，平台在新 SSO 会话签发前回收旧版本的本地 AI 会话，避免旧会话继续占用 active session limit；发行窗口限额仍保持反滥用语义。旧平台找回密码页在中央模式跳转 Account recovery。
+- 验证：平台完整 Web build/test、Go test/vet/build，中央旧会话回收定向测试通过；生产 status `active=true`、`healthy=true`、`public_healthy=true`，运行 SHA256 与发布物一致。
+- 限制：真实邮箱验证码投递和真实凭据重置未代验；Account 负责验证码和密码权威，平台不恢复旧密码重置接口。
