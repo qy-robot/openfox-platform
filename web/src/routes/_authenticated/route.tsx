@@ -36,9 +36,12 @@ export async function resolveProtectedAuthentication(
   _returnTo: string
 ): Promise<string | null> {
   if (isCentralAccountMode()) {
+    // Central account mode is authenticated by the account-center SSO flow.
+    // A cold local route must not probe the legacy refresh endpoint: doing so
+    // can hang navigation when no local adapter/cookie is available and can
+    // silently restore a session after an explicit central sign-out.
     if (hasValidAuthentication()) return null
     if (isExplicitSignOutInProgress()) return null
-    await resolveAuthentication()
     return null
   }
   await resolveAuthentication()
