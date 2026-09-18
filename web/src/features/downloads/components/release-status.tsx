@@ -48,7 +48,7 @@ export function ReleaseChangelog(props: {
 
   return (
     <section
-      className='border-border/60 bg-card/60 mb-6 rounded-2xl border px-5 py-4 shadow-sm sm:mb-8 sm:px-6'
+      className='robo-download-changelog mb-6 sm:mb-8'
       aria-labelledby='release-changelog-heading'
     >
       <h2

@@ -74,13 +74,13 @@ export function DownloadCard(props: { target: DownloadTarget }) {
   const available = props.target.status === 'available'
 
   return (
-    <Card className='border-border/60 bg-card/80 relative min-h-64 overflow-hidden shadow-[0_18px_55px_-38px_rgba(37,99,235,0.55)] transition-shadow hover:shadow-[0_22px_60px_-32px_rgba(37,99,235,0.6)]'>
+    <Card className='robo-download-card relative min-h-64 overflow-hidden'>
       <div
         aria-hidden='true'
-        className='absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/70 to-transparent'
+        className='robo-download-card-line absolute inset-x-0 top-0 h-px'
       />
-      <CardHeader className='gap-3 pt-2'>
-        <div className='flex size-12 items-center justify-center rounded-xl border border-blue-500/15 bg-blue-500/8 text-blue-600 dark:text-blue-400'>
+      <CardHeader className='robo-download-card-header gap-3 pt-2'>
+        <div className='robo-download-platform-icon flex size-12 items-center justify-center'>
           <Icon className='size-6' aria-hidden='true' />
         </div>
         <CardTitle className='text-xl tracking-tight'>
@@ -112,7 +112,7 @@ export function DownloadCard(props: { target: DownloadTarget }) {
         {available && props.target.url != null ? (
           <Button
             size='lg'
-            className='h-10 w-full bg-blue-600 text-white hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400'
+            className='robo-download-card-action h-10 w-full'
             render={
               <a
                 href={props.target.url}

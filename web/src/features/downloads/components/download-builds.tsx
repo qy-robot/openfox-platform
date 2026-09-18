@@ -37,7 +37,7 @@ export function DownloadBuilds(props: DownloadBuildsProps) {
   if (props.error != null) {
     return (
       <ErrorState
-        className='border-border/60 bg-card/60 min-h-80 rounded-2xl border'
+        className='robo-download-error min-h-80'
         title={t('Downloads are temporarily unavailable')}
         description={t(
           'The release list could not be loaded. Check your connection and try again.'
@@ -50,7 +50,7 @@ export function DownloadBuilds(props: DownloadBuildsProps) {
   if (props.manifest == null) {
     return (
       <LoadingState
-        className='min-h-80'
+        className='robo-download-loading min-h-80'
         message={t('Checking available builds...')}
       />
     )
@@ -60,7 +60,7 @@ export function DownloadBuilds(props: DownloadBuildsProps) {
     props.manifest.downloads.map((target) => [target.id, target])
   )
   return (
-    <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
+    <div className='robo-download-card-grid'>
       {DOWNLOAD_TARGET_IDS.map((targetId) => {
         const target = targetMap.get(targetId)
         if (target == null) return null

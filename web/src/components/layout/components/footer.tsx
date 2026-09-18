@@ -78,8 +78,8 @@ export function Footer(props: FooterProps) {
   const { t } = useTranslation()
   const { systemName, logo, footerHtml } = useSystemConfig()
   return (
-    <footer className={cn('border-border bg-card border-t', props.className)}>
-      <div className='mx-auto max-w-6xl px-6 py-10'>
+    <footer className={cn('robo-public-footer border-border bg-card border-t', props.className)}>
+      <div className='mx-auto max-w-6xl px-6 py-12'>
         <div className='flex flex-col justify-between gap-8 sm:flex-row'>
           <div>
             <Link to='/' className='inline-flex items-center gap-3'>

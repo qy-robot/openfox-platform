@@ -13,6 +13,7 @@ import { z } from 'zod'
 
 import { getIdentityProfileURL } from '@/features/auth/central-account-navigation'
 import { api } from '@/lib/api'
+import * as authSession from '@/lib/auth-session'
 import {
   beginExplicitSignOut,
   clearAuthentication,
@@ -111,16 +112,17 @@ it('keeps the exchanged token while routing from the callback to the workbench',
   expect(adapter.mock.calls[0]?.[0].url).toBe('/api/account/sso/exchange')
 })
 
-it('keeps a cold central session on the local sign-in path', async () => {
+it('restores a cold central session before entering a protected route', async () => {
   localStorage.setItem('status', JSON.stringify({ account_auth_enabled: true }))
-  const adapter = vi.fn<AxiosAdapter>()
-  api.defaults.adapter = adapter
+  const resolveAuthenticationSpy = vi
+    .spyOn(authSession, 'resolveAuthentication')
+    .mockResolvedValue({ kind: 'authenticated', bundle })
 
   await expect(
     resolveProtectedAuthentication('/workbench/skills')
   ).resolves.toBeNull()
 
-  expect(adapter).not.toHaveBeenCalled()
+  expect(resolveAuthenticationSpy).toHaveBeenCalledOnce()
 })
 
 it('keeps explicit central sign-in public without silently restoring a session', async () => {

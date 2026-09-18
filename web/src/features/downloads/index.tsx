@@ -37,49 +37,54 @@ export function Downloads() {
 
   return (
     <PublicLayout showMainContainer={false}>
-      <main className='min-h-[calc(100vh-9rem)]'>
-        <section className='relative overflow-hidden px-5 pt-24 pb-14 sm:px-8 md:pt-28 md:pb-20'>
-          <div
-            aria-hidden='true'
-            className='absolute inset-x-0 top-0 -z-10 h-96 bg-[radial-gradient(ellipse_at_50%_-10%,rgba(59,130,246,0.18),transparent_68%)] dark:bg-[radial-gradient(ellipse_at_50%_-10%,rgba(37,99,235,0.25),transparent_68%)]'
-          />
-          <div className='mx-auto max-w-6xl'>
-            <div className='mb-9 flex flex-col gap-4 sm:mb-11 sm:flex-row sm:items-end sm:justify-between'>
-              <div>
-                <p className='mb-3 text-sm font-medium tracking-wide text-blue-600 dark:text-blue-400'>
-                  {t('RoboCoding Desktop')}
-                </p>
-                <h1 className='text-4xl font-semibold tracking-[-0.045em] sm:text-5xl'>
-                  {t('Download')} RoboCoding Desktop
-                </h1>
-              </div>
-              <div className='border-border/60 bg-background/70 inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-sm shadow-sm backdrop-blur'>
-                <span
-                  className='size-1.5 rounded-full bg-blue-500'
-                  aria-hidden='true'
-                />
-                <span className='text-muted-foreground'>
-                  {t('Latest version')}
-                </span>
+      <main className='robo-download'>
+        <section className='robo-download-hero'>
+          <div className='robo-download-hero-grid' aria-hidden='true' />
+          <div className='robo-download-hero-inner'>
+            <p className='robo-download-kicker'>
+              <span aria-hidden='true' />
+              {t('RoboCoding Desktop')}
+            </p>
+            <h1>
+              {t('Download')} <em>RoboCoding.</em>
+            </h1>
+            <div className='robo-download-hero-meta'>
+              <span>{t('Latest version')}</span>
+              <strong>
                 <ReleaseStatus
                   manifest={manifestQuery.data}
                   error={manifestQuery.error}
                 />
-              </div>
+              </strong>
             </div>
-            <ReleaseChangelog
-              manifest={manifestQuery.data}
-              error={manifestQuery.error}
-            />
-            <DownloadBuilds
-              manifest={manifestQuery.data}
-              error={manifestQuery.error}
-              onRetry={() => manifestQuery.refetch()}
-            />
           </div>
         </section>
+        <section
+          className='robo-download-builds'
+          aria-labelledby='download-builds-title'
+        >
+          <div className='robo-download-section-heading'>
+            <div>
+              <p className='robo-download-eyebrow'>
+                {t('Choose your environment')}
+              </p>
+              <h2 id='download-builds-title'>
+                {t('Start where the work is.')}
+              </h2>
+            </div>
+          </div>
+          <DownloadBuilds
+            manifest={manifestQuery.data}
+            error={manifestQuery.error}
+            onRetry={() => manifestQuery.refetch()}
+          />
+        </section>
+        <ReleaseChangelog
+          manifest={manifestQuery.data}
+          error={manifestQuery.error}
+        />
       </main>
-      <Footer />
+      <Footer className='robo-footer' />
     </PublicLayout>
   )
 }

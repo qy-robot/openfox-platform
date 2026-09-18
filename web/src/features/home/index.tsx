@@ -123,7 +123,7 @@ export function Home() {
   return (
     <PublicLayout showMainContainer={false}>
       <ProductHome isAuthenticated={isAuthenticated} />
-      <Footer />
+      <Footer className='robo-footer' />
     </PublicLayout>
   )
 }
