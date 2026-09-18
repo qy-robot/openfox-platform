@@ -18,6 +18,7 @@ import {
   clearCentralSignedOut,
   consumeFreshCentralLoginRequest,
   isCentralSignedOut,
+  requestFreshCentralLogin,
 } from '../central-reauth'
 import {
   cancelCentralSSO,
@@ -30,6 +31,7 @@ const ACCOUNT_REQUEST_TIMEOUT_MS = 15_000
 
 type AccountResponse = {
   success?: boolean
+  code?: string
   message?: string
   data?: unknown
 }
@@ -71,7 +73,9 @@ async function accountFetch(
     const body = (await response.json()) as AccountResponse
     signal.throwIfAborted()
     if (!response.ok && body.data === undefined) {
-      throw new Error(body.message || 'Account sign in failed.')
+      const error = new Error(body.message || 'Account sign in failed.')
+      if (body.code) error.name = body.code
+      throw error
     }
     return body
   } finally {
@@ -139,6 +143,11 @@ export function CentralAccountSignIn(props: { redirectTo?: string }) {
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         cancelCentralSSO()
+        if (error instanceof Error && error.name === 'AUTH_SESSION_REVOKED' && !reauthenticate) {
+          requestFreshCentralLogin()
+          window.location.assign(`/sign-in?redirect=${encodeURIComponent(returnTo)}`)
+          return
+        }
         toast.error(
           getServerErrorMessage(error, t('Unable to start account sign in'))
         )
