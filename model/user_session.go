@@ -737,7 +737,24 @@ func RevokeAllUserSessions(userID int, reason string) (int64, error) {
 	return revokeUserSessions(userID, "", reason)
 }
 
+// RevokeStaleCentralUserSessions removes product sessions issued against an
+// older Account auth version. Password resets and global Account logout bump
+// that version, so stale rows must not consume the next central-login slot.
+func RevokeStaleCentralUserSessions(userID int, issuer string, authVersion int64, reason string) (int64, error) {
+	issuer = strings.TrimSpace(issuer)
+	if userID <= 0 || issuer == "" || authVersion <= 0 {
+		return 0, ErrUserSessionInvalid
+	}
+	return revokeUserSessionsMatching(userID, "", reason, func(query *gorm.DB) *gorm.DB {
+		return query.Where("authority_issuer = ? AND authority_auth_version > 0 AND authority_auth_version <> ?", issuer, authVersion)
+	})
+}
+
 func revokeUserSessions(userID int, excludedSID, reason string) (int64, error) {
+	return revokeUserSessionsMatching(userID, excludedSID, reason, nil)
+}
+
+func revokeUserSessionsMatching(userID int, excludedSID, reason string, scope func(*gorm.DB) *gorm.DB) (int64, error) {
 	if userID <= 0 {
 		return 0, ErrUserSessionInvalid
 	}
@@ -747,6 +764,9 @@ func revokeUserSessions(userID int, excludedSID, reason string) (int64, error) {
 		query := DB.Where("user_id = ? AND status = ? AND expires_at > ?", userID, UserSessionStatusActive, now)
 		if excludedSID != "" {
 			query = query.Where("sid <> ?", excludedSID)
+		}
+		if scope != nil {
+			query = scope(query)
 		}
 		var candidates []UserSession
 		if err := query.Order("sid").Limit(userSessionRevokeBatchSize).Find(&candidates).Error; err != nil {

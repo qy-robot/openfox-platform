@@ -17,13 +17,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+
+import { ACCOUNT_CENTER_URL } from '@/lib/product-links'
 
 import { AuthLayout } from '../auth-layout'
 import { ForgotPasswordForm } from './components/forgot-password-form'
+import { isCentralAccountMode } from '../sign-in/central-reauth'
 
 export function ForgotPassword() {
   const { t } = useTranslation()
+  useEffect(() => {
+    if (isCentralAccountMode()) {
+      window.location.replace(`${ACCOUNT_CENTER_URL}/account/recovery`)
+    }
+  }, [])
+  if (isCentralAccountMode()) return null
   return (
     <AuthLayout>
       <div className='w-full space-y-8'>

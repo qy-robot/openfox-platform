@@ -70,7 +70,7 @@ const serverErrorMessageKeys = {
     'The two-factor setup has expired or changed. Start setup again.',
 
   AUTH_SESSION_LIMIT:
-    'Too many active login sessions. On a device where you are already signed in, open Login sessions and use “Sign out other sessions” to revoke them. If you cannot access a signed-in device, reset your password to sign out all sessions.',
+    'Too many active login sessions. On a device where you are already signed in, open Login sessions and use “Sign out other sessions” to revoke them. If you cannot access a signed-in device, open the Account Center and reset your password with the email verification code.',
   AUTH_SESSION_ISSUANCE_LIMIT:
     'Too many login sessions were created recently. Please wait for the rolling window to pass, then try again.',
   TELEGRAM_BIND_DISABLED: 'Telegram binding is disabled.',
