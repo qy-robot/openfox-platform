@@ -425,3 +425,10 @@
 - 已完成：中央 Account auth version 变化后，平台在新 SSO 会话签发前回收旧版本的本地 AI 会话，避免旧会话继续占用 active session limit；发行窗口限额仍保持反滥用语义。旧平台找回密码页在中央模式跳转 Account recovery。
 - 验证：平台完整 Web build/test、Go test/vet/build，中央旧会话回收定向测试通过；生产 status `active=true`、`healthy=true`、`public_healthy=true`，运行 SHA256 与发布物一致。
 - 限制：真实邮箱验证码投递和真实凭据重置未代验；Account 负责验证码和密码权威，平台不恢复旧密码重置接口。
+
+### 2026-09-18T22:36:00+08:00 | Codex | 回收中央切换前的无绑定遗留会话
+
+- 基线：`robo/main`，发布源 `4e90161245511072520b66a002c46bc41da4b000`，线上 `platform-4e9016124551-6e293e9fbd55`。
+- 已完成：中央登录在 active limit 之前回收无 `authority_issuer` / 无 `authority_auth_version` 的旧本地密码会话；保留当前中央 Account 会话及发行窗口限额语义。
+- 验证：遗留会话回收定向 Go 回归、平台完整 Web/Go build/test/vet、线上 status 与公网健康通过。
+- 限制：真实 admin 登录尚未代操作；现有线上 5 个遗留本地会话将在下一次中央登录时按新逻辑回收。
