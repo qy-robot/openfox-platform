@@ -353,3 +353,11 @@
 - 根因 / 完成：Desktop 正确保存 refresh token + SID 并以登录会话访问控制面，但 `/v1` 兼容层把会话派生的 relay 能力存成普通 Token，导致其出现在 API Key 列表；临近一小时到期时还会新增一行。现在 list/search/count/detail/get-key/batch/update/delete 的共同模型边界只暴露用户管理的 Token；同一 SID + 付款来源的临期 relay 凭证原行延寿，不再每小时插行；退出撤销父会话并禁用该 SID 的内部 Token，保留行供在途结算/审计安全窗口使用。
 - 验证：新增回归覆盖 API Key 列表/搜索/详情隔离、临期续期复用同一 Key、个人/团队付款源分离、退出后 relay 401 与内部 Token 禁用。`go test ./controller ./model ./middleware ./service -count=1`、对应 `go vet`、`go build ./...`、平台及根 `git diff --check` 全部通过。
 - 限制 / 下一步：正式站仍运行 `platform-2823bba09a62-5c5ad2ab6d74`，截图中的旧内部凭证在发布前仍可见；未执行生产变更。长期应改为父登录会话派生、独立 audience/token_use 的短期 relay capability/JWT，并以显式 `credential_source` 替代日志按固定名称识别来源。
+
+### 2026-09-17T21:09:02+08:00 | Codex platform_releases | 服务器本地安装包发布与三版本保留
+
+- 任务 / 基线：共享 `robo/main` / `a9b11d923` 混合工作树；本任务只负责平台发布存储、内部 API、公开清单及对应测试/文档，保留并行任务改动，未提交、推送、部署或修改生产文件。
+- 已完成：新增 Console BFF 专用的 `GET/POST /v1/internal/releases` 草稿管理及 `POST /v1/internal/releases/{version}/publish`；使用独立共享凭据与可信管理员主体头，缺少配置时关闭。安装包按四个受支持目标流式落盘，服务端计算大小和 SHA-256；同版本草稿可逐平台合并，已发布版本不可覆盖。发布通过原子清单替换生效，第四个已发布版本提交成功后才移除最旧版本并删除其本地文件。`/downloads.json` 动态返回最新版本、更新时间、更新日志和四平台状态，保留版本的安装包由不可猜目录映射后的公开路由下载。
+- 配置 / 边界：`ROBO_RELEASE_STORAGE_DIR` 默认 `data/desktop-releases`，生产须持久化；`ROBO_RELEASES_INTERNAL_TOKEN` 供工作台 BFF 使用；`ROBO_RELEASE_MAX_FILE_BYTES` 默认每文件 2 GiB，请求总上限为四倍加 1 MiB。服务器本地目录按单写节点设计，多实例须固定写入/下载节点或另加共享文件系统单写约束。完整契约见 `docs/desktop-release-management.md`。
+- 验证：新增服务与路由回归覆盖无凭据拒绝、multipart 草稿、顺序平台合并、发布后真实文件读取、公开清单更新日志、发布第四版后仅保留三版且最旧目录删除、已发布不可覆盖和单文件大小限制。`go test ./service ./controller ./middleware ./router -count=1`、`go vet ./service ./controller ./middleware ./router`、`go build ./...`、修改范围 `git diff --check` 均通过。
+- 未完成 / 下一步：未部署、未上传真实签名/公证安装包，也未做正式域名下载或安装验收。工作台需配置相同发布凭据并只让本地管理员进入上传台；部署时把存储目录纳入持久卷、备份和容量监控。

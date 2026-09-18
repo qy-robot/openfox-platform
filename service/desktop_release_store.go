@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -110,8 +111,8 @@ func DesktopReleaseMaxFileBytes() int64 {
 	if value == "" {
 		return defaultReleaseMaxFileBytes
 	}
-	var parsed int64
-	if _, err := fmt.Sscan(value, &parsed); err != nil || parsed <= 0 {
+	parsed, err := strconv.ParseInt(value, 10, 64)
+	if err != nil || parsed <= 0 {
 		return defaultReleaseMaxFileBytes
 	}
 	return parsed
@@ -149,9 +150,28 @@ func SaveDesktopReleaseDraft(version, changelog string, actor DesktopReleaseActo
 	if err != nil {
 		return DesktopRelease{}, err
 	}
-	for _, release := range catalog.Releases {
+	var existing *DesktopRelease
+	for i := range catalog.Releases {
+		release := &catalog.Releases[i]
 		if release.Version == version && release.Status == "published" {
 			return DesktopRelease{}, ErrDesktopReleaseAlreadyPublished
+		}
+		if release.Version == version {
+			existing = release
+		}
+	}
+	uploadTargets := make(map[string]struct{}, len(uploads))
+	for _, upload := range uploads {
+		if !IsDesktopReleaseTarget(upload.Target) {
+			return DesktopRelease{}, fmt.Errorf("unsupported release target %q", upload.Target)
+		}
+		if _, exists := uploadTargets[upload.Target]; exists {
+			return DesktopRelease{}, fmt.Errorf("duplicate release target %q", upload.Target)
+		}
+		uploadTargets[upload.Target] = struct{}{}
+		fileName := filepath.Base(strings.TrimSpace(upload.FileName))
+		if fileName == "." || fileName == "" || fileName != upload.FileName {
+			return DesktopRelease{}, fmt.Errorf("invalid artifact filename")
 		}
 	}
 
@@ -165,21 +185,42 @@ func SaveDesktopReleaseDraft(version, changelog string, actor DesktopReleaseActo
 	}
 	defer os.RemoveAll(staging)
 
-	artifacts := make([]DesktopReleaseArtifact, 0, len(uploads))
+	artifacts := make([]DesktopReleaseArtifact, 0, len(uploads)+len(catalog.Releases))
+	if existing != nil {
+		existingDir := desktopReleaseArtifactDir(root, version)
+		for _, artifact := range existing.Artifacts {
+			if _, replaced := uploadTargets[artifact.Target]; replaced {
+				continue
+			}
+			storedAs := desktopReleaseStoredName(artifact)
+			source := filepath.Join(existingDir, storedAs)
+			destination := filepath.Join(staging, storedAs)
+			if err := os.Link(source, destination); err != nil {
+				input, openErr := os.Open(source)
+				if openErr != nil {
+					return DesktopRelease{}, fmt.Errorf("open existing artifact: %w", openErr)
+				}
+				output, createErr := os.OpenFile(destination, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o640)
+				if createErr != nil {
+					_ = input.Close()
+					return DesktopRelease{}, fmt.Errorf("copy existing artifact: %w", createErr)
+				}
+				_, copyErr := io.Copy(output, input)
+				syncErr := output.Sync()
+				closeOutputErr := output.Close()
+				closeInputErr := input.Close()
+				if err := errors.Join(copyErr, syncErr, closeOutputErr, closeInputErr); err != nil {
+					return DesktopRelease{}, fmt.Errorf("copy existing artifact: %w", err)
+				}
+			}
+			artifacts = append(artifacts, artifact)
+		}
+	}
 	seen := make(map[string]struct{}, len(uploads))
 	for _, upload := range uploads {
-		if !IsDesktopReleaseTarget(upload.Target) {
-			return DesktopRelease{}, fmt.Errorf("unsupported release target %q", upload.Target)
-		}
-		if _, exists := seen[upload.Target]; exists {
-			return DesktopRelease{}, fmt.Errorf("duplicate release target %q", upload.Target)
-		}
 		seen[upload.Target] = struct{}{}
 
 		fileName := filepath.Base(strings.TrimSpace(upload.FileName))
-		if fileName == "." || fileName == "" || fileName != upload.FileName {
-			return DesktopRelease{}, fmt.Errorf("invalid artifact filename")
-		}
 		temporaryPath := filepath.Join(staging, upload.Target)
 		file, err := os.OpenFile(temporaryPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o640)
 		if err != nil {
@@ -434,6 +475,24 @@ func readDesktopReleaseCatalog() (desktopReleaseCatalog, error) {
 	}
 	if catalog.SchemaVersion != desktopReleaseCatalogSchema {
 		return desktopReleaseCatalog{}, fmt.Errorf("unsupported release catalog schema %d", catalog.SchemaVersion)
+	}
+	for _, release := range catalog.Releases {
+		if !ValidateDesktopReleaseVersion(release.Version) || (release.Status != "draft" && release.Status != "published") {
+			return desktopReleaseCatalog{}, fmt.Errorf("invalid release catalog entry")
+		}
+		if release.Status == "published" && release.PublishedAt == nil {
+			return desktopReleaseCatalog{}, fmt.Errorf("published release is missing publication time")
+		}
+		seen := make(map[string]struct{}, len(release.Artifacts))
+		for _, artifact := range release.Artifacts {
+			if !IsDesktopReleaseTarget(artifact.Target) || len(artifact.SHA256) != 64 || artifact.SizeBytes <= 0 {
+				return desktopReleaseCatalog{}, fmt.Errorf("invalid release artifact metadata")
+			}
+			if _, exists := seen[artifact.Target]; exists {
+				return desktopReleaseCatalog{}, fmt.Errorf("duplicate release artifact target")
+			}
+			seen[artifact.Target] = struct{}{}
+		}
 	}
 	return catalog, nil
 }

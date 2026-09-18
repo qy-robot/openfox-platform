@@ -77,3 +77,31 @@ func TestDesktopReleaseDraftRejectsPublishedReplacementAndOversizedArtifact(t *t
 	}})
 	require.Error(t, err)
 }
+
+func TestDesktopReleaseDraftMergesSequentialPlatformUploads(t *testing.T) {
+	t.Setenv("ROBO_RELEASE_STORAGE_DIR", t.TempDir())
+	t.Setenv("ROBO_RELEASE_MAX_FILE_BYTES", "1024")
+	actor := DesktopReleaseActor{Subject: "admin-1", DisplayName: "Release Admin"}
+
+	_, err := SaveDesktopReleaseDraft("4.0.0", "initial", actor, []DesktopReleaseUpload{{
+		Target: "windows-x64", FileName: "app.exe", Reader: strings.NewReader("windows"),
+	}})
+	require.NoError(t, err)
+	draft, err := SaveDesktopReleaseDraft("4.0.0", "updated", actor, []DesktopReleaseUpload{{
+		Target: "macos-arm64", FileName: "app.dmg", Reader: strings.NewReader("macos"),
+	}})
+	require.NoError(t, err)
+	assert.Equal(t, "updated", draft.Changelog)
+	assert.Len(t, draft.Artifacts, 2)
+
+	_, err = PublishDesktopRelease("4.0.0", actor)
+	require.NoError(t, err)
+	for target, expected := range map[string]string{"windows-x64": "windows", "macos-arm64": "macos"} {
+		file, _, openErr := OpenDesktopReleaseArtifact("4.0.0", target)
+		require.NoError(t, openErr)
+		data, readErr := io.ReadAll(file)
+		require.NoError(t, readErr)
+		require.NoError(t, file.Close())
+		assert.Equal(t, expected, string(data))
+	}
+}
