@@ -171,6 +171,41 @@ func TestCentralLoginReclaimsStaleAccountSessionsBeforeActiveLimit(t *testing.T)
 	assert.Equal(t, "central_auth_version_changed", stored.RevokedReason)
 }
 
+func TestCentralLoginReclaimsLegacySessionsBeforeActiveLimit(t *testing.T) {
+	useTestSessionSecret(t)
+	user := setupAuthSessionTestDB(t)
+	common.UserSessionActiveLimit = 1
+	common.UserSessionIssuanceLimit = 100
+	now := time.Now().Unix()
+	legacy := model.UserSession{
+		SID: "legacy-password-session", UserID: user.Id, Version: 1, UserAuthVersion: user.AuthVersion,
+		Status: model.UserSessionStatusActive, RefreshHash: "legacy-refresh", LoginMethod: "password",
+		CreatedAt: now, LastActiveAt: now, ExpiresAt: now + 3600,
+	}
+	require.NoError(t, model.DB.Create(&legacy).Error)
+
+	accountServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/internal/session-status", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"success":true,"data":{"active":true}}`))
+	}))
+	t.Cleanup(accountServer.Close)
+	t.Setenv("ROBO_ACCOUNT_MODE", "central")
+	t.Setenv("ROBO_ACCOUNT_URL", accountServer.URL)
+	t.Setenv("ROBO_ACCOUNT_ISSUER", "https://account.example.com")
+	t.Setenv("ROBO_ACCOUNT_INTERNAL_TOKEN", "internal-secret")
+
+	bundle, err := CreateCentralBrowserLoginSession(user.Id, user.AuthVersion, CentralSessionAuthority{
+		Issuer: "https://account.example.com", Subject: "acct-1", SessionID: "new-account-session", AuthVersion: 1,
+	}, "127.0.0.1", "new-agent")
+	require.NoError(t, err)
+	assert.NotEmpty(t, bundle.AccessToken)
+	var stored model.UserSession
+	require.NoError(t, model.DB.First(&stored, "sid = ?", legacy.SID).Error)
+	assert.Equal(t, model.UserSessionStatusRevoked, stored.Status)
+	assert.Equal(t, "central_authority_cutover", stored.RevokedReason)
+}
+
 func TestCreateLoginSessionEnforcesIssuanceLimitAcrossAllStatuses(t *testing.T) {
 	useTestSessionSecret(t)
 	user := setupAuthSessionTestDB(t)

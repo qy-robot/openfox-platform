@@ -82,6 +82,9 @@ func createCentralLoginSession(userID int, expectedAuthVersion int64, loginMetho
 	if err := ValidateCentralSessionReference(authority.Subject, authority.SessionID, authority.AuthVersion); err != nil {
 		return nil, ErrLoginSessionRevoked
 	}
+	if _, err := model.RevokeLegacyUserSessions(userID, "central_authority_cutover"); err != nil {
+		return nil, err
+	}
 	if _, err := model.RevokeStaleCentralUserSessions(userID, authority.Issuer, authority.AuthVersion, "central_auth_version_changed"); err != nil {
 		return nil, err
 	}

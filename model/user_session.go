@@ -750,6 +750,18 @@ func RevokeStaleCentralUserSessions(userID int, issuer string, authVersion int64
 	})
 }
 
+// RevokeLegacyUserSessions removes active product sessions created before the
+// central Account authority was enabled. Those sessions have no authority
+// binding and must not survive the identity cutover or consume its limit.
+func RevokeLegacyUserSessions(userID int, reason string) (int64, error) {
+	if userID <= 0 {
+		return 0, ErrUserSessionInvalid
+	}
+	return revokeUserSessionsMatching(userID, "", reason, func(query *gorm.DB) *gorm.DB {
+		return query.Where("COALESCE(authority_issuer, '') = '' OR authority_auth_version <= 0")
+	})
+}
+
 func revokeUserSessions(userID int, excludedSID, reason string) (int64, error) {
 	return revokeUserSessionsMatching(userID, excludedSID, reason, nil)
 }
