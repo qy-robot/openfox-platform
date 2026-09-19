@@ -13,55 +13,43 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
 import {
-  ArrowDownToLine,
   ArrowRight,
-  ArrowUpRight,
+  Bot,
   Check,
+  ChevronRight,
   Code2,
-  Layers,
-  Users,
+  Layers3,
+  ScanLine,
+  ShieldCheck,
+  Sparkles,
+  Waypoints,
+  Workflow,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 
-const platformHighlights = [
-  {
-    index: '01',
-    title: 'Build from a real task',
-    description:
-      'Keep the brief, the files, and the next useful action in the same place.',
-    icon: Code2,
-  },
-  {
-    index: '02',
-    title: 'Bring the right tools',
-    description:
-      'Add robotics skills and model services when the work calls for them.',
-    icon: Layers,
-  },
-  {
-    index: '03',
-    title: 'Move with your team',
-    description:
-      'Share projects, usage, and decisions without adding another layer of process.',
-    icon: Users,
-  },
+const roboticsCards = [
+  { title: '移动底盘', description: '路径规划与实时控制', icon: Waypoints },
+  { title: '机械臂协作', description: '动作编排与安全边界', icon: Bot },
+  { title: '视觉巡检', description: '识别、定位与任务回传', icon: ScanLine },
 ]
 
-const workflowSteps = [
-  [
-    'Bring your project',
-    'Open a local project and describe the outcome you want.',
-  ],
-  [
-    'Choose your tools',
-    'Connect the model service and skills that fit the job.',
-  ],
-  ['Review the work', 'See what changed, keep what works, and keep moving.'],
+const capabilities = [
+  { number: '01', icon: Layers3, title: 'One place for every model', description: 'Route OpenAI-compatible requests across the providers your product already uses.' },
+  { number: '02', icon: Workflow, title: 'Skills that ship with context', description: 'Give agents the right robotics workflows, tools, and project knowledge on demand.' },
+  { number: '03', icon: ShieldCheck, title: 'Control without the busywork', description: 'Keep usage, permissions, and spend visible as your team moves from prototype to production.' },
+]
+
+const capabilityCopy = [
+  ['模型统一接入', '一个接口接入常用模型。'],
+  ['技能随项目使用', '需要什么技能，就在项目里调用什么。'],
+  ['用量权限清楚', '请求、权限和花费，一眼能看见。'],
 ]
 
 export function ProductHome(props: { isAuthenticated: boolean }) {
@@ -70,133 +58,31 @@ export function ProductHome(props: { isAuthenticated: boolean }) {
   const isCjk = /^(zh|ja|ko)/i.test(i18n.language)
 
   return (
-    <main className={`robo-home${isCjk ? ' robo-home--cjk' : ''}`}>
-      <section className='robo-home-hero'>
-        <div className='robo-home-hero-glow' aria-hidden='true' />
-        <div className='robo-home-hero-inner'>
-          <div className='robo-home-kicker'>
-            <span className='robo-home-kicker-mark' aria-hidden='true' />
-            {t('Your workspace for building robots')}
+    <main className={`openfox-home${isCjk ? ' openfox-home--cjk' : ''}`}>
+      <section className='openfox-hero'>
+        <div className='openfox-hero-shell'>
+          <div className='openfox-hero-copy'>
+            <div className='openfox-eyebrow'><span className='openfox-eyebrow-dot' aria-hidden='true' />{t('给机器人开发团队的工作台')}</div>
+            <h1>{t('把模型接好，')}<em>{t('把事情做完。')}</em></h1>
+            <p className='openfox-hero-lede'>{t('把代码、模型、机器人技能和项目放在一起，专注把机器人跑起来。')}</p>
+            <div className='openfox-hero-actions'><Button className='openfox-button-primary' render={<Link to={consolePath} />}>{t('进入工作台')}<ArrowRight aria-hidden='true' /></Button><Button variant='outline' className='openfox-button-secondary' render={<Link to='/pricing' />}>{t('查看方案')}<ChevronRight aria-hidden='true' /></Button></div>
+            <div className='openfox-trust-row'><span>{t('兼容主流 API')}</span><span>{t('用量可见')}</span><span>{t('支持团队协作')}</span></div>
           </div>
-          <h1>{t('Build things that work.')}</h1>
-          <p className='robo-home-lede'>
-            {t(
-              'OpenFox brings code, robotics skills, and AI services together so every task can become a working result.'
-            )}
-          </p>
-          <div className='robo-home-actions'>
-            <Button
-              className='robo-home-primary-action'
-              render={<Link to={consolePath} />}
-            >
-              {t('Open workspace')}
-              <ArrowRight aria-hidden />
-            </Button>
-            <Button
-              variant='outline'
-              className='robo-home-secondary-action'
-              render={<Link to='/download' />}
-            >
-              <ArrowDownToLine aria-hidden />
-              {t('Download desktop app')}
-            </Button>
-          </div>
-          <div className='robo-home-hero-note'>
-            <span>{t('One account')}</span>
-            <span aria-hidden='true'>·</span>
-            <span>{t('Desktop + cloud')}</span>
-            <span aria-hidden='true'>·</span>
-            <span>{t('Built for real work')}</span>
+          <div className='openfox-model-shelf' aria-label={t('机器人项目预览')}>
+            <div className='openfox-command-bar'><span>{t('输入一个机器人任务，开始探索')}</span><ArrowRight aria-hidden='true' /></div>
+            <div className='openfox-model-cards'>{roboticsCards.map(({ title, description, icon: Icon }, index) => <article key={title} className={`openfox-model-card${index === 0 ? ' is-featured' : ''}`}><span className={`openfox-model-icon model-dot-${index}`} aria-hidden='true'><Icon /></span><h3>{t(title)}</h3><p>{t(description)}</p><span className='openfox-model-link'>{t('查看项目')} <ChevronRight aria-hidden='true' /></span></article>)}</div>
           </div>
         </div>
-        <div className='robo-home-orbit' aria-hidden='true'>
-          <span className='robo-home-orbit-core' />
-          <span className='robo-home-orbit-line robo-home-orbit-line-one' />
-          <span className='robo-home-orbit-line robo-home-orbit-line-two' />
-          <span className='robo-home-orbit-dot robo-home-orbit-dot-one' />
-          <span className='robo-home-orbit-dot robo-home-orbit-dot-two' />
-        </div>
+        <div className='openfox-hero-grid' aria-hidden='true' />
       </section>
 
-      <section
-        className='robo-home-highlights'
-        aria-labelledby='robo-highlights-title'
-      >
-        <div className='robo-home-section-heading'>
-          <p className='robo-home-eyebrow'>{t('The way we work')}</p>
-          <h2 id='robo-highlights-title'>
-            {t('Less ceremony. More progress.')}
-          </h2>
-        </div>
-        <div className='robo-home-highlight-grid'>
-          {platformHighlights.map(
-            ({ index, title, description, icon: Icon }) => (
-              <article key={title} className='robo-home-highlight'>
-                <div className='robo-home-highlight-topline'>
-                  <span>{index}</span>
-                  <Icon aria-hidden />
-                </div>
-                <h3>{t(title)}</h3>
-                <p>{t(description)}</p>
-                <span className='robo-home-highlight-arrow' aria-hidden='true'>
-                  <ArrowUpRight />
-                </span>
-              </article>
-            )
-          )}
-        </div>
-      </section>
+      <section className='openfox-proof'><div className='openfox-proof-inner'><span>{t('适合')}</span><div className='openfox-proof-logos'><b>{t('产品团队')}</b><b>{t('机器人实验室')}</b><b>{t('AI 开发者')}</b><b>{t('平台工程师')}</b></div></div></section>
 
-      <section
-        className='robo-home-workflow'
-        aria-labelledby='robo-workflow-title'
-      >
-        <div className='robo-home-workflow-intro'>
-          <p className='robo-home-eyebrow'>{t('Built around the work')}</p>
-          <h2 id='robo-workflow-title'>
-            {t('From a clear idea to a useful result.')}
-          </h2>
-          <p>
-            {t(
-              'A focused workspace for people who want to make, test, and ship without losing the thread.'
-            )}
-          </p>
-          <Link to='/about' className='robo-home-text-link'>
-            {t('Learn more about OpenFox')}
-            <ArrowRight aria-hidden />
-          </Link>
-        </div>
-        <div className='robo-home-workflow-list'>
-          {workflowSteps.map(([title, description], index) => (
-            <div key={title} className='robo-home-workflow-step'>
-              <span className='robo-home-step-number'>0{index + 1}</span>
-              <div>
-                <h3>{t(title)}</h3>
-                <p>{t(description)}</p>
-              </div>
-              <Check aria-hidden />
-            </div>
-          ))}
-        </div>
-      </section>
+      <section className='openfox-capabilities' aria-labelledby='openfox-capabilities-title'><div className='openfox-section-intro'><span className='openfox-section-label'>{t('为什么是 OpenFox')}</span><h2 id='openfox-capabilities-title'>{t('少一点折腾，')}<br /><em>{t('多一点进展。')}</em></h2><p>{t('把模型、技能和协作放在同一个地方。')}</p></div><div className='openfox-capability-list'>{capabilities.map(({ number, icon: Icon }, index) => <article key={number} className='openfox-capability'><span className='openfox-capability-number'>{number}</span><div className='openfox-capability-icon'><Icon aria-hidden='true' /></div><div><h3>{t(capabilityCopy[index][0])}</h3><p>{t(capabilityCopy[index][1])}</p></div><ArrowRight aria-hidden='true' /></article>)}</div></section>
 
-      <section className='robo-home-cta'>
-        <div className='robo-home-cta-grid' aria-hidden='true' />
-        <div className='robo-home-cta-content'>
-          <div className='robo-home-cta-mark' aria-hidden='true'>
-            R
-          </div>
-          <h2>{t('Make the next thing real.')}</h2>
-          <p>{t('Start with the work in front of you.')}</p>
-          <Button
-            className='robo-home-cta-action'
-            render={<Link to={consolePath} />}
-          >
-            {t('Enter OpenFox')}
-            <ArrowRight aria-hidden />
-          </Button>
-        </div>
-      </section>
+      <section className='openfox-code-section'><div className='openfox-code-copy'><span className='openfox-section-label'>{t('几分钟开始')}</span><h2>{t('一个接口，接入你的技术栈。')}</h2><p>{t('先用熟悉的 API，后续再按项目增加技能和权限。')}</p><Link to='/about' className='openfox-inline-link'>{t('了解更多')} <ArrowRight aria-hidden='true' /></Link></div><div className='openfox-code-window'><div className='openfox-code-head'><span>openfox.ts</span><span><Code2 aria-hidden='true' /> TypeScript</span></div><pre><code><span className='code-muted'>import</span> {'{ OpenFox }'} <span className='code-muted'>from</span> <span className='code-string'>'@openfox/sdk'</span>{'\n\n'}<span className='code-muted'>const</span> fox = <span className='code-keyword'>new</span> OpenFox({'{'}{'\n'}  apiKey: process.env.OPENFOX_KEY{ '\n'}{'}'}){ '\n\n'}<span className='code-muted'>const</span> result = <span className='code-muted'>await</span> fox.responses.create({'{'}{'\n'}  model: <span className='code-string'>'openfox/auto'</span>,{ '\n'}  input: <span className='code-string'>'规划下一次机器人测试'</span>{ '\n'}{'}'})</code></pre><div className='openfox-code-result'><Check aria-hidden='true' /><span>{t('已完成路由，可供查看')}</span><b>842ms</b></div></div></section>
+
+      <section className='openfox-cta'><div className='openfox-cta-mark'><Sparkles aria-hidden='true' /></div><h2>{t('现在就开始。')}</h2><p>{t('把手上的项目接进来，先跑起来。')}</p><Button className='openfox-button-primary' render={<Link to={consolePath} />}>{t('进入 OpenFox')} <ArrowRight aria-hidden='true' /></Button></section>
     </main>
   )
 }
