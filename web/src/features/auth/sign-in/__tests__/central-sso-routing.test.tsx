@@ -139,7 +139,7 @@ it('routes identity management to the account subdomain in central mode', () => 
   localStorage.setItem('status', JSON.stringify({ account_auth_enabled: true }))
 
   expect(getIdentityProfileURL()).toBe(
-    'https://account.openzrob.com/account/profile'
+    'https://account.openfox.work/account/profile'
   )
 })
 

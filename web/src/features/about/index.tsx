@@ -38,14 +38,14 @@ function EmptyAboutState() {
       <main className='mx-auto max-w-3xl px-6 pt-32 pb-20'>
         <Bot className='text-primary mb-8 size-12' aria-hidden />
         <p className='text-muted-foreground mb-3 text-sm'>
-          RoboCoding · by擎云机器人
+          OpenFox ·
         </p>
         <h1 className='text-4xl leading-tight font-semibold'>
           {t('Learn by building, one task at a time.')}
         </h1>
         <p className='text-muted-foreground mt-6 text-lg leading-9'>
           {t(
-            'RoboCoding brings AI coding, robotics skills, and team services into one connected workspace.'
+            'OpenFox brings AI coding, robotics skills, and team services into one connected workspace.'
           )}
         </p>
         <p className='text-muted-foreground mt-5 leading-8'>

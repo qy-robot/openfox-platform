@@ -14,7 +14,7 @@ The manifest must contain exactly one entry for each supported target:
 
 Set `status` to `available` only after the referenced installer exists. An
 available entry requires a non-empty `fileName` and a `url` that is either an
-HTTPS URL or a root-relative path such as `/releases/RoboCoding.dmg`. An
+HTTPS URL or a root-relative path such as `/releases/OpenFox.dmg`. An
 unavailable entry must use `null` for `url`.
 
 Any manifest with an available entry must also provide both `version` and

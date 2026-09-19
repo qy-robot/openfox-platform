@@ -81,7 +81,7 @@ export function ProductHome(props: { isAuthenticated: boolean }) {
           <h1>{t('Build things that work.')}</h1>
           <p className='robo-home-lede'>
             {t(
-              'RoboCoding brings code, robotics skills, and AI services together so every task can become a working result.'
+              'OpenFox brings code, robotics skills, and AI services together so every task can become a working result.'
             )}
           </p>
           <div className='robo-home-actions'>
@@ -162,7 +162,7 @@ export function ProductHome(props: { isAuthenticated: boolean }) {
             )}
           </p>
           <Link to='/about' className='robo-home-text-link'>
-            {t('Learn more about RoboCoding')}
+            {t('Learn more about OpenFox')}
             <ArrowRight aria-hidden />
           </Link>
         </div>
@@ -192,7 +192,7 @@ export function ProductHome(props: { isAuthenticated: boolean }) {
             className='robo-home-cta-action'
             render={<Link to={consolePath} />}
           >
-            {t('Enter RoboCoding')}
+            {t('Enter OpenFox')}
             <ArrowRight aria-hidden />
           </Button>
         </div>

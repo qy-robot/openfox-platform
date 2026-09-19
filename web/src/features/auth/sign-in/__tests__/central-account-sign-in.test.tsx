@@ -40,7 +40,7 @@ vi.mock('../components/user-auth-form', () => ({
 
 vi.mock('@/hooks/use-status', () => ({
   useStatus: () => ({
-    status: { account_center_url: 'https://account.openzrob.com' },
+    status: { account_center_url: 'https://account.openfox.work' },
   }),
 }))
 
@@ -63,7 +63,7 @@ it('renders the native form without embedding the account site', () => {
   expect(capturedFormProps.current).toEqual(
     expect.objectContaining({
       passwordOnly: true,
-      forgotPasswordUrl: 'https://account.openzrob.com/account/recovery',
+      forgotPasswordUrl: 'https://account.openfox.work/account/recovery',
     })
   )
 })
@@ -89,7 +89,7 @@ it('sends credentials only to account then exchanges JSON authorization', async 
     })
   vi.stubGlobal('fetch', fetchMock)
   startCentralSSO.mockResolvedValue(
-    'https://account.openzrob.com/v1/oauth/authorize?response_mode=json'
+    'https://account.openfox.work/v1/oauth/authorize?response_mode=json'
   )
   finishCentralSSOResult.mockResolvedValue({
     status: 'authenticated',
@@ -112,7 +112,7 @@ it('sends credentials only to account then exchanges JSON authorization', async 
 
   expect(fetchMock).toHaveBeenNthCalledWith(
     1,
-    'https://account.openzrob.com/v1/auth/login',
+    'https://account.openfox.work/v1/auth/login',
     expect.objectContaining({
       method: 'POST',
       credentials: 'include',
@@ -165,7 +165,7 @@ it('rejects an authorization URL outside the configured account origin', async (
 
   expect(fetchMock).toHaveBeenCalledTimes(1)
   expect(fetchMock).toHaveBeenCalledWith(
-    'https://account.openzrob.com/v1/auth/login',
+    'https://account.openfox.work/v1/auth/login',
     expect.anything()
   )
 })
@@ -216,7 +216,7 @@ it('silently restores an account cookie unless the user explicitly signed out', 
   })
   vi.stubGlobal('fetch', fetchMock)
   startCentralSSO.mockResolvedValue(
-    'https://account.openzrob.com/v1/oauth/authorize?response_mode=json'
+    'https://account.openfox.work/v1/oauth/authorize?response_mode=json'
   )
   finishCentralSSOResult.mockResolvedValue({
     status: 'interaction_required',

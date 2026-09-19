@@ -141,7 +141,7 @@ describe('central account SSO callback', () => {
     vi.mocked(api.get).mockResolvedValue({
       data: {
         data: {
-          authorizationUrl: 'https://account.openzrob.com/v1/oauth/authorize',
+          authorizationUrl: 'https://account.openfox.work/v1/oauth/authorize',
         },
       },
     })

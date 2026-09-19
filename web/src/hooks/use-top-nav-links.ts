@@ -76,13 +76,13 @@ export function useTopNavLinks(): TopNavLink[] {
 
   links.push({
     title: t('Workbench'),
-    href: 'https://dash.openzrob.com',
+    href: 'https://dash.openfox.work',
     external: true,
   })
 
   links.push({
     title: t('AI Station'),
-    href: 'https://ai.openzrob.com',
+    href: 'https://ai.openfox.work',
     external: true,
   })
 

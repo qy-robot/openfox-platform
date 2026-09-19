@@ -31,7 +31,7 @@ beforeEach(() => {
   useSystemConfigStore.setState(useSystemConfigStore.getInitialState(), true)
 })
 
-describe('RoboCoding brand defaults', () => {
+describe('OpenFox brand defaults', () => {
   test.each([
     'New API',
     'new-api',

@@ -26,15 +26,15 @@ import type { DownloadManifest } from '../types'
 
 const releasedManifest: DownloadManifest = {
   schemaVersion: 1,
-  product: 'RoboCoding',
+  product: 'OpenFox',
   version: '1.0.0',
   publishedAt: '2026-09-15T10:00:00Z',
   downloads: [
     {
       id: 'windows-x64',
       status: 'available',
-      url: '/releases/RoboCoding-1.0.0.exe',
-      fileName: 'RoboCoding-1.0.0.exe',
+      url: '/releases/OpenFox-1.0.0.exe',
+      fileName: 'OpenFox-1.0.0.exe',
       size: null,
       sha256: null,
     },
@@ -75,7 +75,7 @@ test('a refresh error hides stale links until retry recovers current data', () =
   const downloadAction = screen.getByRole('button', { name: 'Download' })
   expect(downloadAction).toHaveAttribute(
     'href',
-    '/releases/RoboCoding-1.0.0.exe'
+    '/releases/OpenFox-1.0.0.exe'
   )
   expect(
     screen.queryByText('Downloads are temporarily unavailable')

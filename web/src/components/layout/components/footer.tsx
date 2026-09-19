@@ -93,7 +93,7 @@ export function Footer(props: FooterProps) {
                   {systemName || props.name}
                 </span>
                 <span className='text-muted-foreground mt-1 block text-xs'>
-                  by擎云机器人
+
                 </span>
               </span>
             </Link>

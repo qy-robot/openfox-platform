@@ -24,15 +24,15 @@ function productOrigin(value: unknown, fallback: string): string {
 
 export const AI_STATION_URL = productOrigin(
   import.meta.env.VITE_ROBO_AI_URL,
-  'https://ai.openzrob.com'
+  'https://ai.openfox.work'
 )
 
 export const CONSOLE_URL = productOrigin(
   import.meta.env.VITE_ROBO_CONSOLE_URL,
-  'https://dash.openzrob.com'
+  'https://dash.openfox.work'
 )
 
 export const ACCOUNT_CENTER_URL = productOrigin(
   import.meta.env.VITE_ROBO_ACCOUNT_URL,
-  'https://account.openzrob.com'
+  'https://account.openfox.work'
 )

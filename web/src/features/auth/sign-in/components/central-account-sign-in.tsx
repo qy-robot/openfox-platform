@@ -38,7 +38,7 @@ type AccountResponse = {
 
 function accountCenterURL(value: unknown): URL {
   const url = new URL(
-    typeof value === 'string' && value ? value : 'https://account.openzrob.com'
+    typeof value === 'string' && value ? value : 'https://account.openfox.work'
   )
   const localHTTP =
     url.protocol === 'http:' &&

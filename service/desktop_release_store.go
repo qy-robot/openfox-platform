@@ -393,7 +393,7 @@ func DesktopDownloadManifestView() (DesktopDownloadManifest, error) {
 	if err != nil {
 		return DesktopDownloadManifest{}, err
 	}
-	manifest := DesktopDownloadManifest{SchemaVersion: 1, Product: "RoboCoding"}
+	manifest := DesktopDownloadManifest{SchemaVersion: 1, Product: "OpenFox"}
 	artifacts := make(map[string]DesktopReleaseArtifact)
 	if view.Latest != nil {
 		manifest.Version = &view.Latest.Version

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	DefaultSystemName = "RoboCoding"
+	DefaultSystemName = "OpenFox"
 	DefaultLogo       = "/robocodingai-logo.png"
 )
 

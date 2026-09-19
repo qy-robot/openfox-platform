@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "displayName": "RoboCoding",
-  "subtitle": "by擎云机器人",
+  "displayName": "OpenFox",
+  "subtitle": "",
   "component": "platform",
   "repository": "qy-robot/robocodingai-platform",
   "upstream": "https://github.com/QuantumNous/new-api",

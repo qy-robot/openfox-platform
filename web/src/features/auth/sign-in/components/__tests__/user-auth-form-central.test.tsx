@@ -87,7 +87,7 @@ it('re-enables the native account form after a rejected attempt', async () => {
   render(
     <UserAuthForm
       passwordOnly
-      forgotPasswordUrl='https://account.openzrob.com/account/recovery'
+      forgotPasswordUrl='https://account.openfox.work/account/recovery'
       onPasswordSubmit={onPasswordSubmit}
     />
   )
@@ -113,7 +113,7 @@ it('keeps legal consent and submits the native password fields through the accou
   render(
     <UserAuthForm
       passwordOnly
-      forgotPasswordUrl='https://account.openzrob.com/account/recovery'
+      forgotPasswordUrl='https://account.openfox.work/account/recovery'
       onPasswordSubmit={onPasswordSubmit}
     />
   )
@@ -123,7 +123,7 @@ it('keeps legal consent and submits the native password fields through the accou
   expect(screen.queryByTestId('turnstile-container')).toBeNull()
   expect(
     screen.getByRole('link', { name: 'Forgot password?' })
-  ).toHaveAttribute('href', 'https://account.openzrob.com/account/recovery')
+  ).toHaveAttribute('href', 'https://account.openfox.work/account/recovery')
   fireEvent.change(screen.getByLabelText('Username or Email'), {
     target: { value: 'alice@example.com' },
   })

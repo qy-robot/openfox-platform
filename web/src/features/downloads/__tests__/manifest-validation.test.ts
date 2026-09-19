@@ -30,7 +30,7 @@ import type { DownloadManifest } from '../types'
 function createManifest(): DownloadManifest {
   return {
     schemaVersion: 1,
-    product: 'RoboCoding',
+    product: 'OpenFox',
     version: null,
     publishedAt: null,
     downloads: [
@@ -72,19 +72,19 @@ function createManifest(): DownloadManifest {
 
 describe('download URL safety', () => {
   test.each([
-    '/releases/RoboCoding.dmg',
-    'https://cdn.example.com/RoboCoding.exe',
+    '/releases/OpenFox.dmg',
+    'https://cdn.example.com/OpenFox.exe',
   ])('accepts deployable URL %s', (url) => {
     expect(isSafeDownloadUrl(url)).toBe(true)
   })
 
   test.each([
-    '//untrusted.example/RoboCoding.dmg',
-    'http://cdn.example.com/RoboCoding.exe',
+    '//untrusted.example/OpenFox.dmg',
+    'http://cdn.example.com/OpenFox.exe',
     'javascript:alert(1)',
-    'RoboCoding.AppImage',
-    '/\\untrusted.example/RoboCoding.dmg',
-    ' https://cdn.example.com/RoboCoding.exe',
+    'OpenFox.AppImage',
+    '/\\untrusted.example/OpenFox.dmg',
+    ' https://cdn.example.com/OpenFox.exe',
   ])('rejects unsafe URL %s', (url) => {
     expect(isSafeDownloadUrl(url)).toBe(false)
   })
@@ -119,13 +119,13 @@ describe('download availability', () => {
     manifest.downloads[0] = {
       ...manifest.downloads[0],
       status: 'available',
-      url: '/releases/RoboCoding-1.0.0.exe',
-      fileName: 'RoboCoding-1.0.0.exe',
+      url: '/releases/OpenFox-1.0.0.exe',
+      fileName: 'OpenFox-1.0.0.exe',
     }
 
     expect(parseDownloadManifest(manifest).downloads[0]).toMatchObject({
       status: 'available',
-      url: '/releases/RoboCoding-1.0.0.exe',
+      url: '/releases/OpenFox-1.0.0.exe',
     })
   })
 
@@ -160,8 +160,8 @@ describe('download availability', () => {
     manifest.downloads[0] = {
       ...manifest.downloads[0],
       status: 'available',
-      url: '/releases/RoboCoding-1.0.0.exe',
-      fileName: 'RoboCoding-1.0.0.exe',
+      url: '/releases/OpenFox-1.0.0.exe',
+      fileName: 'OpenFox-1.0.0.exe',
     }
 
     expect(() => parseDownloadManifest(manifest)).toThrow()
@@ -172,8 +172,8 @@ describe('download availability', () => {
     manifest.downloads[0] = {
       ...manifest.downloads[0],
       status: 'available',
-      url: 'http://untrusted.example/RoboCoding.exe',
-      fileName: 'RoboCoding.exe',
+      url: 'http://untrusted.example/OpenFox.exe',
+      fileName: 'OpenFox.exe',
     }
 
     expect(() => parseDownloadManifest(manifest)).toThrow()

@@ -33,7 +33,7 @@ export type DownloadTarget = {
 
 export type DownloadManifest = {
   schemaVersion: 1
-  product: 'RoboCoding'
+  product: 'OpenFox'
   version: string | null
   publishedAt: string | null
   changelog?: string | null

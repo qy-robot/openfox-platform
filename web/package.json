@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "rsbuild dev",
     "dev:local": "VITE_REACT_APP_SERVER_URL=http://localhost:3000 rsbuild dev",
-    "dev:production": "VITE_REACT_APP_SERVER_URL=https://ai.openzrob.com rsbuild dev",
+    "dev:production": "VITE_REACT_APP_SERVER_URL=https://ai.openfox.work rsbuild dev",
     "build": "rsbuild build",
     "build:check": "tsgo -b && rsbuild build",
     "typecheck": "tsgo -b",

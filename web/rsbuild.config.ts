@@ -14,7 +14,7 @@ export default defineConfig(({ envMode }) => {
   const serverUrl =
     process.env.VITE_REACT_APP_SERVER_URL ||
     env.rawPublicVars.VITE_REACT_APP_SERVER_URL ||
-    (isProd ? 'https://ai.openzrob.com' : 'http://localhost:3000')
+    (isProd ? 'https://ai.openfox.work' : 'http://localhost:3000')
 
   const devProxy = Object.fromEntries(
     (['/api', '/v1', '/mj', '/pg'] as const).map((key) => [

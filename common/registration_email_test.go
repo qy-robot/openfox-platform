@@ -7,8 +7,8 @@ import (
 
 func TestRegistrationVerificationEmail(t *testing.T) {
 	body := RegistrationVerificationEmail("RoboCodingAI", "012345", 10)
-	assert.Contains(t, body, "欢迎加入 RoboCoding")
-	assert.Contains(t, body, "by擎云机器人")
+	assert.Contains(t, body, "欢迎加入 OpenFox")
+	assert.Contains(t, body, "")
 	assert.Contains(t, body, ">012345</div>")
 	assert.Contains(t, body, ">10 分钟</strong>")
 	assert.NotContains(t, body, "<img")

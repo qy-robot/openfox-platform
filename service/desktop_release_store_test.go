@@ -18,7 +18,7 @@ func TestDesktopReleasePublishRetainsLatestThreeAndServesArtifacts(t *testing.T)
 	for _, version := range []string{"1.0.0", "1.1.0", "1.2.0", "1.3.0"} {
 		content := "artifact-" + version
 		draft, err := SaveDesktopReleaseDraft(version, "changes "+version, actor, []DesktopReleaseUpload{{
-			Target: "windows-x64", FileName: "RoboCoding-" + version + ".exe", Reader: strings.NewReader(content),
+			Target: "windows-x64", FileName: "OpenFox-" + version + ".exe", Reader: strings.NewReader(content),
 		}})
 		require.NoError(t, err)
 		assert.Equal(t, "draft", draft.Status)
@@ -48,7 +48,7 @@ func TestDesktopReleasePublishRetainsLatestThreeAndServesArtifacts(t *testing.T)
 	data, err := io.ReadAll(file)
 	require.NoError(t, err)
 	assert.Equal(t, "artifact-1.3.0", string(data))
-	assert.Equal(t, "RoboCoding-1.3.0.exe", artifact.FileName)
+	assert.Equal(t, "OpenFox-1.3.0.exe", artifact.FileName)
 
 	_, _, err = OpenDesktopReleaseArtifact("1.0.0", "windows-x64")
 	assert.ErrorIs(t, err, ErrDesktopReleaseNotFound)

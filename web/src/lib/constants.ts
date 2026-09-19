@@ -21,8 +21,8 @@ For commercial licensing, please contact support@quantumnous.com
  */
 
 // System Configuration Defaults
-export const DEFAULT_SYSTEM_NAME = 'RoboCoding'
-export const DEFAULT_SYSTEM_SUBTITLE = 'by擎云机器人'
+export const DEFAULT_SYSTEM_NAME = 'OpenFox'
+export const DEFAULT_SYSTEM_SUBTITLE = ''
 export const DEFAULT_LOGO = '/robocodingai-logo.png'
 
 const LEGACY_DEFAULT_SYSTEM_NAMES = new Set([
@@ -44,7 +44,7 @@ export function normalizeSystemName(value: unknown): string {
   return name
 }
 
-/** Keep deliberate custom logos and fall back to the bundled RoboCoding mark. */
+/** Keep deliberate custom logos and fall back to the bundled OpenFox mark. */
 export function normalizeSystemLogo(value: unknown): string {
   if (typeof value !== 'string') return DEFAULT_LOGO
   const logo = value.trim()

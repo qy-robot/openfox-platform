@@ -1,6 +1,6 @@
 # Desktop release management
 
-RoboCoding stores desktop installers on the platform server and exposes the newest published release through `/downloads.json`. Release drafts and artifacts are not public until an explicit publish request succeeds. Publishing a fourth version removes the oldest published version from the catalog, then retires and deletes its local artifacts; drafts do not count toward the three-version limit.
+OpenFox stores desktop installers on the platform server and exposes the newest published release through `/downloads.json`. Release drafts and artifacts are not public until an explicit publish request succeeds. Publishing a fourth version removes the oldest published version from the catalog, then retires and deletes its local artifacts; drafts do not count toward the three-version limit.
 
 ## Configuration
 

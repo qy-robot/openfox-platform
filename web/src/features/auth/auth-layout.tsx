@@ -53,13 +53,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           <span>
             <span className='block text-lg font-semibold'>{systemName}</span>
             <span className='text-muted-foreground block text-xs'>
-              by擎云机器人
+
             </span>
           </span>
         )}
       </Link>
       <aside className='bg-accent/60 hidden flex-col justify-center px-16 py-32 lg:flex xl:px-24'>
-        <p className='text-primary mb-6 text-sm font-medium'>RoboCoding</p>
+        <p className='text-primary mb-6 text-sm font-medium'>OpenFox</p>
         <h1 className='text-4xl leading-snug font-semibold tracking-tight'>
           {t('Learn by building.')}
           <br />

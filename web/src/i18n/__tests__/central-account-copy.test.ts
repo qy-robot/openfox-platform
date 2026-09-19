@@ -12,20 +12,20 @@ import { expect, it } from 'vitest'
 import zhTW from '../locales/zh-TW.json'
 import zhCN from '../locales/zh.json'
 
-const button = 'Sign in with your RoboCoding account'
+const button = 'Sign in with your OpenFox account'
 const description =
-  'Use one RoboCoding account to sign in securely across RoboCoding services.'
+  'Use one OpenFox account to sign in securely across OpenFox services.'
 
 it('keeps central-account sign-in copy inside the Simplified Chinese namespace', () => {
-  expect(zhCN.translation[button]).toBe('使用 RoboCoding 账号登录')
+  expect(zhCN.translation[button]).toBe('使用 OpenFox 账号登录')
   expect(zhCN.translation[description]).toBe(
-    '使用同一个 RoboCoding 账号安全登录各项 RoboCoding 服务。'
+    '使用同一个 OpenFox 账号安全登录各项 OpenFox 服务。'
   )
 })
 
 it('keeps central-account sign-in copy inside the Traditional Chinese namespace', () => {
-  expect(zhTW.translation[button]).toBe('使用 RoboCoding 帳號登入')
+  expect(zhTW.translation[button]).toBe('使用 OpenFox 帳號登入')
   expect(zhTW.translation[description]).toBe(
-    '使用同一個 RoboCoding 帳號安全登入各項 RoboCoding 服務。'
+    '使用同一個 OpenFox 帳號安全登入各項 OpenFox 服務。'
   )
 })

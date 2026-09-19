@@ -446,3 +446,12 @@
 - 发布：`platform-b7fa4567d146-7458e1a35781`，兼容线上 `platform-4e9016124551-6e293e9fbd55`；无数据库迁移。
 - 验证：完整 Web/Go 构建检查通过；生产运行哈希 `b3d319924a3b72ed72839cc2f7c35712f0e8f480909891a9043e970db28b857d` 与候选一致，systemd、本机 health、公网 health 均正常。
 - 备份 / 回滚：`20260919T050004Z`；上一版本可通过 receipt 回滚。
+
+### 2026-09-19T16:11:23+08:00 | Codex | OpenFox 公共品牌与域名引用更新
+
+- 平台 Web 公共显示名更新为 OpenFox，站点、AI、账号和工作台链接切换至 `openfox.work` 子域名；保留上游包名、模块路径与内部 client 标识。
+- 验证：本轮未执行独立 Web workspace typecheck；Yarn lock 未登记当前 workspace 包，命令在依赖解析阶段阻塞。
+
+### 2026-09-19T16:13:03+08:00 | Codex | OpenFox Web 资源验证补充
+
+- Platform Web `tsgo -b` 与品牌/独立应用定向测试 12/12 通过；公共 logo/favicon 已换为 OpenFox 用户商标图，未部署。

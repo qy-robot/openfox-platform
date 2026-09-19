@@ -32,7 +32,7 @@ export function UsersPrimaryButtons() {
     return (
       <p className='text-muted-foreground text-sm'>
         {t(
-          'Users are provisioned when they first sign in with RoboCoding Account.'
+          'Users are provisioned when they first sign in with OpenFox Account.'
         )}
       </p>
     )

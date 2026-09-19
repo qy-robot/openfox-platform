@@ -16,7 +16,7 @@ export async function logoutCentralBrowserSession(): Promise<void> {
   const status = await getStatus()
   if (status.account_auth_enabled !== true) return
   const issuer = new URL(
-    String(status.account_center_url || 'https://account.openzrob.com')
+    String(status.account_center_url || 'https://account.openfox.work')
   )
   const localHTTP =
     issuer.protocol === 'http:' &&

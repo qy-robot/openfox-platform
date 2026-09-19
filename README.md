@@ -1,8 +1,8 @@
-# RoboCoding Platform
+# OpenFox Platform
 
-by擎云机器人
 
-RoboCoding product fork. See [product ownership and initialization status](ROBOCODINGAI.md). Original upstream documentation and license information follow unchanged below.
+
+OpenFox product fork. See [product ownership and initialization status](ROBOCODINGAI.md). Original upstream documentation and license information follow unchanged below.
 
 ---
 

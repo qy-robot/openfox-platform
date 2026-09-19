@@ -34,7 +34,7 @@ function Licenses() {
         </h1>
         <p className='text-muted-foreground mb-8 leading-7'>
           {t(
-            'RoboCoding builds on open-source software. The original projects retain their names, copyrights, and licenses.'
+            'OpenFox builds on open-source software. The original projects retain their names, copyrights, and licenses.'
           )}
         </p>{' '}
         <div className='space-y-4 text-sm'>

@@ -17,7 +17,7 @@ func RegistrationVerificationEmail(systemName, code string, validMinutes int) st
 <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;">
 <tr><td style="padding:0 8px 24px;">
 <div style="font-size:26px;line-height:34px;font-weight:700;letter-spacing:-0.7px;">%[1]s</div>
-<div style="margin-top:4px;font-size:12px;line-height:20px;color:#656b75;">by擎云机器人</div>
+<div style="margin-top:4px;font-size:12px;line-height:20px;color:#656b75;"></div>
 </td></tr>
 <tr><td style="padding:32px 24px;background-color:#ffffff;border:1px solid #e4e7ec;border-top:4px solid #202124;border-radius:12px;">
 <div style="font-size:12px;line-height:20px;font-weight:600;letter-spacing:2px;color:#777e89;">邮箱验证</div>

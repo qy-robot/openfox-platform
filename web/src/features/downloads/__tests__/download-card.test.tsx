@@ -45,8 +45,8 @@ test('a published build exposes its validated installer link', () => {
       target={{
         id: 'windows-x64',
         status: 'available',
-        url: '/releases/RoboCoding-1.0.0.exe',
-        fileName: 'RoboCoding-1.0.0.exe',
+        url: '/releases/OpenFox-1.0.0.exe',
+        fileName: 'OpenFox-1.0.0.exe',
         size: '98 MB',
         sha256: null,
       }}
@@ -57,6 +57,6 @@ test('a published build exposes its validated installer link', () => {
   expect(downloadAction.tagName).toBe('A')
   expect(downloadAction).toHaveAttribute(
     'href',
-    '/releases/RoboCoding-1.0.0.exe'
+    '/releases/OpenFox-1.0.0.exe'
   )
 })

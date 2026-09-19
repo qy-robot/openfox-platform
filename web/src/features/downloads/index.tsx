@@ -43,10 +43,10 @@ export function Downloads() {
           <div className='robo-download-hero-inner'>
             <p className='robo-download-kicker'>
               <span aria-hidden='true' />
-              {t('RoboCoding Desktop')}
+              {t('OpenFox Desktop')}
             </p>
             <h1>
-              {t('Download')} <em>RoboCoding.</em>
+              {t('Download')} <em>OpenFox.</em>
             </h1>
             <div className='robo-download-hero-meta'>
               <span>{t('Latest version')}</span>

@@ -134,7 +134,7 @@ describe('security sidebar visibility', () => {
       'Account center',
     ])
     expect(items[2]).toMatchObject({
-      url: 'https://account.openzrob.com/account/profile',
+      url: 'https://account.openfox.work/account/profile',
     })
   })
 

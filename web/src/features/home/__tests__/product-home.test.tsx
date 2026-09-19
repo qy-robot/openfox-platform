@@ -45,7 +45,7 @@ vi.mock('@/components/rich-content', () => ({
   ),
 }))
 vi.mock('../components/product-home', () => ({
-  ProductHome: () => <h1>RoboCoding product home</h1>,
+  ProductHome: () => <h1>OpenFox product home</h1>,
 }))
 afterEach(() => {
   cleanup()
@@ -55,7 +55,7 @@ afterEach(() => {
 })
 it('renders the product home when no administrator content is set', () => {
   render(<Home />)
-  expect(screen.getByRole('heading').textContent).toContain('RoboCoding')
+  expect(screen.getByRole('heading').textContent).toContain('OpenFox')
 })
 it('preserves custom Markdown content', () => {
   state.content = '# Custom welcome'

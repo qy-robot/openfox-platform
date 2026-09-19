@@ -87,7 +87,7 @@ const downloadTargetSchema = z
 const downloadManifestSchema = z
   .object({
     schemaVersion: z.literal(1),
-    product: z.literal('RoboCoding'),
+    product: z.literal('OpenFox'),
     version: z.string().trim().min(1).nullable(),
     publishedAt: z.iso.datetime().nullable(),
     changelog: z.string().trim().min(1).nullable().optional(),
