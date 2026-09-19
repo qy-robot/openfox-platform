@@ -171,6 +171,48 @@ func TestCentralLoginReclaimsStaleAccountSessionsBeforeActiveLimit(t *testing.T)
 	assert.Equal(t, "central_auth_version_changed", stored.RevokedReason)
 }
 
+func TestCentralLoginReclaimsInactiveSameVersionAccountSessionBeforeActiveLimit(t *testing.T) {
+	useTestSessionSecret(t)
+	user := setupAuthSessionTestDB(t)
+	common.UserSessionActiveLimit = 1
+	common.UserSessionIssuanceLimit = 100
+	now := time.Now().Unix()
+	stale := model.UserSession{
+		SID: "dead-central-session", UserID: user.Id, Version: 1, UserAuthVersion: user.AuthVersion,
+		Status: model.UserSessionStatusActive, RefreshHash: "dead-refresh", LoginMethod: CentralBrowserLoginMethod,
+		AuthorityIssuer: "https://account.example.com", AuthoritySubject: "acct-1", AuthoritySessionID: "dead-account-session", AuthorityAuthVersion: 1,
+		CreatedAt: now, LastActiveAt: now, ExpiresAt: now + 3600,
+	}
+	require.NoError(t, model.DB.Create(&stale).Error)
+
+	var statusChecks int
+	accountServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/internal/session-status", r.URL.Path)
+		statusChecks++
+		w.Header().Set("Content-Type", "application/json")
+		if statusChecks == 1 {
+			_, _ = w.Write([]byte(`{"success":true,"data":{"active":true}}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"success":true,"data":{"active":false}}`))
+	}))
+	t.Cleanup(accountServer.Close)
+	t.Setenv("ROBO_ACCOUNT_MODE", "central")
+	t.Setenv("ROBO_ACCOUNT_URL", accountServer.URL)
+	t.Setenv("ROBO_ACCOUNT_ISSUER", "https://account.example.com")
+	t.Setenv("ROBO_ACCOUNT_INTERNAL_TOKEN", "internal-secret")
+
+	bundle, err := CreateCentralBrowserLoginSession(user.Id, user.AuthVersion, CentralSessionAuthority{
+		Issuer: "https://account.example.com", Subject: "acct-1", SessionID: "new-account-session", AuthVersion: 1,
+	}, "127.0.0.1", "new-agent")
+	require.NoError(t, err)
+	assert.NotEmpty(t, bundle.AccessToken)
+	var stored model.UserSession
+	require.NoError(t, model.DB.First(&stored, "sid = ?", stale.SID).Error)
+	assert.Equal(t, model.UserSessionStatusRevoked, stored.Status)
+	assert.Equal(t, "central_session_inactive", stored.RevokedReason)
+}
+
 func TestCentralLoginReclaimsLegacySessionsBeforeActiveLimit(t *testing.T) {
 	useTestSessionSecret(t)
 	user := setupAuthSessionTestDB(t)

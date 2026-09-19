@@ -204,6 +204,26 @@ func CountActiveUserSessions(userID int, now int64) (int64, error) {
 	return count, err
 }
 
+// ListActiveCentralUserSessions returns active product sessions bound to the
+// central account authority. Callers use the authority fields to reconcile
+// sessions that the account service has already revoked.
+func ListActiveCentralUserSessions(userID int, now int64) ([]UserSession, error) {
+	if userID <= 0 {
+		return nil, ErrUserSessionInvalid
+	}
+	if now <= 0 {
+		now = time.Now().Unix()
+	}
+	var sessions []UserSession
+	err := DB.Where(
+		"user_id = ? AND status = ? AND expires_at > ? AND authority_issuer <> '' AND authority_subject <> '' AND authority_session_id <> '' AND authority_auth_version > 0",
+		userID,
+		UserSessionStatusActive,
+		now,
+	).Order("last_active_at ASC").Order("created_at ASC").Find(&sessions).Error
+	return sessions, err
+}
+
 // CountUserSessionsCreatedSince counts every issued row, regardless of its
 // current status or expiry. userID zero selects the global count.
 func CountUserSessionsCreatedSince(userID int, createdAfter int64) (int64, error) {

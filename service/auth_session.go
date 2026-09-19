@@ -107,6 +107,15 @@ func createLoginSession(userID int, expectedAuthVersion int64, loginMethod, ip, 
 	if err != nil {
 		return nil, err
 	}
+	if activeCount >= int64(common.UserSessionActiveLimit) && authority != nil {
+		if err := reclaimInactiveCentralUserSessions(userID, now); err != nil {
+			return nil, err
+		}
+		activeCount, err = model.CountActiveUserSessions(userID, now)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if activeCount >= int64(common.UserSessionActiveLimit) {
 		return nil, model.ErrUserSessionLimit
 	}
@@ -136,6 +145,28 @@ func createLoginSession(userID int, expectedAuthVersion int64, loginMethod, ip, 
 		return nil, err
 	}
 	return bundle, nil
+}
+
+// reclaimInactiveCentralUserSessions removes only product sessions whose
+// Account authority has explicitly reported the bound session as inactive.
+// Transient Account failures leave the local session untouched so a network
+// incident cannot sign users out of otherwise valid devices.
+func reclaimInactiveCentralUserSessions(userID int, now int64) error {
+	sessions, err := model.ListActiveCentralUserSessions(userID, now)
+	if err != nil {
+		return err
+	}
+	for i := range sessions {
+		session := &sessions[i]
+		statusErr := ValidateCentralSessionReference(session.AuthoritySubject, session.AuthoritySessionID, session.AuthorityAuthVersion)
+		if !errors.Is(statusErr, ErrCentralAccountInactive) {
+			continue
+		}
+		if _, err := model.RevokeUserSession(userID, session.SID, "central_session_inactive"); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func newLoginSession(userID int, authVersion int64, loginMethod, ip, userAgent string) (*model.UserSession, string, error) {

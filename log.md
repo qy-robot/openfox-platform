@@ -432,3 +432,17 @@
 - 已完成：中央登录在 active limit 之前回收无 `authority_issuer` / 无 `authority_auth_version` 的旧本地密码会话；保留当前中央 Account 会话及发行窗口限额语义。
 - 验证：遗留会话回收定向 Go 回归、平台完整 Web/Go build/test/vet、线上 status 与公网健康通过。
 - 限制：真实 admin 登录尚未代操作；现有线上 5 个遗留本地会话将在下一次中央登录时按新逻辑回收。
+
+### 2026-09-19T12:51:55+08:00 | Codex | 中央登录回收已失效的同版本 Account 会话
+
+- 基线：平台 `robo/main` 共享工作树；保留其他既有未提交修改，未提交、推送或部署。
+- 已完成：中央登录达到 active session limit 时，枚举同用户仍 active 的中央会话并调用 Account `session-status`；仅明确返回 inactive 的会话自动撤销并清理缓存，再重新计数。Account 网络/服务异常不会误撤销会话。
+- 验证：`GOWORK=off go test ./service ./model` 通过；新增同 `auth_version` 的失效 Account 会话回归测试；`git diff --check` 通过。
+- 未完成 / 限制：尚未生产发布；未做 MySQL/PostgreSQL 矩阵或真实公网 Account 联调。
+- 下一步：在干净平台发布候选中执行跨数据库验证并上线后复现中央 SSO 登录。
+
+### 2026-09-19T13:00:43+08:00 | Codex | 已失效中央会话回收修复生产发布
+
+- 发布：`platform-b7fa4567d146-7458e1a35781`，兼容线上 `platform-4e9016124551-6e293e9fbd55`；无数据库迁移。
+- 验证：完整 Web/Go 构建检查通过；生产运行哈希 `b3d319924a3b72ed72839cc2f7c35712f0e8f480909891a9043e970db28b857d` 与候选一致，systemd、本机 health、公网 health 均正常。
+- 备份 / 回滚：`20260919T050004Z`；上一版本可通过 receipt 回滚。
