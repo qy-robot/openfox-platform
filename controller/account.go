@@ -99,7 +99,7 @@ func CentralAccountSSOExchange(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "code": "AUTH_SUBJECT_MISMATCH", "message": "account identity did not match the authorization grant"})
 		return
 	}
-	userBase, err := model.ResolveAccountProductUser(token.Issuer, principal.Subject, principal.DisplayName)
+	userBase, err := model.ResolveAccountProductUser(token.Issuer, principal.Subject, principal.Username, principal.DisplayName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "could not provision product account"})
 		return

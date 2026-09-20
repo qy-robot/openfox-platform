@@ -4,6 +4,16 @@
 
 ## 当前状态
 
+- 2026-09-20T16:04:00+08:00 | ZCode | 修复账号中心建号使用随机哈希用户名：改为真实用户名（承接根 log 15:33 诊断）
+  - 现象：用户首次登录 AI 站后 /users 显示 `acct_<哈希>` 用户名（如生产用户 5 `acct_8ff11e2d0debe38`，真实用户名 7745491@qq.com 只在显示名列）。
+  - 改动：`model/account_identity.go` `ResolveAccountProductUser` 新增 centralUsername 参数——建号优先用账号中心用户名（introspection principal.username 本就返回），不可用（空/超 20 rune）或已被占用时回退原 `acct_` 摘要；已存在的映射若本地用户名仍是生成摘要且中心用户名可用，登录时自动换名（`adoptCentralUsername`，改库后刷新 Redis 用户缓存字段）；平台侧改过名的不匹配摘要、永不覆盖。`controller/account.go` 调用点传 `principal.Username`。
+  - 验证：`go vet` 干净；`go test ./model/ ./controller/` 全过（新增 `TestResolveAccountProductUserUsesCentralUsername` 四例：真名建号/占用与超长回退/摘要号后补真名/平台改名不覆盖）；既有 `TestResolveAccountProductUserKeepsPlatformRoleIndependent` 与 DB 矩阵用例签名同步。`./service/` 包两个 channel-affinity 失败为 Windows 干净基线既有（stash A/B 复核），与本改动无关，部署管线在 WSL Linux 全量复跑。
+  - 未完成：未部署（发布分支策略见根 log 待记）；生产用户 5 依赖登录时 adopt 规则自动换名，或部署后由用户重登验收。
+  - 下一步：提交推送 origin；以线上 `platform-c1633c597d1f-e47411947c48` 源码归档为基线叠加本修复构建发布（该归档已核在 WSL deploy-state），不回退并行会话的隔离发布内容。
+
+- 2026-09-20T15:25:00+08:00 | ZCode | 按用户决定撤销服务端钳制：revert 8aaac9ef9，DB 渠道参数覆盖已清空
+  - 用户改选桌面端方案（GLM 目录级输出上限随 Desktop Beta 2.0.10-beta.3 发布，见 desktop log），服务端全部回退：分支 `git revert 8aaac9ef9` → `6aa2b58a9` 已推送（撤销 zhipu_4v 适配器钳制与测试；其间并行会话的 `5d43a91bf` 公共表面样式提交已在 origin）；生产 DB 渠道 2 `param_override` 清空并重启 healthy。15:05 条目的"DB 参数覆盖 + 代码钳制"两措施均已撤销，改由桌面端目录上限承担。旧安装包（<beta.3）对 GLM 会复现参数非法，属已知的过渡兼容性。
+
 - 2026-09-20T15:05:00+08:00 | ZCode | 智谱 v4 渠道 max_tokens 钳制：代码已提交推送，生产暂以渠道参数覆盖止血
   - 分支 / 基线：`codex/platform-home-20260920` 由 `dffb6aead` 推进至 `8aaac9ef9` 并已推送 origin。
   - 根因承接根 log 14:14 条目：桌面端逐请求默认 `max_tokens: 256000`，智谱 v4 仅接受 [1,131072]，全部消息被上游 `INVALID_REQUEST` 拒绝。
