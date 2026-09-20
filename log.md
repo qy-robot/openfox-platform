@@ -4,6 +4,14 @@
 
 ## 当前状态
 
+- 2026-09-20T16:45:00+08:00 | ZCode | 用户名修复已发布生产：platform-ef0958280718-ba26a16ffa71 active（承接 16:04 条目）
+  - 发布内容：16:04 条目的真实用户名建号/换名修复，基于线上运行版本的源码归档构建，未回退并行会话内容。发布分支（WSL ~/.openfox-relbuild/platform-username）：`6aa2b58a9` + `c7ea5e8b3`（用 c1633c597d1f 部署源码归档逐文件重建的提交，三个被改文件与基线 diff 为空已核）+ `ef0958280`（cherry-pick `df08c34d2`，log.md 冲突按"保留双方记录"合并）。正式提交 `df08c34d2` 已在 origin/codex/platform-home-20260920。
+  - 构建验证：deploy 管线全过（bun install/build、CSS 校验、Vitest 1801/1801、go test/vet/build、Linux amd64）；binary SHA256 `299bafbd896af0de…`，source archive `803f31a1…`。
+  - 部署：备份 `20260920T083647Z`（离主机副本在 WSL state-dir）；activate + 回环/公网健康全过；进程横幅 `New API platform-ef0958280718-ba26a16ffa71 started`，公网 `/api/status` 200。
+  - 教训（三次误回滚根因）：deploy.py `--health-url` 必须传**域名根**（如 `https://ai.openzrob.com`），工具自行拼接 `/api/status`；传完整路径会请求 `/api/status/api/status` 404 → 判定公网健康失败 → 自动回滚。期间反复重启触发 systemd StartLimitBurst=5/300s（unit 配置），出现一次 start-limit-hit 短暂停机（约 40 秒，`systemctl reset-failed` + start 恢复，运行哈希前后一致无数据影响）。另外 WSL 侧：`~/.ssh/config` 曾丢失致 SSH 走 fake-IP 失败（已按 infra log 配方重建，IP 直连）；bun 需用 WSL 原生 `~/.bun/bin`（PATH 被Windows bun 遮蔽会 ENOENT 装包失败，已清缓存）。
+  - 验收状态：生产 DB 用户 5 仍为 `acct_8ff11e2d0debe38`，等该用户下次网页登录触发 adopt 自动换名为 `7745491@qq.com`；此后新注册首登即真实用户名。待用户侧验收。
+  - 下一步：用户在 /users 观察换名效果；cfab/c1633 的源码合并协调仍待 Mac 会话（本次以源码归档重建绕开，未产生新债务）。
+
 - 2026-09-20T16:04:00+08:00 | ZCode | 修复账号中心建号使用随机哈希用户名：改为真实用户名（承接根 log 15:33 诊断）
   - 现象：用户首次登录 AI 站后 /users 显示 `acct_<哈希>` 用户名（如生产用户 5 `acct_8ff11e2d0debe38`，真实用户名 7745491@qq.com 只在显示名列）。
   - 改动：`model/account_identity.go` `ResolveAccountProductUser` 新增 centralUsername 参数——建号优先用账号中心用户名（introspection principal.username 本就返回），不可用（空/超 20 rune）或已被占用时回退原 `acct_` 摘要；已存在的映射若本地用户名仍是生成摘要且中心用户名可用，登录时自动换名（`adoptCentralUsername`，改库后刷新 Redis 用户缓存字段）；平台侧改过名的不匹配摘要、永不覆盖。`controller/account.go` 调用点传 `principal.Username`。
