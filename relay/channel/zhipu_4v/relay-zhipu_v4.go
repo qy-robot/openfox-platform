@@ -6,6 +6,10 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/dto"
 )
 
+// zhipuV4MaxOutputTokens is the documented ceiling of the Zhipu v4
+// chat/completions max_tokens field.
+const zhipuV4MaxOutputTokens = 131_072
+
 func requestOpenAI2Zhipu(request dto.GeneralOpenAIRequest) *dto.GeneralOpenAIRequest {
 	messages := make([]dto.Message, 0, len(request.Messages))
 	for _, message := range request.Messages {
@@ -54,6 +58,14 @@ func requestOpenAI2Zhipu(request dto.GeneralOpenAIRequest) *dto.GeneralOpenAIReq
 	}
 	if request.MaxTokens != nil || request.MaxCompletionTokens != nil {
 		maxTokens := request.GetMaxTokens()
+		// Zhipu v4 rejects max_tokens outside [1, 131072] with
+		// "max_tokens 参数非法：限制数值范围[1,131072]" (INVALID_REQUEST), so an
+		// explicit larger value — desktop harnesses commonly default their
+		// output cap above this — is clamped to the ceiling instead of failing
+		// the whole request. In-range values and omissions pass through.
+		if maxTokens > zhipuV4MaxOutputTokens {
+			maxTokens = zhipuV4MaxOutputTokens
+		}
 		out.MaxTokens = &maxTokens
 	}
 	return out
