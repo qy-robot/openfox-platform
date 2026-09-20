@@ -47,7 +47,6 @@ import { subscribeAuthSessionEvents } from '@/lib/auth-session-sync'
 import { getIndependentAppURL } from '@/lib/independent-apps'
 import { resolveLegacyRoute } from '@/lib/legacy-route'
 import { shouldBootstrapPlatform } from '@/lib/platform-bootstrap'
-import { readCachedStatus, statusQueryOptions } from '@/lib/status-query'
 import { useAuthStore } from '@/stores/auth-store'
 
 function RootComponent() {
@@ -125,7 +124,7 @@ export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
   // 应用初始化与路由解析前统一校验会话
-  beforeLoad: async ({ context, location }) => {
+  beforeLoad: async ({ location }) => {
     const legacyTarget = resolveLegacyRoute(location.href)
     if (legacyTarget) {
       throw redirect({ href: legacyTarget, replace: true })
@@ -137,17 +136,11 @@ export const Route = createRootRouteWithContext<{
       throw redirect({ href: independentTarget, replace: true })
     }
     if (!shouldBootstrapPlatform(pathname)) return
-    const cachedStatus = readCachedStatus()
-    const status = await context.queryClient
-      .fetchQuery(statusQueryOptions)
-      .catch(() => cachedStatus)
-    const centralAccountEnabled =
-      (status ?? cachedStatus)?.account_auth_enabled === true
     const needsSetupCheck =
       !setupStatusChecked && !pathname.startsWith('/setup')
-    const authBootstrap = centralAccountEnabled
-      ? Promise.resolve()
-      : bootstrapAuthentication()
+    // 冷启动统一恢复会话：持有刷新 Cookie 的回头用户在首屏渲染前恢复登录态，
+    // 公共头部因此直接显示头像而不是登录按钮；无会话提示的访客不发任何请求。
+    const authBootstrap = bootstrapAuthentication()
 
     // 只检查 setup 状态（如果需要）
     if (needsSetupCheck) {

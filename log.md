@@ -455,3 +455,11 @@
 ### 2026-09-19T16:13:03+08:00 | Codex | OpenFox Web 资源验证补充
 
 - Platform Web `tsgo -b` 与品牌/独立应用定向测试 12/12 通过；公共 logo/favicon 已换为 OpenFox 用户商标图，未部署。
+
+### 2026-09-20T13:55:00+08:00 | ZCode | 官网冷启动恢复登录态，公共头部直显头像
+
+- 任务 / 分支 / 基线：平台 Web 会话引导修复；`codex/platform-home-20260920` / `abd8ab2f9`；保留工作树中 Codex 未提交的首页样式改动（`web/src/styles/index.css`）与其日志条目，不在本次提交内。
+- 已完成：根路由 `beforeLoad` 移除"中央账号启用即跳过会话引导"的短路，冷启动恒走 `bootstrapAuthentication()`——持刷新 Cookie 的回头用户在首屏渲染前恢复登录态，公共头部直接显示头像而非登录按钮；无会话提示的访客仍不发任何请求。同步清理仅服务于该判断的阻塞式 `/api/status` 拉取与 `centralAccountEnabled` 死代码；登录路由改为自行用 `ensureStatus` 预热共享 status 缓存，中央/本地表单形态不闪烁，拉取失败不阻塞登录页。
+- 验证：`tsgo -b` 零错误；触碰路由 oxlint 0 告警；Vitest 全量 162 文件 1801/1801 通过；`rsbuild build` 成功。修复前基线对比确认 calendar.tsx 类型错误与构建失败均为依赖损坏所致，已按 pnpm-lock 9.0 `--frozen-lockfile` 重装修复。
+- 未完成 / 限制：未部署生产；官网头部头像直显的浏览器目视验收待线上进行。
+- 下一步：部署平台 Web 后，用已登录账号冷加载官网首页确认右上角直接显示头像，点击登录不再闪登录页。
