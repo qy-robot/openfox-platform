@@ -30,7 +30,7 @@ export function ReleaseStatus(props: {
   if (props.error != null) {
     label = t('Release status unavailable')
   } else if (props.manifest != null) {
-    label = props.manifest.version ?? t('No release published yet')
+    label = props.manifest.version ?? t('Coming soon')
   }
 
   return <p className='text-sm font-medium'>{label}</p>

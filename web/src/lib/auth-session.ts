@@ -21,7 +21,6 @@ import axios from 'axios'
 import { t } from 'i18next'
 
 import { publishAuthSessionEvent } from '@/lib/auth-session-sync'
-import { hasSessionHint } from '@/lib/session-hint'
 import {
   useAuthStore,
   type AuthBootstrapState,
@@ -405,22 +404,16 @@ export async function resolveAuthentication(): Promise<RefreshOutcome> {
 }
 
 /**
- * Resolve authentication on the public boot path, skipping a refresh that the
- * server's session hint says would fail.
+ * Resolve authentication on the public boot path.
  *
- * The skip leaves `bootstrapState` at `idle` rather than `complete`: a missing
- * hint is not a server verdict, so it must not be recorded as a finished
- * anonymous check. `resolveAuthentication` therefore still reaches the network
- * later, which is what lets a hintless visitor holding a valid Refresh Cookie
- * recover the moment authentication actually matters.
+ * The boot check always reaches the server once: the session hint cookie can
+ * be absent while a usable Refresh Cookie is still valid (sessions created
+ * before the hint shipped, or a path-scoped clear), and letting the hint skip
+ * the check left those returning users rendered as signed out on public
+ * pages. `resolveAuthentication` records the outcome, so anonymous visitors
+ * pay at most one request per page load and later navigations stay local.
  */
 export async function bootstrapAuthentication(): Promise<RefreshOutcome> {
-  if (!currentValidAuthBundle() && !hasSessionHint()) {
-    const auth = useAuthStore.getState().auth
-    if (!auth.user && !auth.session) {
-      return { kind: 'anonymous' }
-    }
-  }
   return resolveAuthentication()
 }
 

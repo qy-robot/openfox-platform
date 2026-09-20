@@ -21,7 +21,7 @@ import { expect, test } from 'vitest'
 
 import { DownloadCard } from '../components/download-card'
 
-test('an unpublished build stays disabled and exposes no download link', () => {
+test('an unpublished build shows a quiet notice and exposes no download link', () => {
   render(
     <DownloadCard
       target={{
@@ -35,7 +35,10 @@ test('an unpublished build stays disabled and exposes no download link', () => {
     />
   )
 
-  expect(screen.getByRole('button', { name: 'Unavailable' })).toBeDisabled()
+  expect(
+    screen.getByText('This build has not been published yet.')
+  ).toBeVisible()
+  expect(screen.queryByRole('button')).not.toBeInTheDocument()
   expect(screen.queryByRole('link')).not.toBeInTheDocument()
 })
 

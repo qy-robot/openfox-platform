@@ -1156,22 +1156,34 @@ For commercial licensing, please contact support@quantumnous.com
   --robo-public-line: color-mix(in srgb, var(--robo-public-ink) 17%, transparent);
 }
 
+/* The public header is one persistent floating capsule; the inner nav never
+   paints its own surface, so no scroll state can stack a second bar. */
 .robo-public-header-inner {
-  width: min(100% - 2rem, 1280px);
-  padding-top: 0.35rem;
+  width: min(100% - 2rem, 920px);
+  margin-top: 0.7rem;
+  padding: 0 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--robo-public-ink) 14%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--robo-public-paper) 82%, transparent);
+  box-shadow: 0 12px 34px rgb(25 55 90 / 13%);
+  backdrop-filter: blur(18px) saturate(1.15);
 }
 
 .robo-public-nav {
-  min-height: 4rem;
+  min-height: 3.25rem;
   padding: 0 0.25rem;
-  border-bottom: 1px solid transparent;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .robo-public-nav--scrolled {
-  min-height: 3.5rem;
-  border-color: var(--robo-public-line);
-  background: color-mix(in srgb, var(--robo-public-paper) 86%, transparent);
-  backdrop-filter: blur(18px);
+  min-height: 3.25rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .robo-public-header .text-muted-foreground {
@@ -1593,13 +1605,11 @@ For commercial licensing, please contact support@quantumnous.com
 @media (max-width: 900px) { .openfox-hero-shell, .openfox-capabilities, .openfox-code-section { grid-template-columns: 1fr; }.openfox-hero-shell { padding-top: 7rem; }.openfox-product-card { max-width: 700px; transform: none; }.openfox-capabilities { gap: 3rem; }.openfox-code-section { padding-bottom: 6rem; } }
 @media (max-width: 640px) { .openfox-hero-shell, .openfox-proof-inner, .openfox-capabilities, .openfox-code-section { width: min(100% - 2rem, 1080px); }.openfox-hero-shell { min-height: 0; padding: 7rem 0 3.5rem; }.openfox-hero h1 { font-size: clamp(3.25rem, 16vw, 5.2rem); }.openfox-hero-lede { font-size: .98rem; }.openfox-product-card-body { grid-template-columns: 1fr; }.openfox-product-sidebar { display: none; }.openfox-product-main { padding: 1rem; }.openfox-metric-grid { gap: .4rem; }.openfox-metric-grid strong { font-size: .8rem; }.openfox-proof-inner { display: block; padding: 1.25rem 0; }.openfox-proof-logos { gap: .8rem 1.2rem; margin-top: .8rem; }.openfox-capabilities { padding: 5rem 0; }.openfox-capability { grid-template-columns: 1.5rem 2.55rem 1fr; gap: .75rem; }.openfox-capability > svg { display: none; }.openfox-code-window pre { font-size: .65rem; }.openfox-cta { min-height: 330px; } }
 
-/* The public header becomes a small floating command bar once the page moves. */
-.robo-public-header-inner { width: min(100% - 2rem, 1240px); }
-.robo-public-header-inner--scrolled { width: min(100% - 2rem, 920px); margin-top: .7rem; padding: 0 .7rem; border: 1px solid color-mix(in srgb, var(--robo-public-ink) 14%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--robo-public-paper) 82%, transparent); box-shadow: 0 12px 34px rgb(25 55 90 / 13%); backdrop-filter: blur(18px) saturate(1.15); }
-.robo-public-header-inner--scrolled .robo-public-nav { min-height: 3.25rem; }
-.robo-public-header-inner--scrolled .robo-public-nav--scrolled { border-bottom: 0; background: transparent; }
-.dark .robo-public-header-inner--scrolled { box-shadow: 0 14px 36px rgb(0 0 0 / 26%); }
-@media (max-width: 640px) { .robo-public-header-inner--scrolled { width: calc(100% - 1rem); margin-top: .45rem; padding: 0 .45rem; } }
+/* The capsule is persistent; scrolling only deepens its shadow, geometry never changes. */
+.dark .robo-public-header-inner { box-shadow: 0 14px 36px rgb(0 0 0 / 26%); }
+.robo-public-header-inner--scrolled { box-shadow: 0 14px 40px rgb(25 55 90 / 17%); }
+.dark .robo-public-header-inner--scrolled { box-shadow: 0 16px 42px rgb(0 0 0 / 32%); }
+@media (max-width: 640px) { .robo-public-header-inner { width: calc(100% - 1rem); margin-top: 0.45rem; padding: 0 0.45rem; } }
 
 /* Quiet hero composition: a smaller statement, a useful command bar, and real cards. */
 .openfox-hero-shell { display: block; min-height: 0; padding: 9rem 0 5rem; text-align: center; }
@@ -1632,3 +1642,53 @@ For commercial licensing, please contact support@quantumnous.com
 .dark .openfox-model-card.is-featured { background: linear-gradient(145deg, #087d9d 0%, #2459b5 100%); }
 .openfox-model-card.is-featured p, .openfox-model-card.is-featured .openfox-model-link { color: rgb(255 255 255 / 82%); }
 .openfox-model-card.is-featured .openfox-model-icon { background: rgb(0 34 75 / 72%); }
+
+/* Restore a soft center wash while keeping the hero's grid quiet and structural. */
+.openfox-hero::before { position: absolute; inset: 0; pointer-events: none; content: ''; background: radial-gradient(ellipse 58% 54% at 50% 28%, rgb(185 215 255 / 46%), transparent 72%), radial-gradient(ellipse 44% 38% at 50% 36%, rgb(229 218 255 / 28%), transparent 76%); }
+.openfox-hero-grid { opacity: .08; }
+.dark .openfox-hero::before { background: radial-gradient(ellipse 58% 54% at 50% 28%, rgb(70 132 218 / 24%), transparent 72%), radial-gradient(ellipse 44% 38% at 50% 36%, rgb(112 91 194 / 16%), transparent 76%); }
+.dark .openfox-hero-grid { opacity: .12; }
+
+/* ----------------------------------------------------------------------------
+   Public surface restyle: one quiet blue-tinted family — a faint blue bloom at
+   the top, white hairline cards, dark icon circles, pill actions, and no
+   nested color accents. Later cascade position overrides the legacy blocks.
+   -------------------------------------------------------------------------- */
+
+/* A faint blue bloom behind the top of every public surface. */
+.robo-public-layout,
+.openfox-home,
+.robo-download {
+  background-image: radial-gradient(ellipse 85% 34rem at 50% -8rem, rgb(147 197 253 / 26%), transparent 72%);
+  background-repeat: no-repeat;
+}
+.dark .robo-public-layout,
+.dark .openfox-home,
+.dark .robo-download {
+  background-image: radial-gradient(ellipse 85% 34rem at 50% -8rem, rgb(37 99 235 / 15%), transparent 72%);
+}
+
+/* Home hero: blue-only wash, pill actions, equal cards with ink icon circles. */
+.openfox-hero::before { background: radial-gradient(ellipse 58% 54% at 50% 28%, rgb(191 219 254 / 40%), transparent 72%); }
+.dark .openfox-hero::before { background: radial-gradient(ellipse 58% 54% at 50% 28%, rgb(37 99 235 / 20%), transparent 72%); }
+.openfox-button-primary, .openfox-button-secondary { border-radius: 999px; }
+.openfox-model-icon.model-dot-1, .openfox-model-icon.model-dot-2 { background: var(--fox-ink); }
+.openfox-model-card.is-featured { border-color: color-mix(in srgb, var(--fox-blue) 26%, transparent); background: color-mix(in srgb, var(--fox-paper) 86%, #fff); color: inherit; box-shadow: 0 10px 26px rgb(33 53 80 / 5%); }
+.dark .openfox-model-card.is-featured { background: #112238; }
+.openfox-model-card.is-featured p, .openfox-model-card.is-featured .openfox-model-link { color: var(--fox-muted); }
+.openfox-model-card.is-featured .openfox-model-icon { background: var(--fox-ink); }
+
+/* Download hero: calmer headline scale and a version chip. */
+.robo-download-hero h1 { font-size: clamp(3.2rem, 6.5vw, 5.6rem); }
+.robo-download-hero-meta { padding: 0.45rem 1rem; border: 1px solid color-mix(in srgb, var(--robo-download-ink) 12%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--robo-download-paper) 76%, #fff); }
+
+/* Download cards: floating white tiles instead of a bordered table strip.
+   Scope under .robo-download to out-rank the generic [data-slot='card'] skin. */
+.robo-download-card-grid { gap: 1rem; border-top: 0; }
+.robo-download .robo-download-card,
+.robo-download .robo-download-card:last-child { min-height: 21rem; border: 1px solid color-mix(in srgb, var(--robo-download-ink) 10%, transparent); border-radius: 1rem; background: color-mix(in srgb, var(--robo-download-paper) 86%, #fff); box-shadow: 0 10px 28px rgb(30 79 124 / 6%); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+.robo-download .robo-download-card:hover { border-color: color-mix(in srgb, var(--robo-accent) 34%, transparent); background: color-mix(in srgb, var(--robo-download-paper) 60%, #fff); transform: translateY(-2px); box-shadow: 0 16px 36px rgb(30 79 124 / 10%); }
+.robo-download-card-line { display: none; }
+.robo-download-platform-icon { border: 0; background: var(--robo-download-ink); color: var(--robo-download-paper); }
+.robo-download-card [data-slot='badge'] { border: 1px solid color-mix(in srgb, var(--robo-download-ink) 14%, transparent); background: transparent; color: color-mix(in srgb, var(--robo-download-ink) 60%, transparent); }
+.robo-download-card-availability { border-color: color-mix(in srgb, var(--robo-download-ink) 16%, transparent); }

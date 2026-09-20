@@ -99,40 +99,31 @@ export function DownloadCard(props: { target: DownloadTarget }) {
             {t(presentation.helper)}
           </p>
         </div>
-        <div className='text-muted-foreground mt-auto flex min-h-5 items-center gap-2 text-xs'>
-          {available ? (
-            <>
+        {available && props.target.url != null ? (
+          <>
+            <div className='text-muted-foreground mt-auto flex min-h-5 items-center gap-2 text-xs'>
               <span>{props.target.fileName}</span>
               {props.target.size != null && <span>· {props.target.size}</span>}
-            </>
-          ) : (
-            <span>{t('This build has not been published yet.')}</span>
-          )}
-        </div>
-        {available && props.target.url != null ? (
-          <Button
-            size='lg'
-            className='robo-download-card-action h-10 w-full'
-            render={
-              <a
-                href={props.target.url}
-                download={props.target.fileName ?? undefined}
-                rel='noopener noreferrer'
-              />
-            }
-          >
-            <Download aria-hidden='true' />
-            {t('Download')}
-          </Button>
+            </div>
+            <Button
+              size='lg'
+              className='robo-download-card-action h-10 w-full'
+              render={
+                <a
+                  href={props.target.url}
+                  download={props.target.fileName ?? undefined}
+                  rel='noopener noreferrer'
+                />
+              }
+            >
+              <Download aria-hidden='true' />
+              {t('Download')}
+            </Button>
+          </>
         ) : (
-          <Button
-            size='lg'
-            className='h-10 w-full'
-            variant='secondary'
-            disabled
-          >
-            {t('Unavailable')}
-          </Button>
+          <div className='text-muted-foreground mt-auto flex min-h-10 items-center justify-center gap-2 rounded-full border border-dashed text-xs'>
+            <span>{t('This build has not been published yet.')}</span>
+          </div>
         )}
       </CardContent>
     </Card>
