@@ -4,6 +4,13 @@
 
 ## 当前状态
 
+- 2026-09-20T19:18:11+08:00 | Codex | 手动修正生产 AI 站用户 5 的显示用户名（承接 16:45 自动 adopt 待验收）
+  - 分支 / 基线提交：`codex/platform-home-20260920` / `1c4374aaf`。
+  - 已完成：先将 `users` 与 `account_product_identities` 定向备份到生产机 `/root/openfox-platform-users-20260920-191809.dump`（SHA-256 `d2a0b8a014f608f5d4766c3552be14c1e8fc895cad3d682022e76a85d4e9764c`），再在事务中确认目标用户名未被占用，仅把 ID 5 从 `acct_8ff11e2d0debe38` 改为 `7745491@qq.com`。ID 3/4 为已停用的历史重复记录，保留以维持审计和回滚能力。
+  - 验证：事务返回 `UPDATE 1` 且 ID 5 已为 `7745491@qq.com`；按当前 CNY 缓存键尝试删除 Redis（返回 0，表示无缓存残留）；`https://ai.openzrob.com/api/status` 返回 200，运行版本 `platform-ef0958280718-ba26a16ffa71`。
+  - 未完成 / 阻塞：用户需刷新 `/users` 页面确认视觉结果；未删除历史停用账号，未重启平台。
+  - 下一步：若后续仍出现旧用户名，检查具体浏览器缓存或再次核对平台用户缓存键，不直接删除历史用户。
+
 - 2026-09-20T16:45:00+08:00 | ZCode | 用户名修复已发布生产：platform-ef0958280718-ba26a16ffa71 active（承接 16:04 条目）
   - 发布内容：16:04 条目的真实用户名建号/换名修复，基于线上运行版本的源码归档构建，未回退并行会话内容。发布分支（WSL ~/.openfox-relbuild/platform-username）：`6aa2b58a9` + `c7ea5e8b3`（用 c1633c597d1f 部署源码归档逐文件重建的提交，三个被改文件与基线 diff 为空已核）+ `ef0958280`（cherry-pick `df08c34d2`，log.md 冲突按"保留双方记录"合并）。正式提交 `df08c34d2` 已在 origin/codex/platform-home-20260920。
   - 构建验证：deploy 管线全过（bun install/build、CSS 校验、Vitest 1801/1801、go test/vet/build、Linux amd64）；binary SHA256 `299bafbd896af0de…`，source archive `803f31a1…`。
