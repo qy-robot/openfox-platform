@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { useStatus } from '@/hooks/use-status'
+import { ACCOUNT_CENTER_URL } from '@/lib/product-links'
 import { getServerErrorMessage } from '@/lib/server-error-message'
 
 import {
@@ -38,7 +39,7 @@ type AccountResponse = {
 
 function accountCenterURL(value: unknown): URL {
   const url = new URL(
-    typeof value === 'string' && value ? value : 'https://account.openfox.work'
+    typeof value === 'string' && value ? value : ACCOUNT_CENTER_URL
   )
   const localHTTP =
     url.protocol === 'http:' &&

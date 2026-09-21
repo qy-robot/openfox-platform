@@ -511,3 +511,10 @@
 - 验证：deploy 工具三轮完整检查通过（bun install/build:check、CSS 校验、全量 Vitest 1801/1801、go test/vet/build）；本地与线上浏览器截图验收首页/下载页/顶栏；线上确认匿名冷启动恰发出一次 `/api/user/auth/refresh`。`TestSecurityAccountDeletionConcurrentRequestsHaveOneWinner` 出现一次负载偶发失败，单独 `-count=3` 复跑通过后重试构建成功。
 - 协作 / 备份：包含 13:55 ZCode 条目 `dffb6aead`，无需重复部署；`8aaac9ef9` zhipu 限流改动不在本发布内，由对应任务自行发布。备份 `20260920T055457Z` / `20260920T062346Z` / `20260920T064726Z` 存于 WSL `~/.openfox-deploy-state`，可按收据回滚。
 - 未完成 / 下一步：已登录头像的线上目视验收需真实账号（机制上由 refresh 在首屏前恢复）；根 gitlink 未推进，待工作区维护者核对后推进。
+
+### 2026-09-21T19:45:00+08:00 | ZCode | 顶栏与账号入口按访问域名动态派生（已上线）
+
+- 分支 / 基线：共享分支 codex/platform-home-20260920 / 4d9fc646f；隔离发布提交 ed1964278d8f（WSL ~/build/platform-links）；生产 release platform-ed1964278d8f-67e7b01d5bd9。
+- 已完成：ICP 备案期间 openfox.work 被拦、openzrob.com 为生效入口，但顶栏"工作台/AI 站"、independent-apps 兼容跳转与 central-logout / central-account-sign-in 的账号中心回退仍在构建期写死 fox 域名，用户在旧域名一点导航即跳到被拦域。product-links.ts 改为运行时从 window.location.hostname 按域名族（openzrob.com / openfox.work）派生同级入口，未知主机回落当前生效族 openzrob.com；use-top-nav-links、central-logout、central-account-sign-in 全部改用派生常量，保留 VITE_ROBO_* env 覆盖用于本地开发。
+- 验证：本地定向 vitest（independent-apps + 域名族新用例、sidebar-config、top-nav-brand、central-sso*、user-auth-form-central）与 tsgo -b 通过；deploy 全量门禁 8 项通过（bun install/build:check、CSS 校验、全量 Vitest、go test/vet/build）；线上 ai/www.openzrob.com 新入口 index.21ba49c73f.js 无任何写死 fox URL，active+healthy，备份 20260921T113539Z。
+- 未完成 / 限制：根 gitlink 未推进、未推送（按工作区约定待维护者）；真实浏览器点击顶栏的目视验收待用户确认。回滚：deploy.py rollback --expect-current platform-ed1964278d8f-67e7b01d5bd9。

@@ -46,11 +46,11 @@ describe('product navigation', () => {
       state.status = { HeaderNavModules: JSON.stringify({ console }) }
       const links = renderHook(useTopNavLinks).result.current
       expect(
-        links.filter((link) => link.href === 'https://dash.openfox.work')
+        links.filter((link) => link.href === 'https://dash.openzrob.com')
       ).toEqual([
         {
           title: 'Workbench',
-          href: 'https://dash.openfox.work',
+          href: 'https://dash.openzrob.com',
           external: true,
         },
       ])

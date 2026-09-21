@@ -10,13 +10,14 @@ the Free Software Foundation, either version 3 of the License, or
 import { t } from 'i18next'
 
 import { getStatus } from '@/lib/api'
+import { ACCOUNT_CENTER_URL } from '@/lib/product-links'
 
 /** End the current browser's identity session before revoking the app session. */
 export async function logoutCentralBrowserSession(): Promise<void> {
   const status = await getStatus()
   if (status.account_auth_enabled !== true) return
   const issuer = new URL(
-    String(status.account_center_url || 'https://account.openfox.work')
+    String(status.account_center_url || ACCOUNT_CENTER_URL)
   )
   const localHTTP =
     issuer.protocol === 'http:' &&
