@@ -4,6 +4,13 @@
 
 ## 当前状态
 
+- 2026-09-22T21:11:00+08:00 | ZCode | 主分支更名：`robo/main` → `main`（应用户要求统一分支命名）
+  - 已完成：`main` 原为本 fork 的上游 New API 镜像（`9fe0457e`，上游 #5062），现以 force-with-lease 移至公司主线 `fa46b951` 并设为 GitHub 默认分支；远端与本地 `robo/main` 已删除；`master` 无（上游走 upstream remote）。上游镜像角色改由 `upstream` remote 承担。
+  - 验证：`origin/main` = `fa46b951` 与根 gitlink 一致；origin/HEAD 指向 main；推送与删除均有远端回执。
+  - 未完成 / 阻塞：上游 #5062（Responses WebSocket relay）尚未并入公司线（merge 有 `middleware/auth.go` 等冲突，需专项集成；该提交仍在 upstream 仓库与本地 `git log 9fe0457e` 可达）。`origin/dev` 已包含于主线，可择期清理。
+  - 下一步：后续上游同步以 `upstream/main` 为基准；#5062 集成另开任务。
+
+
 - 2026-09-20T19:18:11+08:00 | Codex | 手动修正生产 AI 站用户 5 的显示用户名（承接 16:45 自动 adopt 待验收）
   - 分支 / 基线提交：`codex/platform-home-20260920` / `1c4374aaf`。
   - 已完成：先将 `users` 与 `account_product_identities` 定向备份到生产机 `/root/openfox-platform-users-20260920-191809.dump`（SHA-256 `d2a0b8a014f608f5d4766c3552be14c1e8fc895cad3d682022e76a85d4e9764c`），再在事务中确认目标用户名未被占用，仅把 ID 5 从 `acct_8ff11e2d0debe38` 改为 `7745491@qq.com`。ID 3/4 为已停用的历史重复记录，保留以维持审计和回滚能力。
