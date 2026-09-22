@@ -4,6 +4,38 @@
 
 ## 当前状态
 
+- 2026-09-21T23:50:00+08:00 | Claude | 放宽 refresh 重放宽限窗口 + SESSION_SECRET 未设置告警（未部署）
+  - 背景：配合桌面端「概率退出登录」修复（见 desktop log 同日）。服务端 refresh token 单次轮换+30s 宽限，客户端续期重试恰好 30s，边界上会把合法客户端判为 token 盗用而吊销整个会话（refresh_reuse → revoked，不可自愈）。
+  - 已完成：`service/auth_token.go` `RefreshReplayWindow` 30s→120s（覆盖桌面端 ~30s 首档退避，窗口内重放按竞争返回已轮换 token 而非吊销）；`common/init.go` `SESSION_SECRET` 未设置时打印醒目告警（当前默认 uuid 随机，重启/多副本即全量 token 失效）。
+  - 安全说明：放宽窗口仅延长「同 token 返回」的宽限期，不新增 token 升级面；OWASP 会话/重放保护需部署前复核。
+  - 未完成：未部署（需用户在服务端部署）；rotated-but-unused 不吊销、central 模式瞬态 vs 撤销区分作为后续加固。
+  - 下一步：用户按部署清单固定 SESSION_SECRET 并重启，确认 refresh_reuse 吊销不再发生。
+
+- 2026-09-20T16:45:00+08:00 | ZCode | 用户名修复已发布生产：platform-ef0958280718-ba26a16ffa71 active（承接 16:04 条目）
+  - 发布内容：16:04 条目的真实用户名建号/换名修复，基于线上运行版本的源码归档构建，未回退并行会话内容。发布分支（WSL ~/.openfox-relbuild/platform-username）：`6aa2b58a9` + `c7ea5e8b3`（用 c1633c597d1f 部署源码归档逐文件重建的提交，三个被改文件与基线 diff 为空已核）+ `ef0958280`（cherry-pick `df08c34d2`，log.md 冲突按"保留双方记录"合并）。正式提交 `df08c34d2` 已在 origin/codex/platform-home-20260920。
+  - 构建验证：deploy 管线全过（bun install/build、CSS 校验、Vitest 1801/1801、go test/vet/build、Linux amd64）；binary SHA256 `299bafbd896af0de…`，source archive `803f31a1…`。
+  - 部署：备份 `20260920T083647Z`（离主机副本在 WSL state-dir）；activate + 回环/公网健康全过；进程横幅 `New API platform-ef0958280718-ba26a16ffa71 started`，公网 `/api/status` 200。
+  - 教训（三次误回滚根因）：deploy.py `--health-url` 必须传**域名根**（如 `https://ai.openzrob.com`），工具自行拼接 `/api/status`；传完整路径会请求 `/api/status/api/status` 404 → 判定公网健康失败 → 自动回滚。期间反复重启触发 systemd StartLimitBurst=5/300s（unit 配置），出现一次 start-limit-hit 短暂停机（约 40 秒，`systemctl reset-failed` + start 恢复，运行哈希前后一致无数据影响）。另外 WSL 侧：`~/.ssh/config` 曾丢失致 SSH 走 fake-IP 失败（已按 infra log 配方重建，IP 直连）；bun 需用 WSL 原生 `~/.bun/bin`（PATH 被Windows bun 遮蔽会 ENOENT 装包失败，已清缓存）。
+  - 验收状态：生产 DB 用户 5 仍为 `acct_8ff11e2d0debe38`，等该用户下次网页登录触发 adopt 自动换名为 `7745491@qq.com`；此后新注册首登即真实用户名。待用户侧验收。
+  - 下一步：用户在 /users 观察换名效果；cfab/c1633 的源码合并协调仍待 Mac 会话（本次以源码归档重建绕开，未产生新债务）。
+
+- 2026-09-20T16:04:00+08:00 | ZCode | 修复账号中心建号使用随机哈希用户名：改为真实用户名（承接根 log 15:33 诊断）
+  - 现象：用户首次登录 AI 站后 /users 显示 `acct_<哈希>` 用户名（如生产用户 5 `acct_8ff11e2d0debe38`，真实用户名 7745491@qq.com 只在显示名列）。
+  - 改动：`model/account_identity.go` `ResolveAccountProductUser` 新增 centralUsername 参数——建号优先用账号中心用户名（introspection principal.username 本就返回），不可用（空/超 20 rune）或已被占用时回退原 `acct_` 摘要；已存在的映射若本地用户名仍是生成摘要且中心用户名可用，登录时自动换名（`adoptCentralUsername`，改库后刷新 Redis 用户缓存字段）；平台侧改过名的不匹配摘要、永不覆盖。`controller/account.go` 调用点传 `principal.Username`。
+  - 验证：`go vet` 干净；`go test ./model/ ./controller/` 全过（新增 `TestResolveAccountProductUserUsesCentralUsername` 四例：真名建号/占用与超长回退/摘要号后补真名/平台改名不覆盖）；既有 `TestResolveAccountProductUserKeepsPlatformRoleIndependent` 与 DB 矩阵用例签名同步。`./service/` 包两个 channel-affinity 失败为 Windows 干净基线既有（stash A/B 复核），与本改动无关，部署管线在 WSL Linux 全量复跑。
+  - 未完成：未部署（发布分支策略见根 log 待记）；生产用户 5 依赖登录时 adopt 规则自动换名，或部署后由用户重登验收。
+  - 下一步：提交推送 origin；以线上 `platform-c1633c597d1f-e47411947c48` 源码归档为基线叠加本修复构建发布（该归档已核在 WSL deploy-state），不回退并行会话的隔离发布内容。
+
+- 2026-09-20T15:25:00+08:00 | ZCode | 按用户决定撤销服务端钳制：revert 8aaac9ef9，DB 渠道参数覆盖已清空
+  - 用户改选桌面端方案（GLM 目录级输出上限随 Desktop Beta 2.0.10-beta.3 发布，见 desktop log），服务端全部回退：分支 `git revert 8aaac9ef9` → `6aa2b58a9` 已推送（撤销 zhipu_4v 适配器钳制与测试；其间并行会话的 `5d43a91bf` 公共表面样式提交已在 origin）；生产 DB 渠道 2 `param_override` 清空并重启 healthy。15:05 条目的"DB 参数覆盖 + 代码钳制"两措施均已撤销，改由桌面端目录上限承担。旧安装包（<beta.3）对 GLM 会复现参数非法，属已知的过渡兼容性。
+
+- 2026-09-20T15:05:00+08:00 | ZCode | 智谱 v4 渠道 max_tokens 钳制：代码已提交推送，生产暂以渠道参数覆盖止血
+  - 分支 / 基线：`codex/platform-home-20260920` 由 `dffb6aead` 推进至 `8aaac9ef9` 并已推送 origin。
+  - 根因承接根 log 14:14 条目：桌面端逐请求默认 `max_tokens: 256000`，智谱 v4 仅接受 [1,131072]，全部消息被上游 `INVALID_REQUEST` 拒绝。
+  - 已完成：`relay/channel/zhipu_4v/relay-zhipu_v4.go` 在 `requestOpenAI2Zhipu` 中把超过 `131072` 的 max_tokens 钳制到上限（in-range/缺省透传），新增表驱动回归测试 `relay-zhipu_v4_test.go`（仿 ali/text.go 先例）。`go test ./relay/channel/zhipu_4v/` 通过。
+  - 阻塞（二进制发布）：线上当前 release `platform-cfab9ed03090-ea3f98aeec09`（2026-09-20 14:24 由另一机器/会话发布，提交不在 origin，推测即上方"relay 凭证隔离"工作）包含本分支没有的改动；直接发布本分支 HEAD 会回退它。**下一次平台二进制发布前必须先拿到/合并 cfab9ed03090 的源**。本机按技能规程准备的 WSL 构建环境可用（见根 log）。
+  - 生产止血（同日生效）：DB 渠道 2（智谱GLM）`param_override` 配置条件钳制 `max_tokens>131072 → 131072`，已重启生效并真实验证通过（详见 infra log 同日条目）。该配置与代码钳制语义一致，二进制合并发布后即为双保险。
+
 - Desktop 内部 relay 凭证污染用户 API Key 列表的问题已本地修复：管理接口全面隔离系统凭证，同一登录会话/付款来源续期复用同一行，退出时禁用；相关 Go 全套、vet/build 通过，尚未部署。线上团队用量 0 的直接原因仍是当前 Desktop 使用个人点数，且团队成员月上限为 0。
 
 - AI站用户导航和点数使用记录已本地完成精简：移除聊天分组、用户任务/审计入口，使用记录仅时间/模型/点数/来源；检查与桌面/手机验收通过，未发布。
@@ -455,3 +487,27 @@
 ### 2026-09-19T16:13:03+08:00 | Codex | OpenFox Web 资源验证补充
 
 - Platform Web `tsgo -b` 与品牌/独立应用定向测试 12/12 通过；公共 logo/favicon 已换为 OpenFox 用户商标图，未部署。
+
+### 2026-09-20T12:53:00+08:00 | Codex | 首页中心光晕与悬浮顶栏单层收口
+
+- 任务 / 分支 / 基线：平台 Web 首页视觉修复；`codex/platform-home-20260920` / `abd8ab2f9`；保留共享工作树既有改动，未提交、推送或部署。
+- 已完成：在 `openfox-hero` 增加低对比度蓝紫中心洗色，降低背景网格存在感；滚动顶栏保留原有 `scrollY > 20` 交互，仅让外层胶囊承载边框、背景与阴影，内层 nav 透明化，消除双层边界。
+- 验证：`git diff --check` 通过；样式增量仅 `web/src/styles/index.css` 10 行。尝试执行 Bun `typecheck`、首页 Vitest 与生产构建，但当前依赖目录存在既有错配：TypeScript 报多处非本次改动类型错误，Vitest 缺 `@vitest/utils`，Rsbuild 缺 `@rspack/core`；冻结安装未能在当前环境完成。
+- 未完成 / 阻塞：未进行本地浏览器截图或生产发布；完整 Bun 依赖安装和页面目视验收仍待可用前端构建环境。
+- 下一步：在依赖完整的 Web 工作区重跑 `bun run typecheck`、首页测试和 `bun run build`，再按桌面 / 移动端滚动状态确认最终视觉。
+
+### 2026-09-20T13:55:00+08:00 | ZCode | 官网冷启动恢复登录态，公共头部直显头像
+
+- 任务 / 分支 / 基线：平台 Web 会话引导修复；`codex/platform-home-20260920` / `abd8ab2f9`；保留工作树中 Codex 未提交的首页样式改动（`web/src/styles/index.css`）与其日志条目，不在本次提交内。
+- 已完成：根路由 `beforeLoad` 移除"中央账号启用即跳过会话引导"的短路，冷启动恒走 `bootstrapAuthentication()`——持刷新 Cookie 的回头用户在首屏渲染前恢复登录态，公共头部直接显示头像而非登录按钮；无会话提示的访客仍不发任何请求。同步清理仅服务于该判断的阻塞式 `/api/status` 拉取与 `centralAccountEnabled` 死代码；登录路由改为自行用 `ensureStatus` 预热共享 status 缓存，中央/本地表单形态不闪烁，拉取失败不阻塞登录页。
+- 验证：`tsgo -b` 零错误；触碰路由 oxlint 0 告警；Vitest 全量 162 文件 1801/1801 通过；`rsbuild build` 成功。修复前基线对比确认 calendar.tsx 类型错误与构建失败均为依赖损坏所致，已按 pnpm-lock 9.0 `--frozen-lockfile` 重装修复。
+- 未完成 / 限制：未部署生产；官网头部头像直显的浏览器目视验收待线上进行。
+- 下一步：部署平台 Web 后，用已登录账号冷加载官网首页确认右上角直接显示头像，点击登录不再闪登录页。
+
+### 2026-09-20T14:49:00+08:00 | ZCode | 公共页面改版、顶栏单层化与冷启动认证三轮发布
+
+- 任务 / 分支 / 基线：平台 Web 公共视觉改版 + 认证引导修正；共享分支 `codex/platform-home-20260920`，隔离发布分支基于 `dffb6aead` 叠加 `cfab9ed03` + `c1633c597`；生产基线依次 `platform-57aa60fe012e-aae1d0cb0989` → `platform-cfab9ed03090-ea3f98aeec09` → `platform-c1633c597d1f-e47411947c48`。
+- 已完成：悬浮顶栏改为常驻单层胶囊（表面只在 `.robo-public-header-inner` 一层，内层 nav 任意状态透明，几何不随滚动变化，仅阴影加深），消除滚动过渡双层叠加与 Windows 下 backdrop-filter 过渡停滞残影；参考智谱 BigModel 克制语言整体改版：全局公共面顶部淡蓝径向光晕、首页黑色胶囊按钮 + 三张统一白卡深色圆图标（去紫绿点缀与整卡蓝底）、下载页标题降档 + 版本小胶囊 + 四张平台卡白色圆角浮卡（描边徽章），未发布状态以虚线提示替代"暂不可用"死按钮；冷启动认证在 dffb6aead 基础上移除 `bootstrapAuthentication` 的会话提示跳过，刷新后恒校验一次，提示缺失但持有效刷新 Cookie 的老会话在公共页恢复头像；下载卡片测试同步更新。
+- 验证：deploy 工具三轮完整检查通过（bun install/build:check、CSS 校验、全量 Vitest 1801/1801、go test/vet/build）；本地与线上浏览器截图验收首页/下载页/顶栏；线上确认匿名冷启动恰发出一次 `/api/user/auth/refresh`。`TestSecurityAccountDeletionConcurrentRequestsHaveOneWinner` 出现一次负载偶发失败，单独 `-count=3` 复跑通过后重试构建成功。
+- 协作 / 备份：包含 13:55 ZCode 条目 `dffb6aead`，无需重复部署；`8aaac9ef9` zhipu 限流改动不在本发布内，由对应任务自行发布。备份 `20260920T055457Z` / `20260920T062346Z` / `20260920T064726Z` 存于 WSL `~/.openfox-deploy-state`，可按收据回滚。
+- 未完成 / 下一步：已登录头像的线上目视验收需真实账号（机制上由 refresh 在首屏前恢复）；根 gitlink 未推进，待工作区维护者核对后推进。

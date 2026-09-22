@@ -20,7 +20,7 @@ const (
 	AccessTokenTTL        = 15 * time.Minute
 	SecurityProofTTL      = time.Minute
 	LoginSessionTTL       = 30 * 24 * time.Hour
-	RefreshReplayWindow   = 30 * time.Second
+	RefreshReplayWindow   = 120 * time.Second // covers the desktop client's ~30s renewal retry window
 	accessTokenUse        = "access"
 	securityProofTokenUse = "security_proof"
 	authTokenIssuer       = "new-api"
