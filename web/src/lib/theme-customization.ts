@@ -26,8 +26,8 @@ For commercial licensing, please contact support@quantumnous.com
 export const THEME_PRESETS = [
   {
     value: 'default',
-    name: 'Default',
-    swatches: ['oklch(0.72 0.18 250)', 'oklch(0.7 0.12 280)'],
+    name: 'OpenFox',
+    swatches: ['#f6f9fd', '#2563d9'],
   },
   {
     // Inspired by Anthropic's official brand language: warm cream canvas
@@ -169,9 +169,8 @@ export const THEME_COOKIE_KEYS = {
  * Co-located with the preset registry so a preset's signature typography
  * is declared in one place. Presets not listed here fall back to the
  * `resolveThemeFont` default of `sans`. The shipped `default` preset
- * opts into serif so the editorial Lora voice is the out-of-the-box
- * experience; vivid color presets stay on the humanist sans so their
- * accents read clearly without competing with the body type.
+ * uses Public Sans across the OpenFox suite. Anthropic keeps its editorial
+ * serif as an optional preset.
  */
 export const PRESET_DEFAULT_FONT: Partial<
   Record<ThemePreset, ResolvedThemeFont>

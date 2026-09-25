@@ -525,3 +525,10 @@
 - 已完成：ICP 备案期间 openfox.work 被拦、openzrob.com 为生效入口，但顶栏"工作台/AI 站"、independent-apps 兼容跳转与 central-logout / central-account-sign-in 的账号中心回退仍在构建期写死 fox 域名，用户在旧域名一点导航即跳到被拦域。product-links.ts 改为运行时从 window.location.hostname 按域名族（openzrob.com / openfox.work）派生同级入口，未知主机回落当前生效族 openzrob.com；use-top-nav-links、central-logout、central-account-sign-in 全部改用派生常量，保留 VITE_ROBO_* env 覆盖用于本地开发。
 - 验证：本地定向 vitest（independent-apps + 域名族新用例、sidebar-config、top-nav-brand、central-sso*、user-auth-form-central）与 tsgo -b 通过；deploy 全量门禁 8 项通过（bun install/build:check、CSS 校验、全量 Vitest、go test/vet/build）；线上 ai/www.openzrob.com 新入口 index.21ba49c73f.js 无任何写死 fox URL，active+healthy，备份 20260921T113539Z。
 - 未完成 / 限制：根 gitlink 未推进、未推送（按工作区约定待维护者）；真实浏览器点击顶栏的目视验收待用户确认。回滚：deploy.py rollback --expect-current platform-ed1964278d8f-67e7b01d5bd9。
+
+### 2026-09-25T16:35:00+08:00 | Codex | New API 默认界面对齐 OpenFox 蓝白主题
+
+- 任务 / 分支 / 基线：平台 Web 默认外观；`codex/openfox-ui-20260925` / `33c2d5c81b109a739b3fbc0099a52d3a3c1f204d`。只调整主题和共享布局，不改模型、钱包、认证或上游包身份。
+- 已完成：默认浅色主题统一为 OpenFox 蓝白色阶，深色主题采用同一冷色体系；顶部导航、侧栏活动状态和卡片边界收敛为轻量层级；移除表格逐行动画与卡片位移动效；主题选择器将默认主题显示为 OpenFox。
+- 验证：`bun install --frozen-lockfile`、`bun run typecheck`、所改 TSX/TS 文件的 oxlint、`bun run build`、侧栏/移动布局定向 Vitest 17/17、`git diff --check` 通过。
+- 未完成 / 下一步：未做真实登录后的浏览器目视验收，未发布生产；组件提交推送到 origin/main 后，再由工作区推进 gitlink。

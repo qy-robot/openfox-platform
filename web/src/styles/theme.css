@@ -96,8 +96,8 @@ For commercial licensing, please contact support@quantumnous.com
 }
 
 :root {
-  --radius: 1rem;
-  --app-header-height: 3rem;
+  --radius: 0.875rem;
+  --app-header-height: 3.5rem;
   /* Static build-channel fallback consumed when JS hasn't booted yet. */
   --app-rev: '2k6e8r7p';
   /* Currently active body font. The font axis swaps this between
@@ -105,20 +105,20 @@ For commercial licensing, please contact support@quantumnous.com
    * in theme-presets.css. Default mirrors `--font-sans` so behavior is
    * identical when no font preference is set. */
   --font-body: var(--font-sans);
-  --background: #f4f7fb;
-  --foreground: #0b1730;
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #1769f5;
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0 0);
-  --secondary-foreground: oklch(0.42 0.16 250);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: #59677f;
-  --accent: color-mix(in oklch, var(--primary) 12%, var(--background));
-  --accent-foreground: oklch(0.145 0 0);
+  --background: #f6f9fd;
+  --foreground: #142a43;
+  --card: #ffffff;
+  --card-foreground: #142a43;
+  --popover: #ffffff;
+  --popover-foreground: #142a43;
+  --primary: #2563d9;
+  --primary-foreground: #ffffff;
+  --secondary: #ebf2fc;
+  --secondary-foreground: #2457ab;
+  --muted: #f1f5fa;
+  --muted-foreground: #62768f;
+  --accent: #e8f1fd;
+  --accent-foreground: #204f9e;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
   --success: oklch(0.596 0.145 163.225);
@@ -129,38 +129,30 @@ For commercial licensing, please contact support@quantumnous.com
   --info-foreground: oklch(0.985 0 0);
   --neutral: oklch(0.708 0 0);
   --neutral-foreground: oklch(0.145 0 0);
-  --border: oklch(0.93 0 0);
-  --input: oklch(0.93 0 0);
-  --ring: oklch(0.708 0.16 249.003);
-  --chart-1: oklch(0.72 0.18 250);
-  --chart-2: oklch(0.65 0.15 200);
-  --chart-3: oklch(0.7 0.12 280);
-  --chart-4: oklch(0.68 0.19 325);
-  --chart-5: oklch(0.68 0.16 155);
-  --overview-accent-1: oklch(0.72 0.18 250);
-  --overview-accent-2: oklch(0.65 0.15 200);
-  --overview-accent-3: oklch(0.7 0.12 280);
-  --sidebar: color-mix(in oklch, var(--foreground) 0.5%, var(--background));
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.64 0.197 253.892);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: color-mix(in oklch, var(--primary) 12%, var(--background));
-  --sidebar-accent-foreground: oklch(0.579 0.196 255.909);
-  --sidebar-border: oklch(0.93 0 0);
-  --sidebar-ring: oklch(0.58 0.2 250);
-  --skeleton-base: oklch(0.97 0 0);
-  --skeleton-highlight: oklch(0.985 0 0);
-  --table-row: var(--background);
-  --table-header: color-mix(
-    in oklch,
-    var(--foreground) 1.5%,
-    var(--background)
-  );
-  --table-header-hover: color-mix(
-    in oklch,
-    var(--foreground) 3%,
-    var(--background)
-  );
+  --border: #dce7f2;
+  --input: #dce7f2;
+  --ring: #8fb7f2;
+  --chart-1: #2563d9;
+  --chart-2: #5d92e5;
+  --chart-3: #47a2bf;
+  --chart-4: #7a8fbb;
+  --chart-5: #58a98f;
+  --overview-accent-1: #2563d9;
+  --overview-accent-2: #47a2bf;
+  --overview-accent-3: #7a8fbb;
+  --sidebar: #f1f6fd;
+  --sidebar-foreground: #29415e;
+  --sidebar-primary: #2563d9;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e2edfc;
+  --sidebar-accent-foreground: #2057b7;
+  --sidebar-border: #dce7f2;
+  --sidebar-ring: #8fb7f2;
+  --skeleton-base: #e9f0f8;
+  --skeleton-highlight: #f7fafe;
+  --table-row: #ffffff;
+  --table-header: #f2f6fb;
+  --table-header-hover: #eaf1fa;
   /* Disabled rows: kept subtle so they read as "quiet", not as a colored
      alert state. */
   --table-disabled: color-mix(
@@ -181,21 +173,20 @@ For commercial licensing, please contact support@quantumnous.com
 }
 
 .dark {
-  /* OpenAI-like dark mode with a crisp charcoal canvas. */
-  --background: oklch(0.235 0 0);
-  --foreground: oklch(0.965 0 0);
-  --card: oklch(0.285 0 0);
-  --card-foreground: oklch(0.965 0 0);
-  --popover: oklch(0.305 0 0);
-  --popover-foreground: oklch(0.965 0 0);
-  --primary: oklch(0.54 0.142 248.516);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.335 0 0);
-  --secondary-foreground: oklch(0.9 0.05 250);
-  --muted: oklch(0.305 0 0);
-  --muted-foreground: oklch(0.78 0 0);
-  --accent: color-mix(in oklch, var(--primary) 20%, var(--background));
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #0e1c2e;
+  --foreground: #e8f1fb;
+  --card: #15283e;
+  --card-foreground: #e8f1fb;
+  --popover: #192e46;
+  --popover-foreground: #e8f1fb;
+  --primary: #82b3ff;
+  --primary-foreground: #10233b;
+  --secondary: #203852;
+  --secondary-foreground: #e8f1fb;
+  --muted: #1d334b;
+  --muted-foreground: #adc0d5;
+  --accent: #25456c;
+  --accent-foreground: #e8f1fb;
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
   --success: oklch(0.696 0.17 162.48);
@@ -206,22 +197,22 @@ For commercial licensing, please contact support@quantumnous.com
   --info-foreground: oklch(0.145 0 0);
   --neutral: oklch(0.76 0 0);
   --neutral-foreground: oklch(0.155 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 17%);
-  --ring: oklch(0.554 0.148 250.726);
+  --border: #2c435c;
+  --input: #38536f;
+  --ring: #82b3ff;
   --chart-1: oklch(0.76 0.14 250);
   --chart-2: oklch(0.76 0.13 200);
   --chart-3: oklch(0.76 0.13 285);
   --chart-4: oklch(0.75 0.16 325);
   --chart-5: oklch(0.76 0.14 155);
-  --sidebar: oklch(0.225 0 0);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.588 0.123 246.488);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: color-mix(in oklch, var(--primary) 20%, var(--background));
-  --sidebar-accent-foreground: oklch(0.9 0.05 250);
-  --sidebar-border: oklch(1 0 0 / 11%);
-  --sidebar-ring: oklch(0.7 0.17 250);
+  --sidebar: #12263b;
+  --sidebar-foreground: #d6e5f6;
+  --sidebar-primary: #82b3ff;
+  --sidebar-primary-foreground: #10233b;
+  --sidebar-accent: #244463;
+  --sidebar-accent-foreground: #e8f1fb;
+  --sidebar-border: #2c435c;
+  --sidebar-ring: #82b3ff;
   --skeleton-base: oklch(0.335 0 0);
   --skeleton-highlight: oklch(0.44 0 0);
   --table-row: var(--background);
