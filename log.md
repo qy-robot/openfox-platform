@@ -4,6 +4,8 @@
 
 ## 当前状态
 
+- 2026-09-26T00:06:00+08:00 | Codex | 2026-09-25 的 OpenFox 第一版 UI 已上线：`platform-8925057cb3c1-8aab7915fcb0`，二进制 SHA256 `dcd0d8258b7af6003f4af6b74cb9a440d7dceb77037d349bf1f4f0664ca7cec9`，平台部署工具状态 active/healthy/public_healthy 且运行哈希相等。新 SaaS 布局候选 `732755f40` 已快进合入本地 `main`，待推送与根 gitlink 更新；当前生产尚未包含该候选。
+
 - 2026-09-26T00:02:29+08:00 | Codex platform_saas | AI 站已登录页面的 SaaS 布局候选在 `codex/saas-workspace-20260925`：总览真实用量先于配置引导；API Key 与模型表单采用桌面双列标签/控件、手机单列；共用页头、分组和指标字号放大。Web 定向 10/10 测试、typecheck、改动文件 lint、build、`git diff --check` 通过；尚未合入 main 或上线，真实员工登录后的目视验收待整合。
 
 - 2026-09-25T23:04:00+08:00 | Codex | 用户要求上线；视觉功能分支 `cf65b04b` 已快进合入本地 `main`，正核对并推送组件主线。生产仍是 `platform-ed1964278d8f-67e7b01d5bd9`；新 Web 视觉发布须从该线上精确源码基线构建嵌入式二进制，不能把尚未上线的其他后台提交混入。
@@ -573,3 +575,11 @@
 - 验证：`bun run typecheck` 通过；总览 7 项和 API Key 抽屉 3 项 Vitest 全过；改动 TS/TSX 文件 oxlint 零错误；`bun run build` 成功且构建 CSS 含新表单规则；`git diff --check` 通过。
 - 未完成 / 限制：未合入组件 `main`、未推进根 gitlink、未发布生产；无真实员工会话可验证已登录页面实际数据与操作，需整合后用真实账号验收。首次 `git fetch origin main` 曾遇本机 schannel TLS 握手失败，推送功能分支时需重试并核对远端提交。
 - 下一步：提交并推送此组件功能分支，将 SHA 交给工作区整合者；整合者核对视觉并决定合入、部署。
+
+### 2026-09-26T00:06:00+08:00 | Codex | 第一版生产发布证据与 SaaS 候选整合
+
+- 任务 / 分支 / 基线：平台 `main` 以已发布源码 `8925057cb3c13c16035777bd02845f7b6af62de3` 为基线，快进合入 `codex/saas-workspace-20260925`=`732755f4036b66296253b55528792d7acb097d1d`；本条记录时组件主线尚待推送。
+- 已完成：第一版 UI 的平台发布收据记录 `platform-8925057cb3c1-8aab7915fcb0` 于 2026-09-25T23:41:28+08:00 切换，源码精确为 `8925057cb3c13c16035777bd02845f7b6af62de3`。相对先前线上 `platform-ed1964278d8f-67e7b01d5bd9` 仅 Web 与日志变化；内置部署工具完成构建、备份、原子切换、重启、公网探针。新版 SaaS 候选当前仅合入 Git，本条不表示已部署。
+- 验证：平台完整 Bun 测试与构建、Go test/vet/build、部署 dry-run 和正式收据均通过；`deploy.py status` 为 active、healthy、public_healthy、running_sha256 与构建二进制 SHA256 相等。官网及 AI 站新首页和 CSS 静态资源均返回 200，CSS SHA256 与构建清单相同。协调备份 `20260925T154100Z` 服务端恢复校验及离机副本 11 个清单文件校验通过。
+- 回滚 / 限制：如第一版平台异常，按部署收据回切前一 release，保持数据库不恢复；新 SaaS 候选需另行构建发布。真实员工会话下的模型、钱包和 API Key 操作仍待人工验收；本轮没有代用户进行付费模型请求。
+- 下一步：推送平台 main，根仓推进精确 gitlink；新候选完成三站整合和发布验证后再切生产。
