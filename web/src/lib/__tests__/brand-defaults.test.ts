@@ -59,6 +59,15 @@ describe('OpenFox brand defaults', () => {
     })
   })
 
+  test('replaces the bundled legacy mark returned by the backend', () => {
+    expect(
+      mapStatusDataToConfig({
+        system_name: 'OpenFox',
+        logo: '/robocodingai-logo.png',
+      })
+    ).toMatchObject({ logo: DEFAULT_LOGO })
+  })
+
   test('normalizes a legacy cached status before first render', () => {
     window.localStorage.setItem(
       'status',

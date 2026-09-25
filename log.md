@@ -4,6 +4,8 @@
 
 ## 当前状态
 
+- 2026-09-25T21:03:23+08:00 | Codex | `codex/fox-visual-20260925` 上完成 OpenFox 原创视觉候选：默认主题、外壳导航和登录页采用纸白、墨蓝、冰蓝、湖蓝与狐狸线稿；保留认证、模型、钱包等原有功能及上游许可。Web typecheck、15 项定向测试、改动文件 lint/format、生产构建通过；当前仅开发预览，未合入 main 或发布生产。
+
 - 2026-09-22T21:11:00+08:00 | ZCode | 主分支更名：`robo/main` → `main`（应用户要求统一分支命名）
   - 已完成：`main` 原为本 fork 的上游 New API 镜像（`9fe0457e`，上游 #5062），现以 force-with-lease 移至公司主线 `fa46b951` 并设为 GitHub 默认分支；远端与本地 `robo/main` 已删除；`master` 无（上游走 upstream remote）。上游镜像角色改由 `upstream` remote 承担。
   - 验证：`origin/main` = `fa46b951` 与根 gitlink 一致；origin/HEAD 指向 main；推送与删除均有远端回执。
@@ -532,3 +534,10 @@
 - 已完成：默认浅色主题统一为 OpenFox 蓝白色阶，深色主题采用同一冷色体系；顶部导航、侧栏活动状态和卡片边界收敛为轻量层级；移除表格逐行动画与卡片位移动效；主题选择器将默认主题显示为 OpenFox。
 - 验证：`bun install --frozen-lockfile`、`bun run typecheck`、所改 TSX/TS 文件的 oxlint、`bun run build`、侧栏/移动布局定向 Vitest 17/17、`git diff --check` 通过。
 - 未完成 / 下一步：未做真实登录后的浏览器目视验收，未发布生产；组件提交推送到 origin/main 后，再由工作区推进 gitlink。
+
+### 2026-09-25T21:03:23+08:00 | Codex | 狐狸线稿视觉候选与平台壳层对齐
+
+- 任务 / 分支 / 基线：平台 `codex/fox-visual-20260925` / `403594f75d42fac97d5dbb4c8d267c3e1f00e5b2`；本轮只改 Web 主题、应用壳层与登录呈现，不改认证和账务逻辑。
+- 已完成：默认主题采用 OpenFox 纸白/冰蓝/墨蓝配色；顶栏、侧栏、品牌标志和登录页使用统一层级。登录画布加入现有狐狸线稿、尾巴弧线与少量星芒，说明文案明确指向模型、API 密钥和钱包，七种既有语言同步。保留 New API 上游版权与文件布局。
+- 验证：`bun run typecheck`、15 项相关 Vitest、改动文件定向 oxlint/oxfmt、`bun run build`、`git diff --check` 通过；本地 Chrome 1440px 登录页在代理生产公共 API 后无错误提示且已目视检查。全量 lint/format:check 因未改文件中的既有问题未通过，不据此声称全库整洁。
+- 未完成 / 下一步：尚未合入平台 main 或发布生产；真实已登录平台页面和账号联邦链仍需发布前验收。根工作区待按分支工作流整合 gitlink。

@@ -52,7 +52,7 @@ export function AppSidebar() {
     <Sidebar collapsible={collapsible} variant={variant}>
       {view && <SidebarViewHeader view={view} />}
 
-      <SidebarContent className='py-2'>
+      <SidebarContent className='openfox-sidebar-content py-4'>
         <AnimatePresence mode='wait' initial={false}>
           <motion.div
             key={key}

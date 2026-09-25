@@ -31,55 +31,64 @@ export function AuthLayout({ children }: AuthLayoutProps) {
   const { systemName, logo, loading } = useSystemConfig()
 
   return (
-    <div className='robo-auth-layout relative grid min-h-svh max-w-none lg:grid-cols-2'>
+    <div className='openfox-auth-layout relative grid min-h-svh max-w-none overflow-hidden lg:grid-cols-[minmax(0,46%)_minmax(0,54%)]'>
       <Link
         to='/'
-        className='absolute top-4 left-4 z-10 flex items-center gap-2 transition-opacity hover:opacity-80 sm:top-8 sm:left-8'
+        className='openfox-auth-brand focus-visible:ring-ring absolute top-6 left-6 z-10 flex items-center gap-3 rounded-xl transition-opacity outline-none hover:opacity-80 focus-visible:ring-2 sm:top-10 sm:left-10'
       >
-        <div className='relative h-8 w-8'>
+        <div className='border-border relative size-10 overflow-hidden rounded-xl border bg-white p-1'>
           {loading ? (
-            <Skeleton className='absolute inset-0 rounded-full' />
+            <Skeleton className='absolute inset-0 rounded-xl' />
           ) : (
             <img
               src={logo}
               alt={t('Logo')}
-              className='h-8 w-8 rounded-full object-cover'
+              className='size-full object-contain'
             />
           )}
         </div>
         {loading ? (
           <Skeleton className='h-6 w-24' />
         ) : (
-          <span>
-            <span className='block text-lg font-semibold'>{systemName}</span>
-            <span className='text-muted-foreground block text-xs'>
-
-            </span>
+          <span className='text-lg font-semibold tracking-[-0.03em]'>
+            {systemName}
           </span>
         )}
       </Link>
-      <aside className='bg-accent/60 hidden flex-col justify-center px-16 py-32 lg:flex xl:px-24'>
-        <p className='text-primary mb-6 text-sm font-medium'>OpenFox</p>
-        <h1 className='text-4xl leading-snug font-semibold tracking-tight'>
-          {t('Learn by building.')}
-          <br />
-          {t('Move forward with every task.')}
-        </h1>
-        <p className='text-muted-foreground mt-6 max-w-md text-base leading-8'>
-          {t('One account for your desktop workspace and cloud services.')}
-        </p>
-        <Link
-          to='/download'
-          className='text-primary mt-10 w-fit text-sm underline underline-offset-4'
-        >
-          {t('Download desktop app')}
-        </Link>
+      <aside className='openfox-auth-scene border-border relative hidden flex-col justify-center overflow-hidden border-r px-16 py-32 lg:flex xl:px-24'>
+        <div className='openfox-auth-arc' aria-hidden='true' />
+        <img
+          src={logo}
+          alt=''
+          aria-hidden='true'
+          className='openfox-auth-mark'
+        />
+        <div className='relative z-10 max-w-[31rem]'>
+          <span
+            className='mb-5 block text-xl leading-none text-[var(--brand-star)]'
+            aria-hidden='true'
+          >
+            ✦
+          </span>
+          <h1 className='text-[clamp(2.25rem,3vw,3.75rem)] leading-[1.18] font-semibold tracking-[-0.045em]'>
+            {t('Models and API access.')}
+          </h1>
+          <p className='dark:text-muted-foreground mt-8 max-w-md text-base leading-8 text-[#506b7c]'>
+            {t('Browse models, manage API keys and review your wallet.')}
+          </p>
+          <Link
+            to='/download'
+            className='border-primary/40 text-primary hover:border-primary focus-visible:outline-ring mt-12 inline-flex w-fit items-center border-b pb-1 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-4'
+          >
+            {t('Download desktop app')}
+          </Link>
+        </div>
       </aside>
-      <div className='flex items-center pt-20 lg:pt-0'>
-        <div className='mx-auto flex w-full flex-col justify-center space-y-2 px-4 py-8 sm:w-[480px] sm:p-8'>
+      <main className='bg-card flex min-w-0 items-center pt-24 lg:pt-0'>
+        <div className='mx-auto flex w-full max-w-[29rem] flex-col justify-center space-y-2 px-7 py-12 sm:px-8'>
           {children}
         </div>
-      </div>
+      </main>
     </div>
   )
 }

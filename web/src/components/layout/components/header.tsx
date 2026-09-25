@@ -25,13 +25,13 @@ export function Header({ className, children, ...props }: HeaderProps) {
   return (
     <header
       className={cn(
-        'sticky top-0 z-40 h-[var(--app-header-height,3.5rem)] w-full shrink-0 border-b border-border bg-card',
+        'openfox-app-header sticky top-0 z-40 h-[var(--app-header-height,4rem)] w-full shrink-0 border-b border-border bg-card',
         className
       )}
       {...props}
     >
-      <div className='flex h-full items-center gap-2 px-3 sm:gap-3 sm:px-5'>
-        <SidebarTrigger variant='ghost' className='size-8' />
+      <div className='flex h-full items-center gap-2 px-4 sm:gap-3 sm:px-7'>
+        <SidebarTrigger variant='ghost' className='size-9 rounded-xl' />
         {children}
       </div>
     </header>

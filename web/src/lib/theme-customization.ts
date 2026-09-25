@@ -27,7 +27,7 @@ export const THEME_PRESETS = [
   {
     value: 'default',
     name: 'OpenFox',
-    swatches: ['#f6f9fd', '#2563d9'],
+    swatches: ['#f7fbfd', '#2876b9'],
   },
   {
     // Inspired by Anthropic's official brand language: warm cream canvas

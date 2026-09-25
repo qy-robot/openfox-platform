@@ -23,7 +23,7 @@ For commercial licensing, please contact support@quantumnous.com
 // System Configuration Defaults
 export const DEFAULT_SYSTEM_NAME = 'OpenFox'
 export const DEFAULT_SYSTEM_SUBTITLE = ''
-export const DEFAULT_LOGO = '/robocodingai-logo.png'
+export const DEFAULT_LOGO = '/openfox-logo.png'
 
 const LEGACY_DEFAULT_SYSTEM_NAMES = new Set([
   'new api',
@@ -48,7 +48,9 @@ export function normalizeSystemName(value: unknown): string {
 export function normalizeSystemLogo(value: unknown): string {
   if (typeof value !== 'string') return DEFAULT_LOGO
   const logo = value.trim()
-  return !logo || logo === '/logo.png' ? DEFAULT_LOGO : logo
+  return !logo || logo === '/logo.png' || logo === '/robocodingai-logo.png'
+    ? DEFAULT_LOGO
+    : logo
 }
 
 // LocalStorage Keys

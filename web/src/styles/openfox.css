@@ -1,0 +1,75 @@
+/*
+Copyright (C) 2023-2026 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* Navigation and content retain their existing behavior. */
+.openfox-app-header {
+  background: color-mix(in srgb, var(--card) 96%, var(--secondary));
+}
+
+.openfox-sidebar-content [data-slot='sidebar-menu-button'] {
+  min-height: 2.5rem;
+  border-radius: 0.75rem;
+  padding-inline: 0.75rem;
+}
+
+.openfox-sidebar-content [data-slot='sidebar-menu-button'][data-active='true'] {
+  box-shadow: inset 3px 0 0 var(--sidebar-primary);
+}
+
+.openfox-auth-scene {
+  background:
+    radial-gradient(circle at 14% 80%, #ffffffaa 0, transparent 38%),
+    linear-gradient(145deg, #e8f4f8 0%, #f1f9fb 56%, #e3f1f6 100%);
+}
+
+.openfox-auth-arc {
+  position: absolute;
+  right: -15rem;
+  bottom: -12rem;
+  width: min(72vw, 52rem);
+  height: 32rem;
+  transform: rotate(-24deg);
+  border: 1.5px solid #a9d0e1;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.openfox-auth-mark {
+  position: absolute;
+  right: 8%;
+  bottom: 9%;
+  width: clamp(9rem, 15vw, 14rem);
+  height: auto;
+  opacity: 0.84;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.dark .openfox-auth-scene {
+  background:
+    radial-gradient(circle at 14% 80%, #284763 0, transparent 38%),
+    linear-gradient(145deg, #19364d 0%, #122c42 100%);
+}
+
+.dark .openfox-auth-arc {
+  border-color: #3d647c;
+}
+
+.dark .openfox-auth-mark {
+  filter: invert(1);
+  mix-blend-mode: screen;
+}

@@ -41,9 +41,9 @@ export function SignIn() {
 
   return (
     <AuthLayout>
-      <div className='w-full space-y-8'>
-        <div className='space-y-2'>
-          <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
+      <div className='w-full space-y-9'>
+        <div className='space-y-3'>
+          <h2 className='text-3xl font-semibold tracking-[-0.04em] sm:text-[2.125rem]'>
             {t('Sign in')}
           </h2>
           {!status?.self_use_mode_enabled &&

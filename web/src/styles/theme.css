@@ -96,8 +96,8 @@ For commercial licensing, please contact support@quantumnous.com
 }
 
 :root {
-  --radius: 0.875rem;
-  --app-header-height: 3.5rem;
+  --radius: 1rem;
+  --app-header-height: 4rem;
   /* Static build-channel fallback consumed when JS hasn't booted yet. */
   --app-rev: '2k6e8r7p';
   /* Currently active body font. The font axis swaps this between
@@ -105,20 +105,20 @@ For commercial licensing, please contact support@quantumnous.com
    * in theme-presets.css. Default mirrors `--font-sans` so behavior is
    * identical when no font preference is set. */
   --font-body: var(--font-sans);
-  --background: #f6f9fd;
-  --foreground: #142a43;
+  --background: #f7fbfd;
+  --foreground: #142b3b;
   --card: #ffffff;
-  --card-foreground: #142a43;
+  --card-foreground: #142b3b;
   --popover: #ffffff;
-  --popover-foreground: #142a43;
-  --primary: #2563d9;
+  --popover-foreground: #142b3b;
+  --primary: #2876b9;
   --primary-foreground: #ffffff;
-  --secondary: #ebf2fc;
-  --secondary-foreground: #2457ab;
-  --muted: #f1f5fa;
-  --muted-foreground: #62768f;
-  --accent: #e8f1fd;
-  --accent-foreground: #204f9e;
+  --secondary: #e8f4f8;
+  --secondary-foreground: #285c7d;
+  --muted: #eff6f9;
+  --muted-foreground: #587185;
+  --accent: #e8f4f8;
+  --accent-foreground: #215f91;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
   --success: oklch(0.596 0.145 163.225);
@@ -129,30 +129,31 @@ For commercial licensing, please contact support@quantumnous.com
   --info-foreground: oklch(0.985 0 0);
   --neutral: oklch(0.708 0 0);
   --neutral-foreground: oklch(0.145 0 0);
-  --border: #dce7f2;
-  --input: #dce7f2;
-  --ring: #8fb7f2;
-  --chart-1: #2563d9;
-  --chart-2: #5d92e5;
-  --chart-3: #47a2bf;
-  --chart-4: #7a8fbb;
-  --chart-5: #58a98f;
-  --overview-accent-1: #2563d9;
-  --overview-accent-2: #47a2bf;
-  --overview-accent-3: #7a8fbb;
-  --sidebar: #f1f6fd;
-  --sidebar-foreground: #29415e;
-  --sidebar-primary: #2563d9;
+  --border: #d4e5ee;
+  --input: #d4e5ee;
+  --ring: #83b6d8;
+  --brand-star: #e8a757;
+  --chart-1: #2876b9;
+  --chart-2: #4a9dbc;
+  --chart-3: #6d8da8;
+  --chart-4: #62a79f;
+  --chart-5: #a1b7c6;
+  --overview-accent-1: #2876b9;
+  --overview-accent-2: #4a9dbc;
+  --overview-accent-3: #6d8da8;
+  --sidebar: #eff7fa;
+  --sidebar-foreground: #35566c;
+  --sidebar-primary: #2876b9;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e2edfc;
-  --sidebar-accent-foreground: #2057b7;
-  --sidebar-border: #dce7f2;
-  --sidebar-ring: #8fb7f2;
-  --skeleton-base: #e9f0f8;
-  --skeleton-highlight: #f7fafe;
+  --sidebar-accent: #dceef5;
+  --sidebar-accent-foreground: #1b638f;
+  --sidebar-border: #d4e5ee;
+  --sidebar-ring: #83b6d8;
+  --skeleton-base: #e2eef3;
+  --skeleton-highlight: #f7fbfd;
   --table-row: #ffffff;
-  --table-header: #f2f6fb;
-  --table-header-hover: #eaf1fa;
+  --table-header: #f0f7fa;
+  --table-header-hover: #e7f1f6;
   /* Disabled rows: kept subtle so they read as "quiet", not as a colored
      alert state. */
   --table-disabled: color-mix(
