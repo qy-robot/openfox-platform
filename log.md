@@ -4,6 +4,8 @@
 
 ## 当前状态
 
+- 2026-09-26T00:34:00+08:00 | Codex | SaaS 工作区第二版平台 Web 已上线 `platform-3dd54dce7d6e-6bb123720edc`，发布源码 `3dd54dce7d6ed058783097de8ff4257b075032ef`，二进制 SHA256 `45871808bc64fb6b9b6afee1d7c95ba6b06d60f09839b3b99377d9474ce86a48`。部署工具回报 active/healthy/public_healthy 且运行哈希一致，官网与 AI 站静态资源和 CSS 哈希已核对；真实员工登录后的平台表单操作尚未验收。发布记录组件分支待推送。
+
 - 2026-09-26T00:06:00+08:00 | Codex | 2026-09-25 的 OpenFox 第一版 UI 已上线：`platform-8925057cb3c1-8aab7915fcb0`，二进制 SHA256 `dcd0d8258b7af6003f4af6b74cb9a440d7dceb77037d349bf1f4f0664ca7cec9`，平台部署工具状态 active/healthy/public_healthy 且运行哈希相等。新 SaaS 布局候选 `732755f40` 已快进合入本地 `main`，待推送与根 gitlink 更新；当前生产尚未包含该候选。
 
 - 2026-09-26T00:02:29+08:00 | Codex platform_saas | AI 站已登录页面的 SaaS 布局候选在 `codex/saas-workspace-20260925`：总览真实用量先于配置引导；API Key 与模型表单采用桌面双列标签/控件、手机单列；共用页头、分组和指标字号放大。Web 定向 10/10 测试、typecheck、改动文件 lint、build、`git diff --check` 通过；尚未合入 main 或上线，真实员工登录后的目视验收待整合。
@@ -583,3 +585,11 @@
 - 验证：平台完整 Bun 测试与构建、Go test/vet/build、部署 dry-run 和正式收据均通过；`deploy.py status` 为 active、healthy、public_healthy、running_sha256 与构建二进制 SHA256 相等。官网及 AI 站新首页和 CSS 静态资源均返回 200，CSS SHA256 与构建清单相同。协调备份 `20260925T154100Z` 服务端恢复校验及离机副本 11 个清单文件校验通过。
 - 回滚 / 限制：如第一版平台异常，按部署收据回切前一 release，保持数据库不恢复；新 SaaS 候选需另行构建发布。真实员工会话下的模型、钱包和 API Key 操作仍待人工验收；本轮没有代用户进行付费模型请求。
 - 下一步：推送平台 main，根仓推进精确 gitlink；新候选完成三站整合和发布验证后再切生产。
+
+### 2026-09-26T00:34:00+08:00 | Codex | SaaS 工作区平台 Web 正式发布
+
+- 任务 / 分支 / 基线：`codex/saas-release-log-20260926` 自组件 `main`=`3dd54dce7d6ed058783097de8ff4257b075032ef`；本次只更新公开可记录的进度，不改平台代码。部署工具从该已推送源码构建，兼容基线为上一线上 `platform-8925057cb3c1-8aab7915fcb0`。
+- 已完成：版本化发布 `platform-3dd54dce7d6e-6bb123720edc` 于 2026-09-26T00:27:46+08:00 切换；源码相对运行基线只改 Web 和日志，数据库、后端与运行配置不变。原 release 与发布收据保留，可按工具回切。
+- 验证：构建器执行 Bun 全套测试与 build:check、Go 两遍 test、vet、build 及 Linux amd64 构建；deploy dry-run 与正式发布成功。`deploy.py status` 为 active、healthy、public_healthy，进程哈希等于二进制 SHA256 `45871808bc64fb6b9b6afee1d7c95ba6b06d60f09839b3b99377d9474ce86a48`。`www.openfox.work` 与 `ai.openfox.work` 的 12 个链接静态资源均 200，CSS SHA256 `4d6da570af3ec431b41df31f9ae2763a26471b01645c7384f1f8c0bae0d6b381` 与构建清单一致。
+- 备份 / 回滚：部署前协调快照 `20260925T162716Z` 服务端 `restore-verify.py` 通过并复制到用户指定证书目录，离机 11 项 SHA256 匹配；如本版本异常，运行 `deploy.py rollback --expect-current platform-3dd54dce7d6e-6bb123720edc` 回到上一平台 release，不恢复数据库。
+- 未完成 / 下一步：未使用真实员工身份点击平台 API Key、模型和钱包表单；发布后没有做付费模型调用或独立 PostgreSQL 恢复。组件日志提交推送后由根仓推进 gitlink。
