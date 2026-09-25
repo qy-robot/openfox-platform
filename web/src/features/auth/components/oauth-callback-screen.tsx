@@ -75,7 +75,6 @@ export function OAuthCallbackScreen({
   let headline = t('Signing you in with {{provider}}', {
     provider: providerLabel,
   })
-  let description = t('Hang tight while we finish connecting your account.')
   let secondaryNote = t(
     "You'll be redirected automatically. You can return to the previous page if nothing happens after a few seconds."
   )
@@ -83,15 +82,11 @@ export function OAuthCallbackScreen({
     headline = t('Binding your {{provider}} account', {
       provider: providerLabel,
     })
-    description = t(
-      'Hang tight while we securely link this account to your profile.'
-    )
   }
   if (mode === 'verify') {
     headline = t('Verifying your {{provider}} account', {
       provider: providerLabel,
     })
-    description = t('Confirming the account linked to your profile.')
   }
   if (mode !== 'login') {
     secondaryNote = t('Return to the original window to continue.')
@@ -104,13 +99,10 @@ export function OAuthCallbackScreen({
           <div className='bg-muted flex h-16 w-16 items-center justify-center rounded-2xl'>
             <Icon className='h-8 w-8' />
           </div>
-          <div className='space-y-2'>
+          <div>
             <h2 className='text-center text-2xl font-semibold tracking-tight'>
               {headline}
             </h2>
-            <p className='text-muted-foreground text-sm sm:text-base'>
-              {description}
-            </p>
           </div>
         </div>
 
@@ -120,11 +112,6 @@ export function OAuthCallbackScreen({
             <span>{t('Processing OAuth response...')}</span>
           </div>
           <p className='text-muted-foreground text-sm'>{secondaryNote}</p>
-          <p className='text-muted-foreground text-xs'>
-            {t(
-              'This may take a few moments while we validate the request and update your session.'
-            )}
-          </p>
         </div>
       </div>
     </AuthLayout>

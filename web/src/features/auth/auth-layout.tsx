@@ -63,26 +63,15 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           aria-hidden='true'
           className='openfox-auth-mark'
         />
-        <div className='relative z-10 max-w-[31rem]'>
-          <span
-            className='mb-5 block text-xl leading-none text-[var(--brand-star)]'
-            aria-hidden='true'
-          >
-            ✦
-          </span>
-          <h1 className='text-[clamp(2.25rem,3vw,3.75rem)] leading-[1.18] font-semibold tracking-[-0.045em]'>
-            {t('Models and API access.')}
-          </h1>
-          <p className='dark:text-muted-foreground mt-8 max-w-md text-base leading-8 text-[#506b7c]'>
-            {t('Browse models, manage API keys and review your wallet.')}
-          </p>
-          <Link
-            to='/download'
-            className='border-primary/40 text-primary hover:border-primary focus-visible:outline-ring mt-12 inline-flex w-fit items-center border-b pb-1 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-4'
-          >
-            {t('Download desktop app')}
-          </Link>
-        </div>
+        <h1 className='relative z-10 text-[clamp(3.75rem,5vw,6rem)] leading-none font-semibold tracking-[-0.065em]'>
+          {systemName}
+        </h1>
+        <Link
+          to='/download'
+          className='border-primary/40 text-primary hover:border-primary focus-visible:outline-ring absolute bottom-16 left-16 z-10 inline-flex w-fit items-center border-b pb-1 text-base font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 xl:left-24'
+        >
+          {t('Download desktop app')}
+        </Link>
       </aside>
       <main className='bg-card flex min-w-0 items-center pt-24 lg:pt-0'>
         <div className='mx-auto flex w-full max-w-[29rem] flex-col justify-center space-y-2 px-7 py-12 sm:px-8'>

@@ -363,7 +363,7 @@ export function UserAuthForm({
             disabled={passkeyButtonDisabled}
           />
           {!passkeySupported && (
-            <p className='text-muted-foreground text-xs'>
+            <p className='text-muted-foreground text-sm'>
               {t('Passkey is not supported on this device.')}
             </p>
           )}
