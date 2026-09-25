@@ -382,6 +382,12 @@ export function ApiKeysMutateDrawer({
   const autoGroupsMode = form.watch('auto_groups_mode')
   const unlimitedQuota = form.watch('unlimited_quota')
   const fundingMode = form.watch('funding_mode')
+  const fundingModeLabels: Record<string, string> = {
+    team_first: t('Team first, then personal'),
+    personal_first: t('Personal first, then team'),
+    team_only: t('Team only'),
+    personal_only: t('Personal only'),
+  }
 
   useEffect(() => {
     if (
@@ -408,13 +414,13 @@ export function ApiKeysMutateDrawer({
       }}
     >
       <SheetContent
-        className={sideDrawerContentClassName('max-w-none sm:!max-w-[620px]')}
+        className={sideDrawerContentClassName('max-w-none sm:!max-w-[840px]')}
       >
         <SheetHeader className={sideDrawerHeaderClassName()}>
           <SheetTitle>
             {isUpdate ? t('Update API Key') : t('Create API Key')}
           </SheetTitle>
-          <SheetDescription>
+          <SheetDescription className='sr-only'>
             {isUpdate
               ? t('Update the API key by providing necessary info.')
               : t('Add a new API key by providing necessary info.')}
@@ -426,12 +432,11 @@ export function ApiKeysMutateDrawer({
             onSubmit={form.handleSubmit(onSubmit, onInvalid)}
             aria-busy={!isFormInitialized}
             inert={!isFormInitialized || isSubmitting ? true : undefined}
-            className={sideDrawerFormClassName('gap-5')}
+            className={sideDrawerFormClassName('openfox-editor-form gap-7')}
           >
             <SideDrawerSection>
               <SideDrawerSectionHeader
                 title={t('Basic Information')}
-                description={t('Set API key basic information')}
                 icon={<KeyRound className='size-4' />}
                 iconTone='info'
               />
@@ -525,7 +530,11 @@ export function ApiKeysMutateDrawer({
                   control={form.control}
                   name='cross_group_retry'
                   render={({ field }) => (
-                    <FormItem className={sideDrawerSwitchItemClassName()}>
+                    <FormItem
+                      className={sideDrawerSwitchItemClassName(
+                        'openfox-editor-switch'
+                      )}
+                    >
                       <div className='flex flex-col gap-0.5'>
                         <FormLabel className='text-sm'>
                           {t('Cross-group retry')}
@@ -641,7 +650,6 @@ export function ApiKeysMutateDrawer({
             <SideDrawerSection>
               <SideDrawerSectionHeader
                 title={t('Quota Settings')}
-                description={t('Set quota amount and limits')}
                 icon={<WalletCards className='size-4' />}
                 iconTone='success'
               />
@@ -694,13 +702,8 @@ export function ApiKeysMutateDrawer({
                       <FormControl>
                         <SelectTrigger className='w-full'>
                           <SelectValue>
-                            {field.value === 'team_first'
-                              ? t('Team first, then personal')
-                              : field.value === 'personal_first'
-                                ? t('Personal first, then team')
-                                : field.value === 'team_only'
-                                  ? t('Team only')
-                                  : t('Personal only')}
+                            {fundingModeLabels[field.value] ??
+                              fundingModeLabels.personal_only}
                           </SelectValue>
                         </SelectTrigger>
                       </FormControl>
@@ -806,7 +809,11 @@ export function ApiKeysMutateDrawer({
                 control={form.control}
                 name='unlimited_quota'
                 render={({ field }) => (
-                  <FormItem className={sideDrawerSwitchItemClassName()}>
+                  <FormItem
+                    className={sideDrawerSwitchItemClassName(
+                      'openfox-editor-switch'
+                    )}
+                  >
                     <div className='flex flex-col gap-0.5'>
                       <FormLabel className='text-sm'>
                         {t('Unlimited Quota')}
@@ -839,7 +846,6 @@ export function ApiKeysMutateDrawer({
                   <SideDrawerSectionHeader
                     className='flex-1'
                     title={t('Advanced Settings')}
-                    description={t('Set API key access restrictions')}
                     icon={<Settings2 className='size-4' />}
                   />
                   <ChevronDown

@@ -41,6 +41,47 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   box-shadow: inset 3px 0 0 var(--sidebar-primary);
 }
 
+/* Editors share a readable label rail; narrow screens return to one column. */
+.openfox-editor-form [data-slot='form-item']:not(.openfox-editor-switch) {
+  min-width: 0;
+}
+
+.openfox-editor-form [data-slot='form-label'] {
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+}
+
+.openfox-editor-form [data-slot='form-control'] {
+  min-height: 2.75rem;
+}
+
+.openfox-editor-form [data-slot='form-description'] {
+  font-size: 0.875rem;
+  line-height: 1.4rem;
+}
+
+@media (min-width: 640px) {
+  .openfox-editor-form [data-slot='form-item']:not(.openfox-editor-switch) {
+    display: grid;
+    grid-template-columns: minmax(9.5rem, 0.32fr) minmax(0, 1fr);
+    align-items: start;
+    column-gap: 1.5rem;
+  }
+
+  .openfox-editor-form
+    [data-slot='form-item']:not(.openfox-editor-switch)
+    > :not([data-slot='form-label']) {
+    grid-column: 2;
+  }
+
+  .openfox-editor-form
+    [data-slot='form-item']:not(.openfox-editor-switch)
+    > [data-slot='form-label'] {
+    padding-top: 0.625rem;
+  }
+}
+
 .openfox-auth-scene {
   background:
     radial-gradient(circle at 14% 80%, #ffffffaa 0, transparent 38%),

@@ -107,6 +107,19 @@ async function renderOverview() {
 }
 
 describe('overview setup guide', () => {
+  it('shows live usage before setup steps for an account without requests', async () => {
+    useAuthStore
+      .getState()
+      .auth.setUser({ id: 1, username: 'new-user', role: 1 })
+    await renderOverview()
+
+    const usage = screen.getByRole('heading', { name: 'Usage at a glance' })
+    const guide = await screen.findByRole('heading', { name: 'Setup guide' })
+    expect(
+      usage.compareDocumentPosition(guide) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+  })
+
   it('shows usage first and only a header entry when setup is complete', async () => {
     await renderOverview()
 
@@ -120,8 +133,8 @@ describe('overview setup guide', () => {
     for (const name of ['API Keys', 'Channels', 'Usage Logs', 'Pricing']) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
     }
-    const panel = document.getElementById(
-      toggle.getAttribute('aria-controls') ?? ''
+    const panel = document.querySelector(
+      `[id="${toggle.getAttribute('aria-controls') ?? ''}"]`
     )
     expect(panel).toBeInTheDocument()
     expect(panel).not.toBeVisible()
@@ -137,11 +150,13 @@ describe('overview setup guide', () => {
     await user.keyboard('{Enter}')
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
     expect(
-      document.getElementById(toggle.getAttribute('aria-controls') ?? '')
+      document.querySelector(
+        `[id="${toggle.getAttribute('aria-controls') ?? ''}"]`
+      )
     ).toBeVisible()
     expect(
       screen.getByRole('heading', {
-        name: 'Build on your API gateway in minutes',
+        name: 'Setup guide',
       })
     ).toBeVisible()
     await waitFor(() =>
@@ -188,9 +203,6 @@ describe('overview setup guide', () => {
       await screen.findByRole('button', { name: 'Hide setup guide' })
     )
     expect(screen.getByText('Setup progress: 1/3')).toBeVisible()
-    expect(
-      screen.getByText('Setup guide is collapsed. Expand it anytime.')
-    ).toBeVisible()
     expect(screen.getByRole('button', { name: 'API Keys' })).toBeVisible()
     expect(
       screen.queryByRole('button', { name: 'Setup guide' })

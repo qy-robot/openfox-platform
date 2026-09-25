@@ -29,7 +29,6 @@ import {
   CreditCard,
   FileText,
   KeyRound,
-  ListChecks,
   RadioTower,
   ShieldCheck,
   TerminalSquare,
@@ -72,17 +71,6 @@ import { UptimePanel } from './uptime-panel'
 
 const SETUP_GUIDE_VISIBILITY_STORAGE_KEY =
   'dashboard_overview_setup_guide_expanded'
-
-const SETUP_GUIDE_CODE_PATTERN = [
-  'const request = await client.responses.create({',
-  "  model: 'gpt-4.1-mini',",
-  "  input: 'Start routing traffic',",
-  '})',
-  '',
-  'if (request.output_text) {',
-  '  console.log(request.output_text)',
-  '}',
-].join('\n')
 
 type DashboardActionPath =
   | '/keys'
@@ -185,39 +173,13 @@ function buildCurlCommand(args: {
 
 function SetupGuideBackdrop(props: { compact?: boolean }) {
   return (
-    <>
-      <div
-        className={cn(
-          'pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_48%_120%_at_78%_0%,color-mix(in_oklch,var(--overview-accent-1)_14%,transparent)_0%,transparent_62%),linear-gradient(112deg,color-mix(in_oklch,var(--card)_94%,var(--overview-accent-2)_6%)_0%,color-mix(in_oklch,var(--card)_94%,var(--overview-accent-3)_6%)_48%,color-mix(in_oklch,var(--background)_90%,var(--overview-accent-1)_10%)_100%)] dark:opacity-60',
-          props.compact
-            ? '[mask-image:linear-gradient(90deg,black_0%,black_48%,transparent_74%)] opacity-55'
-            : 'opacity-85'
-        )}
-        aria-hidden='true'
-      />
-      <div
-        className={cn(
-          'text-foreground/5 dark:text-foreground/8 pointer-events-none absolute inset-y-0 right-0 hidden overflow-hidden font-mono sm:block',
-          props.compact ? 'w-1/2 opacity-45' : 'w-[58%] opacity-75'
-        )}
-        aria-hidden='true'
-      >
-        <pre
-          className={cn(
-            'absolute right-3 [mask-image:linear-gradient(90deg,transparent_0%,black_30%,black_82%,transparent_100%)] text-right tracking-[0.38em] whitespace-pre',
-            props.compact
-              ? '-top-6 text-[9px] leading-4'
-              : 'top-1 text-[11px] leading-5'
-          )}
-        >
-          {SETUP_GUIDE_CODE_PATTERN}
-        </pre>
-      </div>
-      <div
-        className='from-background/35 to-background/70 dark:from-background/20 dark:to-background/80 pointer-events-none absolute inset-0 bg-linear-to-b via-transparent'
-        aria-hidden='true'
-      />
-    </>
+    <div
+      className={cn(
+        'pointer-events-none absolute inset-x-0 top-0 h-1 bg-linear-to-r from-[#2876b9] via-[#8bc7df] to-transparent',
+        props.compact && 'h-0.5'
+      )}
+      aria-hidden='true'
+    />
   )
 }
 
@@ -264,7 +226,7 @@ function StartStepItem(props: {
               </span>
               <span className='truncate'>{props.step.title}</span>
             </span>
-            <span className='text-muted-foreground line-clamp-1 text-xs'>
+            <span className='text-muted-foreground line-clamp-2 text-sm'>
               {props.step.description}
             </span>
           </span>
@@ -647,6 +609,7 @@ export function OverviewDashboard() {
       </SectionPageLayout.Actions>
       <SectionPageLayout.Content>
         <div className='flex flex-col gap-4'>
+          <SummaryCards />
           <div id={setupGuideId} hidden={!setupGuideExpanded}>
             {setupGuideExpanded && (
               <CardStaggerContainer className='grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]'>
@@ -656,23 +619,9 @@ export function OverviewDashboard() {
                     <div className='relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]'>
                       <div className='flex min-w-0 flex-col gap-5'>
                         <div className='flex flex-wrap items-start justify-between gap-3'>
-                          <div className='flex max-w-2xl flex-col gap-1'>
-                            <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium tracking-wider uppercase'>
-                              <ListChecks
-                                className='size-3.5'
-                                aria-hidden='true'
-                              />
-                              {t('Get started')}
-                            </div>
-                            <h3 className='text-xl font-semibold tracking-tight sm:text-2xl'>
-                              {t('Build on your API gateway in minutes')}
-                            </h3>
-                            <p className='text-muted-foreground max-w-xl text-sm leading-relaxed'>
-                              {t(
-                                'A focused home for keys, balance, routing, and service health.'
-                              )}
-                            </p>
-                          </div>
+                          <h3 className='text-xl font-semibold tracking-tight sm:text-2xl'>
+                            {t('Setup guide')}
+                          </h3>
                           <div className='flex flex-wrap items-center gap-2'>
                             <Button
                               variant='outline'
@@ -714,11 +663,8 @@ export function OverviewDashboard() {
                 <CardStaggerItem className='bg-card h-full rounded-2xl border p-4 shadow-xs sm:p-5'>
                   <div className='flex h-full flex-col gap-4'>
                     <div className='flex flex-col gap-1'>
-                      <div className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
-                        {t('Recommended actions')}
-                      </div>
                       <h3 className='text-lg font-semibold tracking-tight'>
-                        {t('Keep the platform ready')}
+                        {t('Recommended actions')}
                       </h3>
                     </div>
                     <div className='grid gap-2'>
@@ -756,9 +702,6 @@ export function OverviewDashboard() {
                             })}
                           </span>
                         </div>
-                        <p className='text-muted-foreground line-clamp-1 text-xs'>
-                          {t('Setup guide is collapsed. Expand it anytime.')}
-                        </p>
                       </div>
                     </div>
 
@@ -786,8 +729,6 @@ export function OverviewDashboard() {
               </CardStaggerItem>
             </CardStaggerContainer>
           )}
-
-          <SummaryCards />
 
           {showContentPanels && (
             <CardStaggerContainer

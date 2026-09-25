@@ -311,11 +311,13 @@ export function ModelMutateDrawer(props: {
                     onSubmit={form.handleSubmit((values) =>
                       save.mutate(values)
                     )}
-                    className={sideDrawerFormClassName()}
+                    className={sideDrawerFormClassName(
+                      'openfox-editor-form gap-7'
+                    )}
                   >
                     {/* Basic Information */}
                     <SideDrawerSection>
-                      <h3 className='text-sm font-semibold'>
+                      <h3 className='text-lg font-semibold'>
                         {t('Basic Information')}
                       </h3>
 
@@ -438,7 +440,7 @@ export function ModelMutateDrawer(props: {
 
                     {/* Matching Configuration */}
                     <SideDrawerSection>
-                      <h3 className='text-sm font-semibold'>
+                      <h3 className='text-lg font-semibold'>
                         {t('Matching Rules')}
                       </h3>
 
@@ -489,7 +491,7 @@ export function ModelMutateDrawer(props: {
                     {/* Endpoints Configuration */}
                     <SideDrawerSection>
                       <div className='flex items-center justify-between'>
-                        <h3 className='text-sm font-semibold'>
+                        <h3 className='text-lg font-semibold'>
                           {t('Endpoints')}
                         </h3>
                         <Combobox
@@ -538,7 +540,7 @@ export function ModelMutateDrawer(props: {
 
                     {/* Status & Sync */}
                     <SideDrawerSection>
-                      <h3 className='text-sm font-semibold'>
+                      <h3 className='text-lg font-semibold'>
                         {t('Status & Sync')}
                       </h3>
 
@@ -546,7 +548,11 @@ export function ModelMutateDrawer(props: {
                         control={form.control}
                         name='status'
                         render={({ field }) => (
-                          <FormItem className={sideDrawerSwitchItemClassName()}>
+                          <FormItem
+                            className={sideDrawerSwitchItemClassName(
+                              'openfox-editor-switch'
+                            )}
+                          >
                             <div className='flex flex-col gap-0.5'>
                               <FormLabel className='text-base'>
                                 {t('Model square visibility')}
@@ -571,7 +577,11 @@ export function ModelMutateDrawer(props: {
                         control={form.control}
                         name='sync_official'
                         render={({ field }) => (
-                          <FormItem className={sideDrawerSwitchItemClassName()}>
+                          <FormItem
+                            className={sideDrawerSwitchItemClassName(
+                              'openfox-editor-switch'
+                            )}
+                          >
                             <div className='flex flex-col gap-0.5'>
                               <FormLabel className='text-base'>
                                 {t('Allow metadata sync')}
