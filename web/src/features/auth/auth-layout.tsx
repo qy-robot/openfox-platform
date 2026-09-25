@@ -63,9 +63,14 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           aria-hidden='true'
           className='openfox-auth-mark'
         />
-        <h1 className='relative z-10 text-[clamp(3.75rem,5vw,6rem)] leading-none font-semibold tracking-[-0.065em]'>
-          {systemName}
-        </h1>
+        <div className='relative z-10 max-w-[32rem]'>
+          <h1 className='text-[clamp(2.5rem,3.5vw,3.5rem)] leading-[1.12] font-semibold tracking-[-0.055em]'>
+            {t('Models, API keys and usage')}
+          </h1>
+          <p className='dark:text-muted-foreground mt-6 max-w-[30rem] text-lg leading-8 text-[#405d70]'>
+            {t('Choose models, manage API keys and review usage.')}
+          </p>
+        </div>
         <Link
           to='/download'
           className='border-primary/40 text-primary hover:border-primary focus-visible:outline-ring absolute bottom-16 left-16 z-10 inline-flex w-fit items-center border-b pb-1 text-base font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 xl:left-24'
