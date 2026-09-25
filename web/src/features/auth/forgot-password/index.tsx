@@ -23,8 +23,8 @@ import { useTranslation } from 'react-i18next'
 import { ACCOUNT_CENTER_URL } from '@/lib/product-links'
 
 import { AuthLayout } from '../auth-layout'
-import { ForgotPasswordForm } from './components/forgot-password-form'
 import { isCentralAccountMode } from '../sign-in/central-reauth'
+import { ForgotPasswordForm } from './components/forgot-password-form'
 
 export function ForgotPassword() {
   const { t } = useTranslation()
@@ -41,12 +41,12 @@ export function ForgotPassword() {
           <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
             {t('Forgot password')}
           </h2>
-          <p className='text-muted-foreground text-left text-sm sm:text-base'>
+          <p className='text-muted-foreground text-left text-base'>
             {t(
               'Enter your registered email and we will send you a link to reset your password.'
             )}
           </p>
-          <p className='text-muted-foreground text-left text-sm sm:text-base'>
+          <p className='text-muted-foreground text-left text-base'>
             {t("Don't have an account?")}{' '}
             <Link
               to='/sign-up'

@@ -95,23 +95,23 @@ function MobileUserProfile({ user, onNavigate }: MobileUserProfileProps) {
   return (
     <>
       {/* User info section - compact style matching navigation */}
-      <div className='flex flex-col text-sm'>
+      <div className='flex flex-col text-base'>
         {/* User header - simplified */}
         <div className='border-border flex items-center gap-2.5 border-b p-2.5'>
           <Avatar className='size-9'>
             <AvatarImage src='/avatars/01.png' alt={`@${displayName}`} />
-            <AvatarFallback className='text-xs'>{initials}</AvatarFallback>
+            <AvatarFallback className='text-sm'>{initials}</AvatarFallback>
           </Avatar>
           <div className='flex flex-1 flex-col gap-0.5 overflow-hidden'>
             <p className='text-foreground truncate font-medium'>
               {displayName}
             </p>
             <div className='flex items-center gap-1.5'>
-              <span className='text-muted-foreground text-xs'>{roleLabel}</span>
+              <span className='text-muted-foreground text-sm'>{roleLabel}</span>
               {user.group && (
                 <>
-                  <span className='text-muted-foreground text-xs'>·</span>
-                  <span className='text-muted-foreground text-xs'>
+                  <span className='text-muted-foreground text-sm'>·</span>
+                  <span className='text-muted-foreground text-sm'>
                     {String(user.group)}
                   </span>
                 </>
@@ -124,7 +124,7 @@ function MobileUserProfile({ user, onNavigate }: MobileUserProfileProps) {
         <a
           href={identityProfileURL}
           onClick={onNavigate}
-          className='text-primary/60 hover:text-primary/80 border-border flex items-center gap-2.5 border-b p-2.5 transition-colors'
+          className='text-primary hover:text-primary/80 border-border flex items-center gap-2.5 border-b p-2.5 transition-colors'
         >
           <User className='size-4' />
           {centralIdentity ? t('Account center') : t('Profile')}
@@ -269,7 +269,7 @@ export function MobileDrawer({
 
               {/* Navigation links */}
               <motion.div
-                className='border-border mb-4 flex flex-col rounded-md border text-sm'
+                className='border-border mb-4 flex flex-col rounded-md border text-base'
                 variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
               >
                 {loading ? (
@@ -288,7 +288,7 @@ export function MobileDrawer({
                       >
                         <Link
                           to={link.href}
-                          className='text-primary/60 hover:text-primary/80 transition-colors'
+                          className='text-primary hover:text-primary/80 transition-colors'
                           onClick={onClose}
                         >
                           {link.title}

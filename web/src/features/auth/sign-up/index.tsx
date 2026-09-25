@@ -58,7 +58,7 @@ export function SignUp() {
           <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
             {t('Create an account')}
           </h2>
-          <p className='text-muted-foreground text-left text-sm sm:text-base'>
+          <p className='text-muted-foreground text-left text-base'>
             {t('Already have an account?')}{' '}
             <Link
               to='/sign-in'

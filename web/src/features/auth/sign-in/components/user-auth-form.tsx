@@ -430,14 +430,14 @@ export function UserAuthForm({
                   {forgotPasswordUrl ? (
                     <a
                       href={forgotPasswordUrl}
-                      className='text-muted-foreground absolute end-0 -top-0.5 z-10 text-sm font-medium hover:opacity-75'
+                      className='text-muted-foreground absolute end-0 -top-0.5 z-10 text-base font-medium hover:opacity-75'
                     >
                       {t('Forgot password?')}
                     </a>
                   ) : (
                     <Link
                       to='/forgot-password'
-                      className='text-muted-foreground absolute end-0 -top-0.5 z-10 text-sm font-medium hover:opacity-75'
+                      className='text-muted-foreground absolute end-0 -top-0.5 z-10 text-base font-medium hover:opacity-75'
                     >
                       {t('Forgot password?')}
                     </Link>

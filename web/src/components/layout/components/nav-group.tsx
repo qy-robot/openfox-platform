@@ -66,7 +66,7 @@ export function NavGroup({ title, items }: NavGroupProps) {
 
   return (
     <SidebarGroup className='px-3 py-2'>
-      <SidebarGroupLabel className='text-muted-foreground px-3 text-[11px] font-semibold tracking-[0.12em] uppercase'>
+      <SidebarGroupLabel className='text-muted-foreground px-3 text-sm font-semibold'>
         {title}
       </SidebarGroupLabel>
       <SidebarMenu>
@@ -114,7 +114,7 @@ export function NavGroup({ title, items }: NavGroupProps) {
  * Navigation badge component
  */
 function NavBadge({ children }: { children: ReactNode }) {
-  return <Badge className='shrink-0 px-1 py-0 text-xs'>{children}</Badge>
+  return <Badge className='shrink-0 px-1 py-0 text-sm'>{children}</Badge>
 }
 
 /**
@@ -255,7 +255,7 @@ function SidebarMenuCollapsedDropdown({
                 {sub.icon && <sub.icon />}
                 <span className='max-w-52 text-wrap'>{sub.title}</span>
                 {sub.badge && (
-                  <span className='ms-auto text-xs'>{sub.badge}</span>
+                  <span className='ms-auto text-sm'>{sub.badge}</span>
                 )}
               </DropdownMenuItem>
             ))}

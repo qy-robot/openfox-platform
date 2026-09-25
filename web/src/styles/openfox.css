@@ -21,9 +21,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
 
 .openfox-sidebar-content [data-slot='sidebar-menu-button'] {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   border-radius: 0.75rem;
   padding-inline: 0.75rem;
+  font-size: 1rem;
+}
+
+.openfox-sidebar-content [data-slot='sidebar-menu-sub-button'] {
+  min-height: 2.5rem;
+  font-size: 1rem;
+}
+
+.openfox-sidebar-view-header [data-slot='sidebar-menu-button'] {
+  min-height: 2.75rem;
+  font-size: 1rem;
 }
 
 .openfox-sidebar-content [data-slot='sidebar-menu-button'][data-active='true'] {
@@ -34,6 +45,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   background:
     radial-gradient(circle at 14% 80%, #ffffffaa 0, transparent 38%),
     linear-gradient(145deg, #e8f4f8 0%, #f1f9fb 56%, #e3f1f6 100%);
+}
+
+.openfox-auth-layout [data-slot='form-label'],
+.openfox-auth-layout [data-slot='input'],
+.openfox-auth-layout [data-slot='button'] {
+  font-size: 1rem;
+}
+
+.openfox-auth-layout [data-slot='input'],
+.openfox-auth-layout form button[type='submit'] {
+  min-height: 2.75rem;
 }
 
 .openfox-auth-arc {

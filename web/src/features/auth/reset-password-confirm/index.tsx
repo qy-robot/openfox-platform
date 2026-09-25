@@ -117,7 +117,7 @@ export function ResetPasswordConfirm({
           <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
             {t('Reset password')}
           </h2>
-          <p className='text-muted-foreground text-left text-sm sm:text-base'>
+          <p className='text-muted-foreground text-left text-base'>
             {newPassword
               ? t('auth.resetPasswordConfirm.success')
               : t('auth.resetPasswordConfirm.description')}

@@ -73,6 +73,7 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
               ({ title, href, isActive, disabled, external }) => (
                 <DropdownMenuItem
                   key={`${title}-${href}`}
+                  className='py-2 text-base'
                   render={
                     external ? (
                       <a
@@ -112,7 +113,7 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
               href={href}
               target='_blank'
               rel='noopener noreferrer'
-              className={`hover:bg-accent hover:text-accent-foreground rounded-xl px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}
+              className={`hover:bg-accent hover:text-accent-foreground rounded-xl px-3 py-2 text-base font-medium transition-colors ${isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}
             >
               {title}
             </a>
@@ -121,7 +122,7 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
               key={`${title}-${href}`}
               to={href}
               disabled={disabled}
-              className={`hover:bg-accent hover:text-accent-foreground rounded-xl px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}
+              className={`hover:bg-accent hover:text-accent-foreground rounded-xl px-3 py-2 text-base font-medium transition-colors ${isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}
             >
               {title}
             </Link>

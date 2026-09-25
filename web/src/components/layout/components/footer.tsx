@@ -78,7 +78,12 @@ export function Footer(props: FooterProps) {
   const { t } = useTranslation()
   const { systemName, logo, footerHtml } = useSystemConfig()
   return (
-    <footer className={cn('robo-public-footer border-border bg-card border-t', props.className)}>
+    <footer
+      className={cn(
+        'robo-public-footer border-border bg-card border-t',
+        props.className
+      )}
+    >
       <div className='mx-auto max-w-6xl px-6 py-12'>
         <div className='flex flex-col justify-between gap-8 sm:flex-row'>
           <div>
@@ -89,21 +94,15 @@ export function Footer(props: FooterProps) {
                 className='size-10 rounded-xl'
               />
               <span>
-                <span className='block text-sm font-semibold'>
+                <span className='block text-base font-semibold'>
                   {systemName || props.name}
-                </span>
-                <span className='text-muted-foreground mt-1 block text-xs'>
-
                 </span>
               </span>
             </Link>
-            <p className='text-muted-foreground mt-4 text-sm'>
-              {t('Learn by building, one task at a time.')}
-            </p>
           </div>
           <nav
             aria-label={t('Footer navigation')}
-            className='flex flex-wrap items-start gap-x-7 gap-y-4 text-sm'
+            className='flex flex-wrap items-start gap-x-7 gap-y-4 text-base'
           >
             <Link to='/download' className='hover:text-primary'>
               {t('Download')}
@@ -117,7 +116,7 @@ export function Footer(props: FooterProps) {
           </nav>
         </div>
         {props.columns?.map((column) => (
-          <div key={column.title} className='mt-6 text-sm'>
+          <div key={column.title} className='mt-6 text-base'>
             <p className='font-medium'>{t(column.title)}</p>
             <ul className='mt-2 flex flex-wrap gap-4'>
               {column.links.map((link) => (
@@ -135,11 +134,11 @@ export function Footer(props: FooterProps) {
         ))}
         {footerHtml && (
           <div
-            className='custom-footer text-muted-foreground mt-6 text-sm'
+            className='custom-footer text-muted-foreground mt-6 text-base'
             dangerouslySetInnerHTML={{ __html: footerHtml }}
           />
         )}
-        <div className='border-border text-muted-foreground mt-8 flex flex-wrap items-center justify-between gap-4 border-t pt-6 text-xs'>
+        <div className='border-border text-muted-foreground mt-8 flex flex-wrap items-center justify-between gap-4 border-t pt-6 text-sm'>
           <span>
             © {new Date().getFullYear()} {systemName}.{' '}
             {props.copyright ?? t('All rights reserved.')}

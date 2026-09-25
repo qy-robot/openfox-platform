@@ -31,10 +31,10 @@ export function Otp() {
           <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
             {t('Security verification')}
           </h2>
-          <p className='text-muted-foreground text-left text-sm sm:text-base'>
+          <p className='text-muted-foreground text-left text-base'>
             {t('Verify your identity to finish signing in.')}
           </p>
-          <p className='text-muted-foreground text-left text-sm sm:text-base'>
+          <p className='text-muted-foreground text-left text-base'>
             {t('Session expired?')}{' '}
             <Link
               to='/sign-in'
