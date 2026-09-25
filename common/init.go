@@ -56,6 +56,8 @@ func InitEnv() {
 		} else {
 			SessionSecret = ss
 		}
+	} else {
+		log.Println("WARNING: SESSION_SECRET is not set; using a random per-process secret. Sessions and refresh tokens will be invalidated on restart and across replicas. Set SESSION_SECRET to a fixed random string in production.")
 	}
 	if os.Getenv("CRYPTO_SECRET") != "" {
 		CryptoSecret = os.Getenv("CRYPTO_SECRET")

@@ -4,6 +4,13 @@
 
 ## 当前状态
 
+- 2026-09-25T18:30:00+08:00 | Claude Code | 放宽 refresh 重放宽限窗口 + SESSION_SECRET 未设置告警（分支 `fix/refresh-replay-window-and-session-secret`）
+  - 背景：桌面端续期重试的首档退避约 30s，与服务端 refresh token 单次轮换的 30s 宽限窗口正好卡在边界，合法客户端会被判为 token 盗用并吊销整个会话（`refresh_reuse` → revoked，不可自愈），表现即「登录成功后概率退出登录」。
+  - 已完成：`service/auth_token.go` `RefreshReplayWindow` 30s→120s（覆盖首档退避；窗口内重放仍按竞争返回已轮换 token 而非吊销）；`common/init.go` 在 `SESSION_SECRET` 未设置时打印醒目告警（当前回落到进程随机值，重启/多副本即全量会话与 refresh token 失效）。
+  - 验证：改动为一处常量与一处日志分支，未触碰认证流程；配对桌面端已合入的续期重试修复（见 desktop 仓库 `log.md`）。
+  - 未完成 / 阻塞：未运行 Go 测试套件（写作环境无 Go 工具链）；未部署；放宽窗口仅延长「同 token 返回」的宽限期、不新增 token 升级面，但部署前应复核 OWASP 会话/重放保护。
+  - 下一步：部署前固定 `SESSION_SECRET` 并重启，确认 `refresh_reuse` 吊销不再发生。
+
 - 2026-09-22T21:11:00+08:00 | ZCode | 主分支更名：`robo/main` → `main`（应用户要求统一分支命名）
   - 已完成：`main` 原为本 fork 的上游 New API 镜像（`9fe0457e`，上游 #5062），现以 force-with-lease 移至公司主线 `fa46b951` 并设为 GitHub 默认分支；远端与本地 `robo/main` 已删除；`master` 无（上游走 upstream remote）。上游镜像角色改由 `upstream` remote 承担。
   - 验证：`origin/main` = `fa46b951` 与根 gitlink 一致；origin/HEAD 指向 main；推送与删除均有远端回执。
