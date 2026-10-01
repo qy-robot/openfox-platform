@@ -600,3 +600,10 @@
 - 已完成：`use-sidebar-data.ts` 给概览、数据看板、账号中心/个人资料、安全与访问加 `requiredRole: ROLE.ADMIN`（管理员组原样保留），并新增「可用模型」入口 `/available-models`（所有角色可见）；新 feature `features/available-models` 复用模型广场 `/api/pricing` 数据与卡片/表格/抽屉组件，按 `/api/user/models` 过滤出当前用户可用模型；`/dashboard` 索引路由按角色分流，普通用户落到 `/usage-logs/common`，管理员保持 `/dashboard/overview`；i18n 七语言新增 `You have access to {{count}} models`（`i18n:sync` 校验 missing/extras 均为 0）。
 - 验证：`bun run typecheck` 通过；全量 Vitest 164 文件 1816/1816 通过（含更新后的 sidebar-config 角色断言与新增 available-models 过滤测试）；改动文件 oxlint 0 error、oxfmt 通过；`bun run build` 成功。本地 `SQLITE_PATH` 临时库起服务实测：普通用户侧边栏仅剩 可用模型、API 密钥、使用日志、钱包、团队 五项，访问 `/dashboard` 跳 `/usage-logs/common`，`/available-models` 正确列出渠道 3 个模型并渲染卡片、计数行、搜索与视图切换；管理员登录侧边栏完整保留概览、数据看板、审计/任务日志、账号中心与管理员组，`/dashboard` 仍落概览。测试库与临时目录已清理。
 - 未完成 / 限制：未部署生产；「可用模型」未注册 sidebar_modules 配置项（默认全员可见，无单独开关）；普通用户仍可经头像下拉进入账号中心与登出，侧边栏不再展示。
+
+### 2026-10-01T16:10:00+08:00 | ZCode | AI 站公开页顶栏由悬浮胶囊改为标准 SaaS 扁平顶栏
+
+- 任务 / 分支 / 基线：`codex/public-header-flat-20261001` 自组件 `main`=`09db117a`；仅改平台 Web 公开页顶栏。按用户要求去掉首页等公开页的悬浮胶囊顶栏，改为常规贴边 SaaS 顶栏。
+- 已完成：`styles/index.css` 中 `robo-public-header-inner` 由居中胶囊（920px、全圆角、外边距、大投影）改为全宽贴顶、下 hairline 边框、纸面半透明加模糊的扁平条，`robo-public-nav` 水平内边距对齐控制台顶栏（1rem/640px 起 1.75rem），删除 `--scrolled` 形变与明暗两套投影规则；`public-header.tsx` 移除滚动监听与 `scrolled` 状态及条件类名，顶栏几何不再随滚动变化；新增 `public-header-layout.test.tsx` 回归测试（静态全宽条断言 + 滚动不再追加形变类）。
+- 验证：`bun run typecheck` 通过；新增测试 2/2 与定向套件通过；改动文件 oxlint 0 error；`bun run build` 成功。本地临时 SQLite 服务浏览器实测亮色首页、滚动至页底、暗色模式三种状态：顶栏均为贴顶全宽扁平条，内容自下方穿过，无胶囊、无投影形变。`index.css` 存在的 oxfmt 既有失败经 stash 对比确认为历史压缩格式问题，与本次无关。测试库与临时目录已清理，残留 `--scrolled` 仅存在于回归测试的否定断言中。
+- 未完成 / 限制：未部署生产；公开页其余样式（胶囊 CTA 按钮、卡片圆角语言）未动，仅顶栏改版。

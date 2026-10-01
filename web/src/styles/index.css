@@ -1112,34 +1112,33 @@ For commercial licensing, please contact support@quantumnous.com
   --robo-public-line: color-mix(in srgb, var(--robo-public-ink) 17%, transparent);
 }
 
-/* The public header is one persistent floating capsule; the inner nav never
-   paints its own surface, so no scroll state can stack a second bar. */
+/* The public header is a standard full-width top bar: flush to the top edge,
+   hairline bottom border, translucent paper surface; geometry never changes
+   on scroll. */
 .robo-public-header-inner {
-  width: min(100% - 2rem, 920px);
-  margin-top: 0.7rem;
-  padding: 0 0.7rem;
-  border: 1px solid color-mix(in srgb, var(--robo-public-ink) 14%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--robo-public-paper) 82%, transparent);
-  box-shadow: 0 12px 34px rgb(25 55 90 / 13%);
-  backdrop-filter: blur(18px) saturate(1.15);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--robo-public-line);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--robo-public-paper) 86%, transparent);
+  box-shadow: none;
+  backdrop-filter: blur(14px) saturate(1.1);
 }
 
 .robo-public-nav {
-  min-height: 3.25rem;
-  padding: 0 0.25rem;
+  min-height: 3.5rem;
+  padding: 0 1rem;
   border: 0;
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
 }
 
-.robo-public-nav--scrolled {
-  min-height: 3.25rem;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
+@media (min-width: 640px) {
+  .robo-public-nav {
+    padding: 0 1.75rem;
+  }
 }
 
 .robo-public-header .text-muted-foreground {
@@ -1554,11 +1553,7 @@ For commercial licensing, please contact support@quantumnous.com
 @media (max-width: 900px) { .openfox-hero-shell, .openfox-capabilities { grid-template-columns: 1fr; }.openfox-hero-shell { padding-top: 7rem; }.openfox-product-card { max-width: 700px; transform: none; }.openfox-capabilities { gap: 3rem; } }
 @media (max-width: 640px) { .openfox-hero-shell, .openfox-proof-inner, .openfox-capabilities { width: min(100% - 2rem, 1080px); }.openfox-hero-shell { min-height: 0; padding: 7rem 0 3.5rem; }.openfox-hero h1 { font-size: clamp(3.25rem, 16vw, 5.2rem); }.openfox-hero-lede { font-size: .98rem; }.openfox-product-card-body { grid-template-columns: 1fr; }.openfox-product-sidebar { display: none; }.openfox-product-main { padding: 1rem; }.openfox-metric-grid { gap: .4rem; }.openfox-metric-grid strong { font-size: .8rem; }.openfox-proof-inner { display: block; padding: 1.25rem 0; }.openfox-proof-logos { gap: .8rem 1.2rem; margin-top: .8rem; }.openfox-capabilities { padding: 5rem 0; }.openfox-capability { grid-template-columns: 1.5rem 2.55rem 1fr; gap: .75rem; }.openfox-capability > svg { display: none; }.openfox-cta { min-height: 330px; } }
 
-/* The capsule is persistent; scrolling only deepens its shadow, geometry never changes. */
-.dark .robo-public-header-inner { box-shadow: 0 14px 36px rgb(0 0 0 / 26%); }
-.robo-public-header-inner--scrolled { box-shadow: 0 14px 40px rgb(25 55 90 / 17%); }
-.dark .robo-public-header-inner--scrolled { box-shadow: 0 16px 42px rgb(0 0 0 / 32%); }
-@media (max-width: 640px) { .robo-public-header-inner { width: calc(100% - 1rem); margin-top: 0.45rem; padding: 0 0.45rem; } }
+/* The top bar is persistent and flat; no scroll-driven geometry or shadow. */
 
 /* Quiet hero composition: a smaller statement, a useful command bar, and real cards. */
 .openfox-hero-shell { display: block; min-height: 0; padding: 9rem 0 5rem; text-align: center; }

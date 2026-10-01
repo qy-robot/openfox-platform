@@ -75,7 +75,6 @@ export function PublicHeader(props: PublicHeaderProps) {
 
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [authPromptTarget, setAuthPromptTarget] =
     useState<AuthPromptTarget | null>(null)
@@ -120,13 +119,6 @@ export function PublicHeader(props: PublicHeaderProps) {
   )
   if (isAuthenticated) authContent = <ProfileDropdown />
   if (loading) authContent = <Skeleton className='h-8 w-20 rounded-lg' />
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : ''
@@ -199,18 +191,8 @@ export function PublicHeader(props: PublicHeaderProps) {
   return (
     <>
       <header className='robo-public-header pointer-events-none fixed inset-x-0 top-0 z-50'>
-        <div
-          className={cn(
-            'robo-public-header-inner pointer-events-auto mx-auto transition-all duration-500 ease-out',
-            scrolled ? 'robo-public-header-inner--scrolled' : ''
-          )}
-        >
-          <nav
-            className={cn(
-              'robo-public-nav flex items-center justify-between gap-2 transition-all duration-500 ease-out',
-              scrolled ? 'robo-public-nav--scrolled' : ''
-            )}
-          >
+        <div className='robo-public-header-inner pointer-events-auto'>
+          <nav className='robo-public-nav flex items-center justify-between gap-2'>
             {/* Logo */}
             <div className='@container/system-brand flex min-w-0 flex-1 items-center gap-1 lg:min-w-36'>
               <Link
