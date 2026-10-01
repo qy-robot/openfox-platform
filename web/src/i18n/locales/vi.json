@@ -6803,6 +6803,7 @@
     "You do not have permission to edit sensitive channel settings.": "Bạn không có quyền chỉnh sửa cài đặt kênh nhạy cảm.",
     "You do not have permission to perform this action.": "Bạn không có quyền thực hiện thao tác này.",
     "You don't have necessary permission": "Bạn không có quyền cần thiết",
+    "You have access to {{count}} models": "Bạn có thể sử dụng {{count}} mô hình",
     "You have legally obtained authorization for the connected model APIs, accounts, keys, and quotas.": "Bạn đã nhận được ủy quyền hợp pháp cho API mô hình, tài khoản, khóa và hạn mức được kết nối.",
     "You have unsaved changes": "Bạn có thay đổi chưa được lưu",
     "You have unsaved changes. Are you sure you want to leave?": "Bạn có thay đổi chưa được lưu. Bạn có chắc chắn muốn rời đi không?",

@@ -6803,6 +6803,7 @@
     "You do not have permission to edit sensitive channel settings.": "У вас нет права изменять чувствительные настройки каналов.",
     "You do not have permission to perform this action.": "У вас нет прав на выполнение этого действия.",
     "You don't have necessary permission": "У вас нет необходимых разрешений",
+    "You have access to {{count}} models": "Доступно моделей: {{count}}",
     "You have legally obtained authorization for the connected model APIs, accounts, keys, and quotas.": "Вы законно получили разрешение на подключенные API моделей, аккаунты, ключи и квоты.",
     "You have unsaved changes": "У вас есть несохранённые изменения",
     "You have unsaved changes. Are you sure you want to leave?": "У вас есть несохранённые изменения. Вы уверены, что хотите уйти?",

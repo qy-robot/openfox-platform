@@ -19,9 +19,23 @@ For commercial licensing, please contact support@quantumnous.com
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
 import { DASHBOARD_DEFAULT_SECTION } from '@/features/dashboard/section-registry'
+import { USAGE_LOGS_DEFAULT_SECTION } from '@/features/usage-logs/section-registry'
+import { ROLE } from '@/lib/roles'
+import { useAuthStore } from '@/stores/auth-store'
 
 export const Route = createFileRoute('/_authenticated/dashboard/')({
   beforeLoad: () => {
+    const { auth } = useAuthStore.getState()
+
+    // Regular users work from the slimmed sidebar; land them on their usage
+    // logs instead of the admin overview.
+    if ((auth.user?.role ?? ROLE.GUEST) < ROLE.ADMIN) {
+      throw redirect({
+        to: '/usage-logs/$section',
+        params: { section: USAGE_LOGS_DEFAULT_SECTION },
+      })
+    }
+
     throw redirect({
       to: '/dashboard/$section',
       params: { section: DASHBOARD_DEFAULT_SECTION },

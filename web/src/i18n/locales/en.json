@@ -6803,6 +6803,7 @@
     "You do not have permission to edit sensitive channel settings.": "You do not have permission to edit sensitive channel settings.",
     "You do not have permission to perform this action.": "You do not have permission to perform this action.",
     "You don't have necessary permission": "You don't have necessary permission",
+    "You have access to {{count}} models": "You have access to {{count}} models",
     "You have legally obtained authorization for the connected model APIs, accounts, keys, and quotas.": "You have legally obtained authorization for the connected model APIs, accounts, keys, and quotas.",
     "You have unsaved changes": "You have unsaved changes",
     "You have unsaved changes. Are you sure you want to leave?": "You have unsaved changes. Are you sure you want to leave?",

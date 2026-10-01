@@ -6803,6 +6803,7 @@
     "You do not have permission to edit sensitive channel settings.": "機密チャネル設定を編集する権限がありません。",
     "You do not have permission to perform this action.": "この操作を実行する権限がありません。",
     "You don't have necessary permission": "必要な権限がありません",
+    "You have access to {{count}} models": "利用できるモデルは{{count}}個です",
     "You have legally obtained authorization for the connected model APIs, accounts, keys, and quotas.": "接続されたモデル API、アカウント、キー、クォータについて合法的な許可を取得しています。",
     "You have unsaved changes": "未保存の変更があります",
     "You have unsaved changes. Are you sure you want to leave?": "未保存の変更があります。離れてもよろしいですか？",

@@ -6803,6 +6803,7 @@
     "You do not have permission to edit sensitive channel settings.": "你没有权限编辑敏感渠道设置。",
     "You do not have permission to perform this action.": "你没有执行此操作的权限。",
     "You don't have necessary permission": "您没有必要的权限",
+    "You have access to {{count}} models": "当前可用 {{count}} 个模型",
     "You have legally obtained authorization for the connected model APIs, accounts, keys, and quotas.": "你已合法取得所连接模型 API、账户、密钥和额度的授权。",
     "You have unsaved changes": "您有未保存的更改",
     "You have unsaved changes. Are you sure you want to leave?": "您有未保存的更改。确定要离开吗？",

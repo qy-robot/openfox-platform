@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import {
   Activity,
   Box,
+  Boxes,
   Building2,
   ClipboardList,
   CreditCard,
@@ -67,14 +68,21 @@ export function useSidebarData(): SidebarData {
         title: t('General'),
         items: [
           {
+            title: t('Available Models'),
+            url: '/available-models',
+            icon: Boxes,
+          },
+          {
             title: t('Overview'),
             url: '/dashboard/overview',
             icon: Activity,
+            requiredRole: ROLE.ADMIN,
           },
           {
             title: t('Dashboard'),
             url: '/dashboard/models',
             icon: LayoutDashboard,
+            requiredRole: ROLE.ADMIN,
           },
           {
             title: t('API Keys'),
@@ -123,6 +131,7 @@ export function useSidebarData(): SidebarData {
             title: centralIdentity ? t('Account center') : t('Profile'),
             url: getIdentityProfileURL(),
             icon: User,
+            requiredRole: ROLE.ADMIN,
           },
           ...(!centralIdentity
             ? [
@@ -130,6 +139,7 @@ export function useSidebarData(): SidebarData {
                   title: t('Security & Access'),
                   url: '/security',
                   icon: ShieldCheck,
+                  requiredRole: ROLE.ADMIN,
                 },
               ]
             : []),

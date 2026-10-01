@@ -593,3 +593,10 @@
 - 验证：构建器执行 Bun 全套测试与 build:check、Go 两遍 test、vet、build 及 Linux amd64 构建；deploy dry-run 与正式发布成功。`deploy.py status` 为 active、healthy、public_healthy，进程哈希等于二进制 SHA256 `45871808bc64fb6b9b6afee1d7c95ba6b06d60f09839b3b99377d9474ce86a48`。`www.openfox.work` 与 `ai.openfox.work` 的 12 个链接静态资源均 200，CSS SHA256 `4d6da570af3ec431b41df31f9ae2763a26471b01645c7384f1f8c0bae0d6b381` 与构建清单一致。
 - 备份 / 回滚：部署前协调快照 `20260925T162716Z` 服务端 `restore-verify.py` 通过并复制到用户指定证书目录，离机 11 项 SHA256 匹配；如本版本异常，运行 `deploy.py rollback --expect-current platform-3dd54dce7d6e-6bb123720edc` 回到上一平台 release，不恢复数据库。
 - 未完成 / 下一步：未使用真实员工身份点击平台 API Key、模型和钱包表单；发布后没有做付费模型调用或独立 PostgreSQL 恢复。组件日志提交推送后由根仓推进 gitlink。
+
+### 2026-10-01T15:55:00+08:00 | ZCode | 普通用户控制台侧边栏精简并新增可用模型页
+
+- 任务 / 分支 / 基线：`codex/user-console-simplify-20261001` 自组件 `main`=`c52ce3a6c5d3b79a928170a642929e473b746bf5`；仅改平台 Web。按用户要求，普通用户只保留使用记录、API 密钥、团队、钱包入口，并单独提供可用模型页。
+- 已完成：`use-sidebar-data.ts` 给概览、数据看板、账号中心/个人资料、安全与访问加 `requiredRole: ROLE.ADMIN`（管理员组原样保留），并新增「可用模型」入口 `/available-models`（所有角色可见）；新 feature `features/available-models` 复用模型广场 `/api/pricing` 数据与卡片/表格/抽屉组件，按 `/api/user/models` 过滤出当前用户可用模型；`/dashboard` 索引路由按角色分流，普通用户落到 `/usage-logs/common`，管理员保持 `/dashboard/overview`；i18n 七语言新增 `You have access to {{count}} models`（`i18n:sync` 校验 missing/extras 均为 0）。
+- 验证：`bun run typecheck` 通过；全量 Vitest 164 文件 1816/1816 通过（含更新后的 sidebar-config 角色断言与新增 available-models 过滤测试）；改动文件 oxlint 0 error、oxfmt 通过；`bun run build` 成功。本地 `SQLITE_PATH` 临时库起服务实测：普通用户侧边栏仅剩 可用模型、API 密钥、使用日志、钱包、团队 五项，访问 `/dashboard` 跳 `/usage-logs/common`，`/available-models` 正确列出渠道 3 个模型并渲染卡片、计数行、搜索与视图切换；管理员登录侧边栏完整保留概览、数据看板、审计/任务日志、账号中心与管理员组，`/dashboard` 仍落概览。测试库与临时目录已清理。
+- 未完成 / 限制：未部署生产；「可用模型」未注册 sidebar_modules 配置项（默认全员可见，无单独开关）；普通用户仍可经头像下拉进入账号中心与登出，侧边栏不再展示。
