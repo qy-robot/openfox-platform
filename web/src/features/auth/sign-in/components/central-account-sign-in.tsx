@@ -2,200 +2,120 @@
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
 */
-
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 
-import { useStatus } from '@/hooks/use-status'
-import { ACCOUNT_CENTER_URL } from '@/lib/product-links'
+import { LoadingState } from '@/components/loading-state'
+import { Button } from '@/components/ui/button'
 import { getServerErrorMessage } from '@/lib/server-error-message'
 
 import {
   clearCentralSignedOut,
   consumeFreshCentralLoginRequest,
   isCentralSignedOut,
-  requestFreshCentralLogin,
 } from '../central-reauth'
-import {
-  cancelCentralSSO,
-  finishCentralSSOResult,
-  startCentralSSO,
-} from '../central-sso'
-import { UserAuthForm } from './user-auth-form'
+import { startCentralSSO } from '../central-sso'
 
-const ACCOUNT_REQUEST_TIMEOUT_MS = 15_000
-
-type AccountResponse = {
-  success?: boolean
-  code?: string
-  message?: string
-  data?: unknown
-}
-
-function accountCenterURL(value: unknown): URL {
-  const url = new URL(
-    typeof value === 'string' && value ? value : ACCOUNT_CENTER_URL
-  )
-  const localHTTP =
-    url.protocol === 'http:' &&
-    (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
-  if (url.protocol !== 'https:' && !localHTTP) {
-    throw new Error('The account service URL is invalid.')
-  }
-  return url
-}
-
-async function accountFetch(
-  input: string,
-  init: RequestInit,
-  signal: AbortSignal
-): Promise<AccountResponse> {
-  signal.throwIfAborted()
-  const controller = new AbortController()
-  const abort = () => controller.abort(signal.reason)
-  signal.addEventListener('abort', abort, { once: true })
-  const timeout = window.setTimeout(
-    () =>
-      controller.abort(new DOMException('Request timed out', 'TimeoutError')),
-    ACCOUNT_REQUEST_TIMEOUT_MS
-  )
+/** The backend-provided authorization URL must be a plain redirect request. */
+function isAccountAuthorizationURL(value: string): boolean {
   try {
-    const response = await fetch(input, {
-      ...init,
-      credentials: 'include',
-      redirect: 'error',
-      signal: controller.signal,
-    })
-    const body = (await response.json()) as AccountResponse
-    signal.throwIfAborted()
-    if (!response.ok && body.data === undefined) {
-      const error = new Error(body.message || 'Account sign in failed.')
-      if (body.code) error.name = body.code
-      throw error
+    const url = new URL(value)
+    const localHTTP =
+      url.protocol === 'http:' &&
+      (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
+    if (
+      (url.protocol !== 'https:' && !localHTTP) ||
+      url.username ||
+      url.password
+    ) {
+      return false
     }
-    return body
-  } finally {
-    window.clearTimeout(timeout)
-    signal.removeEventListener('abort', abort)
+    return (
+      url.pathname === '/v1/oauth/authorize' &&
+      !url.searchParams.has('response_mode') &&
+      url.searchParams.has('code_challenge') &&
+      url.searchParams.has('state')
+    )
+  } catch {
+    return false
   }
 }
 
 export function CentralAccountSignIn(props: { redirectTo?: string }) {
   const { t } = useTranslation()
-  const { status } = useStatus()
-  const silentOperation = useRef<AbortController | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [starting, setStarting] = useState(false)
+  const redirecting = useRef(false)
   const returnTo = props.redirectTo || '/dashboard'
-  const accountURL = useMemo(
-    () => accountCenterURL(status?.account_center_url),
-    [status?.account_center_url]
-  )
 
-  const authorize = useCallback(
-    async (
-      signal: AbortSignal,
-      options: { prompt?: 'none'; reauthenticate?: boolean } = {}
-    ) => {
+  const beginRedirect = useCallback(async () => {
+    if (redirecting.current) return
+    redirecting.current = true
+    setStarting(true)
+    setError(null)
+    try {
+      const reauthenticate = consumeFreshCentralLoginRequest()
       const authorizationUrl = await startCentralSSO(returnTo, {
-        ...options,
-        signal,
+        reauthenticate,
       })
-      signal.throwIfAborted()
-      const parsedAuthorizationURL = new URL(authorizationUrl)
-      if (
-        parsedAuthorizationURL.origin !== accountURL.origin ||
-        parsedAuthorizationURL.pathname !== '/v1/oauth/authorize' ||
-        parsedAuthorizationURL.searchParams.get('response_mode') !== 'json'
-      ) {
-        cancelCentralSSO()
+      if (!isAccountAuthorizationURL(authorizationUrl)) {
         throw new Error('The account authorization URL is invalid.')
       }
-      const authorization = await accountFetch(
-        parsedAuthorizationURL.toString(),
-        { method: 'GET', headers: { Accept: 'application/json' } },
-        signal
+      clearCentralSignedOut()
+      window.location.assign(authorizationUrl)
+    } catch (caught) {
+      redirecting.current = false
+      setStarting(false)
+      setError(
+        getServerErrorMessage(caught, t('Unable to start account sign in'))
       )
-      signal.throwIfAborted()
-      const result = await finishCentralSSOResult(authorization.data, signal)
-      signal.throwIfAborted()
-      return result
-    },
-    [accountURL.origin, returnTo]
-  )
+    }
+  }, [returnTo, t])
 
   useEffect(() => {
+    // An explicit sign-out must not immediately drag the user back into the
+    // account login page; any other entry redirects straight to the IdP.
     if (isCentralSignedOut()) return
-    const controller = new AbortController()
-    silentOperation.current = controller
-    const reauthenticate = consumeFreshCentralLoginRequest()
-    void authorize(
-      controller.signal,
-      reauthenticate ? { reauthenticate: true } : { prompt: 'none' }
-    )
-      .then((result) => {
-        if (result.status === 'authenticated') {
-          window.location.assign(result.returnTo)
-        }
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        cancelCentralSSO()
-        if (error instanceof Error && error.name === 'AUTH_SESSION_REVOKED' && !reauthenticate) {
-          requestFreshCentralLogin()
-          window.location.assign(`/sign-in?redirect=${encodeURIComponent(returnTo)}`)
-          return
-        }
-        toast.error(
-          getServerErrorMessage(error, t('Unable to start account sign in'))
-        )
-      })
-    return () => {
-      controller.abort()
-      cancelCentralSSO()
-    }
-  }, [authorize, t])
+    // oxlint-disable-next-line react/set-state-in-effect -- mount navigates the whole page to the IdP; the pending state must render before the redirect
+    void beginRedirect()
+  }, [beginRedirect])
 
-  async function signIn(
-    credentials: { username: string; password: string },
-    signal: AbortSignal
-  ): Promise<void> {
-    silentOperation.current?.abort()
-    silentOperation.current = null
-    cancelCentralSSO()
-    const loginURL = new URL('/v1/auth/login', accountURL)
-    const login = await accountFetch(
-      loginURL.toString(),
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          identifier: credentials.username,
-          password: credentials.password,
-        }),
-      },
-      signal
+  if (starting) {
+    return (
+      <LoadingState message={t('Redirecting you to the account center...')} />
     )
-    if (login.success !== true) {
-      throw new Error(login.message || t('Login failed'))
-    }
-    const result = await authorize(signal)
-    if (result.status !== 'authenticated') {
-      throw new Error(t('Unable to complete account sign in'))
-    }
-    clearCentralSignedOut()
-    window.location.assign(result.returnTo)
   }
 
   return (
-    <UserAuthForm
-      redirectTo={returnTo}
-      passwordOnly
-      forgotPasswordUrl={new URL('/account/recovery', accountURL).toString()}
-      onPasswordSubmit={signIn}
-    />
+    <div className='w-full space-y-4'>
+      {error ? (
+        <p className='text-destructive text-sm'>{error}</p>
+      ) : (
+        <p className='text-muted-foreground text-base'>
+          {t('Sign in with your OpenFox account')}
+        </p>
+      )}
+      <Button
+        type='button'
+        className='w-full justify-center'
+        onClick={() => void beginRedirect()}
+      >
+        {t('Continue to account center')}
+      </Button>
+    </div>
   )
 }

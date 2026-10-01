@@ -24,7 +24,7 @@ func CentralAccountSSOStart(c *gin.Context) {
 	challenge, state := strings.TrimSpace(c.Query("codeChallenge")), strings.TrimSpace(c.Query("state"))
 	redirectURI := strings.TrimSpace(c.Query("redirectUri"))
 	responseMode, prompt := strings.TrimSpace(c.Query("responseMode")), strings.TrimSpace(c.Query("prompt"))
-	if (responseMode != "" && responseMode != "web_message" && responseMode != "json") || (prompt != "" && prompt != "none") || len(challenge) != 43 || len(state) < 16 || !centralRedirectAllowed(redirectURI) {
+	if (responseMode != "" && responseMode != "web_message") || (prompt != "" && prompt != "none") || len(challenge) != 43 || len(state) < 16 || !centralRedirectAllowed(redirectURI) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "code": "OAUTH_REQUEST_INVALID", "message": "authorization request is invalid"})
 		return
 	}

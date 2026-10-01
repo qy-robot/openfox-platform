@@ -17,7 +17,6 @@ import {
 } from '../central-reauth'
 import {
   finishCentralSSO,
-  finishCentralSSOResult,
   resolveCentralSSOReturnTo,
   startCentralSSO,
 } from '../central-sso'
@@ -48,7 +47,6 @@ describe('central account SSO callback', () => {
     )
 
     const pending = startCentralSSO('/dashboard', {
-      prompt: 'none',
       signal: controller.signal,
     })
     controller.abort()
@@ -85,21 +83,20 @@ describe('central account SSO callback', () => {
     )
   })
 
-  it('only requests forced account reauthentication for renewal flows', async () => {
+  it('starts a standard redirect authorization request and only forces reauthentication for renewal flows', async () => {
     vi.mocked(api.get).mockResolvedValue({
       data: { data: { authorizationUrl: 'https://account.example/authorize' } },
     })
 
-    await startCentralSSO('/dashboard', { prompt: 'none' })
+    await startCentralSSO('/dashboard')
     await startCentralSSO('/dashboard', { reauthenticate: true })
 
     expect(api.get).toHaveBeenNthCalledWith(
       1,
       '/api/account/sso/start',
       expect.objectContaining({
-        params: expect.objectContaining({
-          responseMode: 'json',
-          prompt: 'none',
+        params: expect.not.objectContaining({
+          responseMode: expect.anything(),
         }),
         skipAuthRefresh: true,
       })
@@ -109,7 +106,6 @@ describe('central account SSO callback', () => {
       '/api/account/sso/start',
       expect.objectContaining({
         params: expect.objectContaining({
-          responseMode: 'json',
           reauth: true,
         }),
         skipAuthRefresh: true,
@@ -135,37 +131,6 @@ describe('central account SSO callback', () => {
       'invalid sign-in response'
     )
     expect(applyAuthBundle).not.toHaveBeenCalled()
-  })
-
-  it('validates JSON authorization type and state before consuming it', async () => {
-    vi.mocked(api.get).mockResolvedValue({
-      data: {
-        data: {
-          authorizationUrl: 'https://account.openfox.work/v1/oauth/authorize',
-        },
-      },
-    })
-    await startCentralSSO('/dashboard', { prompt: 'none' })
-    const pending = JSON.parse(
-      sessionStorage.getItem('robocoding:account-sso') || '{}'
-    ) as { state: string }
-    const valid = {
-      type: 'robocoding.oauth.result',
-      state: pending.state,
-      error: 'login_required',
-    }
-
-    await expect(
-      finishCentralSSOResult({ ...valid, type: 'unrelated.message' })
-    ).resolves.toEqual({ status: 'ignored' })
-    await expect(
-      finishCentralSSOResult({ ...valid, state: 'forged' })
-    ).rejects.toThrow('state did not match')
-    await expect(finishCentralSSOResult(valid)).resolves.toEqual({
-      status: 'interaction_required',
-      error: 'login_required',
-    })
-    expect(sessionStorage.getItem('robocoding:account-sso')).toBeNull()
   })
 
   it('blocks repeated central authorization attempts inside the loop window', () => {

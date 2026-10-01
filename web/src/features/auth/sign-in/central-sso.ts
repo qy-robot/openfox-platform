@@ -21,15 +21,9 @@ type PendingSSO = {
 }
 
 export type CentralSSOOptions = {
-  prompt?: 'none'
   reauthenticate?: boolean
   signal?: AbortSignal
 }
-
-export type CentralSSOMessageResult =
-  | { status: 'ignored' }
-  | { status: 'authenticated'; returnTo: string }
-  | { status: 'interaction_required'; error: string }
 
 export function resolveCentralSSOReturnTo(value: unknown): string {
   return sanitizeAuthRedirect(value, window.location.origin) ?? '/dashboard'
@@ -78,8 +72,6 @@ export async function startCentralSSO(
       codeChallenge,
       state,
       redirectUri,
-      responseMode: 'json',
-      ...(options.prompt ? { prompt: options.prompt } : {}),
       ...(options.reauthenticate ? { reauth: true } : {}),
     },
     skipAuthRefresh: true,
@@ -87,51 +79,6 @@ export async function startCentralSSO(
   })
   options.signal?.throwIfAborted()
   return response.data.data.authorizationUrl as string
-}
-
-export async function finishCentralSSOResult(
-  data: unknown,
-  signal?: AbortSignal
-): Promise<CentralSSOMessageResult> {
-  if (typeof data !== 'object' || data === null) {
-    return { status: 'ignored' }
-  }
-  const result = data as Record<string, unknown>
-  if (result.type !== 'robocoding.oauth.result') {
-    return { status: 'ignored' }
-  }
-  if (typeof result.state !== 'string') {
-    throw new Error('The account sign-in message was invalid.')
-  }
-  const serialized = sessionStorage.getItem(SSO_STORAGE_KEY)
-  if (!serialized) {
-    throw new Error('The sign-in request is missing or expired.')
-  }
-  const pending = JSON.parse(serialized) as PendingSSO
-  if (pending.state !== result.state) {
-    throw new Error('The sign-in state did not match.')
-  }
-  if (typeof result.error === 'string') {
-    sessionStorage.removeItem(SSO_STORAGE_KEY)
-    if (
-      result.error === 'login_required' ||
-      result.error === 'interaction_required'
-    ) {
-      return { status: 'interaction_required', error: result.error }
-    }
-    throw new Error(`Account sign in failed: ${result.error}`)
-  }
-  if (typeof result.code !== 'string' || result.code.length === 0) {
-    throw new Error('The account sign-in message did not contain a code.')
-  }
-  return {
-    status: 'authenticated',
-    returnTo: await finishCentralSSO(result.code, result.state, signal),
-  }
-}
-
-export function cancelCentralSSO(): void {
-  sessionStorage.removeItem(SSO_STORAGE_KEY)
 }
 
 export async function finishCentralSSO(

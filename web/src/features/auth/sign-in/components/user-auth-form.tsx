@@ -60,25 +60,11 @@ import { AuthOperationError } from '@/lib/secure-verification'
 import { createServerError } from '@/lib/server-error-message'
 import { cn } from '@/lib/utils'
 
-type PasswordCredentials = z.infer<typeof loginFormSchema>
-
-type UserAuthFormProps = AuthFormProps & {
-  passwordOnly?: boolean
-  forgotPasswordUrl?: string
-  onPasswordSubmit?: (
-    credentials: PasswordCredentials,
-    signal: AbortSignal
-  ) => Promise<void>
-}
-
 export function UserAuthForm({
   className,
   redirectTo,
-  passwordOnly = false,
-  forgotPasswordUrl,
-  onPasswordSubmit,
   ...props
-}: UserAuthFormProps) {
+}: AuthFormProps) {
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [wechatCode, setWeChatCode] = useState('')
@@ -105,11 +91,10 @@ export function UserAuthForm({
   const loginFailedMessage = t('Login failed')
 
   const { status } = useStatus()
-  const passkeyLoginEnabled =
-    !passwordOnly &&
-    Boolean(status?.passkey_login ?? status?.data?.passkey_login)
+  const passkeyLoginEnabled = Boolean(
+    status?.passkey_login ?? status?.data?.passkey_login
+  )
   const passwordLoginEnabled =
-    passwordOnly ||
     (status?.password_login_enabled ??
       status?.data?.password_login_enabled ??
       true) !== false
@@ -133,19 +118,17 @@ export function UserAuthForm({
     isPasskeyLoading ||
     !passkeySupported ||
     (requiresLegalConsent && !agreedToLegal)
-  const hasWeChatLogin = !passwordOnly && Boolean(status?.wechat_login)
-  const hasOAuthLogin =
-    !passwordOnly &&
-    Boolean(
-      status?.github_oauth ||
-      status?.discord_oauth ||
-      status?.oidc_enabled ||
-      status?.linuxdo_oauth ||
-      status?.telegram_oauth ||
-      (status?.custom_oauth_providers?.length ?? 0) > 0
-    )
+  const hasWeChatLogin = Boolean(status?.wechat_login)
+  const hasOAuthLogin = Boolean(
+    status?.github_oauth ||
+    status?.discord_oauth ||
+    status?.oidc_enabled ||
+    status?.linuxdo_oauth ||
+    status?.telegram_oauth ||
+    (status?.custom_oauth_providers?.length ?? 0) > 0
+  )
   const hasAlternativeLogin =
-    !passwordOnly && (passkeyLoginEnabled || hasWeChatLogin || hasOAuthLogin)
+    passkeyLoginEnabled || hasWeChatLogin || hasOAuthLogin
 
   useEffect(() => {
     if (requiresLegalConsent) {
@@ -191,7 +174,7 @@ export function UserAuthForm({
       return
     }
 
-    if (!onPasswordSubmit && !validateTurnstile()) return
+    if (!validateTurnstile()) return
 
     const submittedTurnstileToken = turnstileToken
     if (isTurnstileEnabled) {
@@ -204,12 +187,6 @@ export function UserAuthForm({
     passwordOperation.current?.abort()
     passwordOperation.current = controller
     try {
-      if (onPasswordSubmit) {
-        await onPasswordSubmit(data, controller.signal)
-        controller.signal.throwIfAborted()
-        form.setValue('password', '')
-        return
-      }
       const res = await login({
         username: data.username,
         password: data.password,
@@ -371,15 +348,13 @@ export function UserAuthForm({
       )}
 
       {/* OAuth Providers */}
-      {!passwordOnly && (
-        <OAuthProviders
-          status={status}
-          redirectTo={redirectTo}
-          disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
-          onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
-          isWeChatLoading={isWeChatSubmitting}
-        />
-      )}
+      <OAuthProviders
+        status={status}
+        redirectTo={redirectTo}
+        disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+        onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
+        isWeChatLoading={isWeChatSubmitting}
+      />
     </>
   )
 
@@ -427,21 +402,12 @@ export function UserAuthForm({
                     />
                   </FormControl>
                   <FormMessage />
-                  {forgotPasswordUrl ? (
-                    <a
-                      href={forgotPasswordUrl}
-                      className='text-muted-foreground absolute end-0 -top-0.5 z-10 text-base font-medium hover:opacity-75'
-                    >
-                      {t('Forgot password?')}
-                    </a>
-                  ) : (
-                    <Link
-                      to='/forgot-password'
-                      className='text-muted-foreground absolute end-0 -top-0.5 z-10 text-base font-medium hover:opacity-75'
-                    >
-                      {t('Forgot password?')}
-                    </Link>
-                  )}
+                  <Link
+                    to='/forgot-password'
+                    className='text-muted-foreground absolute end-0 -top-0.5 z-10 text-base font-medium hover:opacity-75'
+                  >
+                    {t('Forgot password?')}
+                  </Link>
                 </FormItem>
               )}
             />
@@ -457,7 +423,7 @@ export function UserAuthForm({
             </Button>
 
             {/* Turnstile */}
-            {!passwordOnly && isTurnstileEnabled && (
+            {isTurnstileEnabled && (
               <div className='mt-2'>
                 <Turnstile
                   key={turnstileWidgetKey}

@@ -2,233 +2,123 @@
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
 */
 
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { userEvent } from '@testing-library/user-event'
 import { afterEach, expect, it, vi } from 'vitest'
 
-import { isCentralSignedOut, markCentralSignedOut } from '../central-reauth'
+import {
+  isCentralSignedOut,
+  markCentralSignedOut,
+  requestFreshCentralLogin,
+} from '../central-reauth'
 import { CentralAccountSignIn } from '../components/central-account-sign-in'
 
-const {
-  capturedFormProps,
-  finishCentralSSOResult,
-  startCentralSSO,
-  toastError,
-} = vi.hoisted(() => ({
-  capturedFormProps: { current: undefined as unknown },
-  finishCentralSSOResult: vi.fn(),
+const { assign, startCentralSSO } = vi.hoisted(() => ({
+  assign: vi.fn(),
   startCentralSSO: vi.fn(),
-  toastError: vi.fn(),
 }))
 
-vi.mock('../central-sso', () => ({
-  cancelCentralSSO: vi.fn(),
-  finishCentralSSOResult,
-  startCentralSSO,
-}))
+vi.mock('../central-sso', () => ({ startCentralSSO }))
 
-vi.mock('../components/user-auth-form', () => ({
-  UserAuthForm: (props: unknown) => {
-    capturedFormProps.current = props
-    return <div>native-account-form</div>
-  },
-}))
+const VALID_AUTHORIZATION_URL =
+  'https://account.openfox.work/v1/oauth/authorize?client_id=openfox-platform&redirect_uri=https%3A%2F%2Fai.openfox.work%2Faccount%2Fcallback&code_challenge=challenge&code_challenge_method=S256&state=state'
 
-vi.mock('@/hooks/use-status', () => ({
-  useStatus: () => ({
-    status: { account_center_url: 'https://account.openfox.work' },
-  }),
-}))
-
-vi.mock('sonner', () => ({ toast: { error: toastError } }))
+function stubLocation(): void {
+  vi.stubGlobal('location', {
+    origin: 'http://localhost:5173',
+    assign,
+  })
+}
 
 afterEach(() => {
   cleanup()
   sessionStorage.clear()
   vi.unstubAllGlobals()
   vi.clearAllMocks()
-  capturedFormProps.current = undefined
 })
 
-it('renders the native form without embedding the account site', () => {
-  markCentralSignedOut()
-  render(<CentralAccountSignIn redirectTo='/dashboard' />)
+it('redirects the whole page to the backend-provided authorization URL', async () => {
+  stubLocation()
+  startCentralSSO.mockResolvedValue(VALID_AUTHORIZATION_URL)
 
-  expect(screen.getByText('native-account-form')).toBeVisible()
-  expect(document.querySelector('iframe')).toBeNull()
-  expect(capturedFormProps.current).toEqual(
-    expect.objectContaining({
-      passwordOnly: true,
-      forgotPasswordUrl: 'https://account.openfox.work/account/recovery',
-    })
-  )
-})
+  render(<CentralAccountSignIn redirectTo='/usage-logs/common' />)
 
-it('sends credentials only to account then exchanges JSON authorization', async () => {
-  markCentralSignedOut()
-  const fetchMock = vi
-    .fn()
-    .mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ success: true }),
-    })
-    .mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          type: 'robocoding.oauth.result',
-          state: 'state',
-          code: 'code',
-        },
-      }),
-    })
-  vi.stubGlobal('fetch', fetchMock)
-  startCentralSSO.mockResolvedValue(
-    'https://account.openfox.work/v1/oauth/authorize?response_mode=json'
-  )
-  finishCentralSSOResult.mockResolvedValue({
-    status: 'authenticated',
-    returnTo: '/dashboard',
+  await waitFor(() => expect(assign).toHaveBeenCalledTimes(1))
+  expect(startCentralSSO).toHaveBeenCalledWith('/usage-logs/common', {
+    reauthenticate: false,
   })
+  expect(assign).toHaveBeenCalledWith(VALID_AUTHORIZATION_URL)
+})
 
-  render(<CentralAccountSignIn redirectTo='/dashboard' />)
-  const props = capturedFormProps.current as {
-    onPasswordSubmit: (
-      credentials: { username: string; password: string },
-      signal: AbortSignal
-    ) => Promise<void>
-  }
-  await act(() =>
-    props.onPasswordSubmit(
-      { username: 'alice@example.com', password: 'secret' },
-      new AbortController().signal
-    )
-  )
+it('requests forced account reauthentication when a fresh login was reserved', async () => {
+  stubLocation()
+  requestFreshCentralLogin()
+  startCentralSSO.mockResolvedValue(VALID_AUTHORIZATION_URL)
 
-  expect(fetchMock).toHaveBeenNthCalledWith(
-    1,
-    'https://account.openfox.work/v1/auth/login',
-    expect.objectContaining({
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        identifier: 'alice@example.com',
-        password: 'secret',
-      }),
-    })
+  render(<CentralAccountSignIn />)
+
+  await waitFor(() => expect(assign).toHaveBeenCalledTimes(1))
+  expect(startCentralSSO).toHaveBeenCalledWith('/dashboard', {
+    reauthenticate: true,
+  })
+})
+
+it('does not redirect automatically after an explicit sign-out until the user continues', async () => {
+  stubLocation()
+  markCentralSignedOut()
+  startCentralSSO.mockResolvedValue(VALID_AUTHORIZATION_URL)
+
+  render(<CentralAccountSignIn />)
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: /account center/i })
+    ).toBeVisible()
   )
-  expect(fetchMock.mock.calls[0]?.[1]?.headers).not.toHaveProperty(
-    'Authorization'
-  )
-  expect(fetchMock).toHaveBeenNthCalledWith(
-    2,
-    expect.stringContaining('response_mode=json'),
-    expect.objectContaining({ credentials: 'include', method: 'GET' })
-  )
-  expect(finishCentralSSOResult).toHaveBeenCalledWith(
-    expect.objectContaining({ code: 'code', state: 'state' }),
-    expect.any(AbortSignal)
+  expect(startCentralSSO).not.toHaveBeenCalled()
+  expect(isCentralSignedOut()).toBe(true)
+
+  await userEvent
+    .setup()
+    .click(screen.getByRole('button', { name: /account center/i }))
+
+  await waitFor(() =>
+    expect(assign).toHaveBeenCalledWith(VALID_AUTHORIZATION_URL)
   )
   expect(isCentralSignedOut()).toBe(false)
 })
 
-it('rejects an authorization URL outside the configured account origin', async () => {
-  markCentralSignedOut()
-  const fetchMock = vi.fn().mockResolvedValue({
-    ok: true,
-    json: async () => ({ success: true }),
-  })
-  vi.stubGlobal('fetch', fetchMock)
+it('rejects an authorization URL that is not a redirect-mode authorize request', async () => {
+  stubLocation()
   startCentralSSO.mockResolvedValue(
-    'https://evil.example/v1/oauth/authorize?response_mode=json'
+    'https://evil.example/v1/oauth/authorize?response_mode=json&state=state'
   )
 
   render(<CentralAccountSignIn />)
-  const props = capturedFormProps.current as {
-    onPasswordSubmit: (
-      credentials: { username: string; password: string },
-      signal: AbortSignal
-    ) => Promise<void>
-  }
-  await expect(
-    props.onPasswordSubmit(
-      { username: 'alice@example.com', password: 'secret' },
-      new AbortController().signal
-    )
-  ).rejects.toThrow('authorization URL is invalid')
+  const button = await screen.findByRole('button', { name: /account center/i })
 
-  expect(fetchMock).toHaveBeenCalledTimes(1)
-  expect(fetchMock).toHaveBeenCalledWith(
-    'https://account.openfox.work/v1/auth/login',
-    expect.anything()
+  expect(assign).not.toHaveBeenCalled()
+  expect(
+    screen.getByText('The account authorization URL is invalid.')
+  ).toBeVisible()
+
+  startCentralSSO.mockResolvedValue(VALID_AUTHORIZATION_URL)
+  await userEvent.setup().click(button)
+  await waitFor(() =>
+    expect(assign).toHaveBeenCalledWith(VALID_AUTHORIZATION_URL)
   )
-})
-
-it('preserves explicit sign-out when account credentials are rejected', async () => {
-  markCentralSignedOut()
-  vi.stubGlobal(
-    'fetch',
-    vi.fn().mockResolvedValue({
-      ok: false,
-      json: async () => ({
-        success: false,
-        code: 'AUTH_INVALID_CREDENTIALS',
-        message: 'Invalid identifier or password.',
-      }),
-    })
-  )
-
-  render(<CentralAccountSignIn />)
-  const props = capturedFormProps.current as {
-    onPasswordSubmit: (
-      credentials: { username: string; password: string },
-      signal: AbortSignal
-    ) => Promise<void>
-  }
-  await expect(
-    props.onPasswordSubmit(
-      { username: 'alice@example.com', password: 'wrong-password' },
-      new AbortController().signal
-    )
-  ).rejects.toThrow('Invalid identifier or password.')
-
-  expect(isCentralSignedOut()).toBe(true)
-  expect(startCentralSSO).not.toHaveBeenCalled()
-})
-
-it('silently restores an account cookie unless the user explicitly signed out', async () => {
-  const fetchMock = vi.fn().mockResolvedValue({
-    ok: false,
-    json: async () => ({
-      success: false,
-      data: {
-        type: 'robocoding.oauth.result',
-        state: 'state',
-        error: 'login_required',
-      },
-    }),
-  })
-  vi.stubGlobal('fetch', fetchMock)
-  startCentralSSO.mockResolvedValue(
-    'https://account.openfox.work/v1/oauth/authorize?response_mode=json'
-  )
-  finishCentralSSOResult.mockResolvedValue({
-    status: 'interaction_required',
-    error: 'login_required',
-  })
-
-  render(<CentralAccountSignIn />)
-  await waitFor(() => expect(startCentralSSO).toHaveBeenCalledTimes(1))
-  cleanup()
-  markCentralSignedOut()
-  vi.clearAllMocks()
-  render(<CentralAccountSignIn />)
-  await act(async () => {})
-  expect(startCentralSSO).not.toHaveBeenCalled()
 })

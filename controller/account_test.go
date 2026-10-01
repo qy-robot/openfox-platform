@@ -39,6 +39,10 @@ func TestCentralAccountSSOStartUsesPublicIssuerNotInternalServiceURL(t *testing.
 	require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &response))
 	assert.True(t, strings.HasPrefix(response.Data.AuthorizationURL, "https://account.example.com/v1/oauth/authorize?"))
 	assert.NotContains(t, response.Data.AuthorizationURL, "127.0.0.1")
+	authorizationURL, err := url.Parse(response.Data.AuthorizationURL)
+	require.NoError(t, err)
+	assert.Empty(t, authorizationURL.Query().Get("response_mode"))
+	assert.Empty(t, authorizationURL.Query().Get("prompt"))
 }
 
 func TestCentralAccountSSOStartRequestsFreshLoginForReauthentication(t *testing.T) {
@@ -89,7 +93,7 @@ func TestCentralAccountSSOStartBuildsWebMessageAuthorization(t *testing.T) {
 	assert.Equal(t, "none", authorizationURL.Query().Get("prompt"))
 }
 
-func TestCentralAccountSSOStartBuildsJSONAuthorization(t *testing.T) {
+func TestCentralAccountSSOStartRejectsJSONResponseMode(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	t.Setenv("ROBO_ACCOUNT_MODE", "central")
 	t.Setenv("ROBO_ACCOUNT_ISSUER", "https://account.example.com")
@@ -100,17 +104,7 @@ func TestCentralAccountSSOStartBuildsJSONAuthorization(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/api/account/sso/start?responseMode=json&prompt=none&codeChallenge="+strings.Repeat("a", 43)+"&state="+strings.Repeat("s", 16)+"&redirectUri=https%3A%2F%2Fai.example.com%2Faccount%2Fcallback", nil)
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, request)
-	require.Equal(t, http.StatusOK, response.Code)
-	var body struct {
-		Data struct {
-			AuthorizationURL string `json:"authorizationUrl"`
-		} `json:"data"`
-	}
-	require.NoError(t, common.Unmarshal(response.Body.Bytes(), &body))
-	authorizationURL, err := url.Parse(body.Data.AuthorizationURL)
-	require.NoError(t, err)
-	assert.Equal(t, "json", authorizationURL.Query().Get("response_mode"))
-	assert.Equal(t, "none", authorizationURL.Query().Get("prompt"))
+	assert.Equal(t, http.StatusBadRequest, response.Code)
 }
 
 func TestCentralAccountSSOStartRejectsUnsupportedWebMessageOptions(t *testing.T) {
