@@ -8,14 +8,14 @@ the Free Software Foundation, either version 3 of the License, or
 */
 
 import { AxiosError, type AxiosAdapter } from 'axios'
-import { afterEach, expect, it, vi } from 'vitest'
 import { toast } from 'sonner'
-import { handleServerError } from '@/lib/handle-server-error'
-import { createAppQueryClient } from '@/lib/query-client'
+import { afterEach, expect, it, vi } from 'vitest'
 
 import { consumeFreshCentralLoginRequest } from '@/features/auth/sign-in/central-reauth'
 import { beginExplicitSignOut, finishExplicitSignOut } from '@/lib/auth-session'
+import { handleServerError } from '@/lib/handle-server-error'
 import { api } from '@/lib/http-client'
+import { createAppQueryClient } from '@/lib/query-client'
 import { useAuthStore } from '@/stores/auth-store'
 
 const originalAdapter = api.defaults.adapter
@@ -156,31 +156,53 @@ it('forces a fresh account login only when the backend requires reauthentication
   expect(consumeFreshCentralLoginRequest()).toBe(false)
 })
 
-
-it.each(['during logout', 'after logout'])(
-  'does not toast a revoked background request %s',
-  async (stage) => {
+it.each([
+  { stage: 'during logout', bearer: true },
+  { stage: 'after logout', bearer: true },
+  { stage: 'during logout', bearer: false },
+  { stage: 'after logout', bearer: false },
+])(
+  'does not toast a revoked background request $stage (bearer=$bearer)',
+  async ({ stage, bearer }) => {
     const notify = vi.spyOn(toast, 'error').mockReturnValue('error')
-    localStorage.setItem('status', JSON.stringify({ account_auth_enabled: true }))
+    localStorage.setItem(
+      'status',
+      JSON.stringify({ account_auth_enabled: true })
+    )
     api.defaults.adapter = async (config) => {
       if (stage === 'during logout') beginExplicitSignOut()
       else {
         finishExplicitSignOut()
         window.history.replaceState({}, '', '/sign-in')
       }
-      throw new AxiosError('Unauthorized', 'ERR_BAD_REQUEST', config, undefined, {
-        data: { message: 'access token invalid' },
-        status: 401, statusText: 'Unauthorized', headers: {}, config,
-      })
+      throw new AxiosError(
+        'Unauthorized',
+        'ERR_BAD_REQUEST',
+        config,
+        undefined,
+        {
+          data: { message: 'access token invalid' },
+          status: 401,
+          statusText: 'Unauthorized',
+          headers: {},
+          config,
+        }
+      )
     }
     const client = createAppQueryClient()
-    await expect(client.fetchQuery({
-      queryKey: ['logout-background', stage],
-      queryFn: () => api.get('/api/user/self', {
-        headers: { Authorization: 'Bearer revoked-session' },
-      }),
-      retry: false,
-    })).rejects.toBeInstanceOf(AxiosError)
+    await expect(
+      client.fetchQuery({
+        queryKey: ['logout-background', stage],
+        queryFn: () =>
+          api.get(
+            '/api/user/self',
+            bearer
+              ? { headers: { Authorization: 'Bearer revoked-session' } }
+              : undefined
+          ),
+        retry: false,
+      })
+    ).rejects.toBeInstanceOf(AxiosError)
     expect(notify).not.toHaveBeenCalled()
     client.clear()
     notify.mockRestore()
@@ -193,14 +215,27 @@ it.each(['/api/user/auth/logout', '/api/user/login'])(
     const notify = vi.spyOn(toast, 'error').mockReturnValue('error')
     beginExplicitSignOut()
     api.defaults.adapter = async (config) => {
-      throw new AxiosError('Unauthorized', 'ERR_BAD_REQUEST', config, undefined, {
-        data: { message: 'Authentication failed' },
-        status: 401, statusText: 'Unauthorized', headers: {}, config,
-      })
+      throw new AxiosError(
+        'Unauthorized',
+        'ERR_BAD_REQUEST',
+        config,
+        undefined,
+        {
+          data: { message: 'Authentication failed' },
+          status: 401,
+          statusText: 'Unauthorized',
+          headers: {},
+          config,
+        }
+      )
     }
-    await api.post(url, {}, { skipAuthRefresh: true,
-      headers: { Authorization: 'Bearer session' },
-    }).catch((error) => handleServerError(error))
+    await api
+      .post(
+        url,
+        {},
+        { skipAuthRefresh: true, headers: { Authorization: 'Bearer session' } }
+      )
+      .catch((error) => handleServerError(error))
     expect(notify).toHaveBeenCalledWith('Authentication failed')
     notify.mockRestore()
   }

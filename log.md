@@ -622,3 +622,8 @@
 
 - 2026-10-02T13:38:43+08:00 | Codex | OAuth callback re-entry repair。
   - Branch `codex/oauth-quality-20261002`, baseline `37e93d7e`. Independent review found overlapping callback handlers consuming PKCE twice. Added a failing regression first, then shared only the in-flight exchange; settled callbacks still reject replay. Callback UI derives incomplete errors and ignores stale effect results. Targeted Web 3 files / 16 tests, typecheck and scoped oxlint passed; controller OAuth targeted tests passed. Full immutable release gates and production acceptance pending. No schema/configuration changes.
+
+### 2026-10-02T13:50:32+08:00 | Codex | Explicit logout query notification repair
+
+- Branch `codex/oauth-quality-20261002`, baseline `b4e49af2`. Rebuilt browser fixture reproduced three false unauthorized toasts after successful sign-out: auth clearing allowed background queries without a bearer to escape the existing handled-error guard. Added no-bearer rows to the existing regression (two failures before fix); transition branch marks only background 401s handled, preserves rejection and explicit authentication failures.
+- Verified: auth expiry/error notification/browser logout tests 3 files/43 passed, typecheck, scoped lint/format; independent code review APPROVE and architecture CLEAR. Fresh real-browser sign-in/callback and explicit sign-out now show only the success notice and remain on sign-in without auto-navigation. 14 real-process federation scenarios pass. Frozen release rebuild and production activation pending; no schema/configuration change.

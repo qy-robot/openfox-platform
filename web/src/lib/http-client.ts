@@ -33,7 +33,10 @@ import {
   isExplicitSignOutInProgress,
   refreshAuthentication,
 } from '@/lib/auth-session'
-import { handleServerError, markServerErrorHandled } from '@/lib/handle-server-error'
+import {
+  handleServerError,
+  markServerErrorHandled,
+} from '@/lib/handle-server-error'
 import {
   getServerErrorMessage,
   safeServerErrorMessage,
@@ -163,6 +166,9 @@ api.interceptors.response.use(
         isExplicitSignOutInProgress() ||
         (isCentralAccountMode() && window.location.pathname === '/sign-in')
       ) {
+        // Clearing auth can trigger queries without a bearer before unmount.
+        // Keep rejecting them, while explicit auth calls report their failures.
+        if (!config?.skipAuthRefresh) markServerErrorHandled(error)
         throw error
       }
       if (config && !config.skipAuthRefresh && isCentralAccountMode()) {
