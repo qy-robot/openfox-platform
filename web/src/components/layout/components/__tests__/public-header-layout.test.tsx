@@ -40,6 +40,11 @@ import { useAuthStore } from '@/stores/auth-store'
 import { PublicHeader } from '../public-header'
 
 beforeEach(() => {
+  // jsdom has no layout; model a viewport without inset scrollbars.
+  vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(
+    window.innerWidth
+  )
+  vi.spyOn(document.body, 'clientWidth', 'get').mockReturnValue(window.innerWidth)
   vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
   vi.stubGlobal('localStorage', {
     getItem: () => null,
