@@ -4,6 +4,11 @@
 
 ## 当前状态
 
+- 2026-10-02T14:47:44+08:00 | Codex | Shared blue-white theme and navigation verification complete.
+  - Branch codex/blue-white-ui-20261002; implementation 3651ed40. Ice-blue canvas, white panels, graphite text and blue/cyan tiles use common theme tokens; removed dead home/auth decoration and competing page styles. Public and app headers preserve existing navigation gates, accessible mobile dropdown and theme behavior. Central mode uses the default palette without overwriting standalone preferences.
+  - Validation: frozen Web 166 files / 1826 tests, typecheck/build, Go full tests/vet and independent relaykit tests/build passed. Scoped lint/format and seven-language key parity passed. Browser light/dark desktop, 390px and 1024px checks: no overlap/overflow; Escape restores focus. Frozen protected-mobile navigation cancellation restores actual scrolling. The regression supplies jsdom viewport geometry instead of modifying application behavior for an artificial scrollbar.
+  - Remaining acceptance limits: Safari and full browser matrix not exercised. No backend schema/API changes or new dependencies.
+
 - 2026-10-02T13:38:43+08:00 | Codex | OAuth callback re-entry repair。
   - Branch `codex/oauth-quality-20261002`, baseline `37e93d7e`. Independent review found overlapping callback handlers consuming PKCE twice. Added a failing regression first, then shared only the in-flight exchange; settled callbacks still reject replay. Callback UI derives incomplete errors and ignores stale effect results. Targeted Web 3 files / 16 tests, typecheck and scoped oxlint passed; controller OAuth targeted tests passed. Full immutable release gates and production acceptance pending. No schema/configuration changes.
 
@@ -645,3 +650,10 @@
 - Mobile bounding-box acceptance additionally found the old brand size container collapsed to its padding width after navigation was split. Removed the unused size container so the logo owns its intrinsic width and no longer overlaps the dropdown; full brand remains visible above the small-screen breakpoint.
 
 - Download-page auxiliary text now uses the shared muted-foreground token rather than translucent ink, and tiny metadata text is raised to 14px. This keeps the blue palette readable on both light and dark canvas; primary white-on-blue contrast is 4.57:1 and dark control contrast 6.98:1.
+
+## 2026-10-02T14:47:44+08:00 · Blue-white UI verified
+
+- 2026-10-02T14:47:44+08:00 | Codex | Shared blue-white theme and navigation verification complete.
+  - Branch codex/blue-white-ui-20261002; implementation 3651ed40. Ice-blue canvas, white panels, graphite text and blue/cyan tiles use common theme tokens; removed dead home/auth decoration and competing page styles. Public and app headers preserve existing navigation gates, accessible mobile dropdown and theme behavior. Central mode uses the default palette without overwriting standalone preferences.
+  - Validation: frozen Web 166 files / 1826 tests, typecheck/build, Go full tests/vet and independent relaykit tests/build passed. Scoped lint/format and seven-language key parity passed. Browser light/dark desktop, 390px and 1024px checks: no overlap/overflow; Escape restores focus. Frozen protected-mobile navigation cancellation restores actual scrolling. The regression supplies jsdom viewport geometry instead of modifying application behavior for an artificial scrollbar.
+  - Remaining acceptance limits: Safari and full browser matrix not exercised. No backend schema/API changes or new dependencies.
