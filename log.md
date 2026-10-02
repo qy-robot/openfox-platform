@@ -4,6 +4,11 @@
 
 ## 当前状态
 
+- 2026-10-02T15:43:31+08:00 | Codex | Fixed Native Desktop Skill consumer proxy published; source e03c3dc6, release platform-e03c3dc64fa5-ea5b3b657cf8, previous platform-3651ed400d92-d680646f8e57.
+  - Only three exact GET access/POST claim/download paths accept verified central Desktop sessions; identity derived server-side, consumer credential stays private and distinct from author/Account keys. No schema/model/wallet change; previous binary ignores additive consumer env.
+  - Frozen Web1826, all Go tests/vet, relaykit tests/build and Linux build passed; runtime SHA9a977f64 and local/public health match, unsigned Native routes401. Account/Skills private session-status validation and dedicated scope probes passed. Backup20261002T073604Z server restore-verify and off-host checksums passed; receipt is in designated private certs directory.
+  - No new signed Desktop installer was published; do not describe source integration as installed-client acceptance. No real-user private ZIP/robot execution/payment/load acceptance claimed. Use immediate previous binary receipt, preserve content rights/audit DB; Account rollback separately requires restoring service-client config first.
+
 - 2026-10-02T15:13:47+08:00 | Codex | Keep Skill downloads tied to the authenticated Desktop account; codex/skill-consumer-proxy-20261002 / baseline3b00b8f1.
   - Added fixed access/claim/download consumer proxy: validates an active central Desktop session and derives subject/session reference from server-side state. Uses separate consumer credential, fixed loopback upstream, no redirects, bounded JSON/ZIP; rejects PAT/browser sessions and never forwards AI credentials or roles. Scope allowlist includes only these registered routes. No schema changes.
   - Validation: real federated Desktop middleware/controller test covers unauthorized, browser session, attacker-supplied identity, revoked central session, redirect refusal and original binary download. Go full tests/vet passed. Frozen production build gate pending.
@@ -662,3 +667,10 @@
   - Branch codex/blue-white-ui-20261002; implementation 3651ed40. Ice-blue canvas, white panels, graphite text and blue/cyan tiles use common theme tokens; removed dead home/auth decoration and competing page styles. Public and app headers preserve existing navigation gates, accessible mobile dropdown and theme behavior. Central mode uses the default palette without overwriting standalone preferences.
   - Validation: frozen Web 166 files / 1826 tests, typecheck/build, Go full tests/vet and independent relaykit tests/build passed. Scoped lint/format and seven-language key parity passed. Browser light/dark desktop, 390px and 1024px checks: no overlap/overflow; Escape restores focus. Frozen protected-mobile navigation cancellation restores actual scrolling. The regression supplies jsdom viewport geometry instead of modifying application behavior for an artificial scrollbar.
   - Remaining acceptance limits: Safari and full browser matrix not exercised. No backend schema/API changes or new dependencies.
+
+## 2026-10-02T15:43:31+08:00 · Skill 安装发布验收
+
+- 2026-10-02T15:43:31+08:00 | Codex | Fixed Native Desktop Skill consumer proxy published; source e03c3dc6, release platform-e03c3dc64fa5-ea5b3b657cf8, previous platform-3651ed400d92-d680646f8e57.
+  - Only three exact GET access/POST claim/download paths accept verified central Desktop sessions; identity derived server-side, consumer credential stays private and distinct from author/Account keys. No schema/model/wallet change; previous binary ignores additive consumer env.
+  - Frozen Web1826, all Go tests/vet, relaykit tests/build and Linux build passed; runtime SHA9a977f64 and local/public health match, unsigned Native routes401. Account/Skills private session-status validation and dedicated scope probes passed. Backup20261002T073604Z server restore-verify and off-host checksums passed; receipt is in designated private certs directory.
+  - No new signed Desktop installer was published; do not describe source integration as installed-client acceptance. No real-user private ZIP/robot execution/payment/load acceptance claimed. Use immediate previous binary receipt, preserve content rights/audit DB; Account rollback separately requires restoring service-client config first.
