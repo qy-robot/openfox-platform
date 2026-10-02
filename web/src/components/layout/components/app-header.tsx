@@ -112,7 +112,7 @@ export function AppHeader({
 
   return (
     <Header>
-      <div className='@container/system-brand flex min-w-0 shrink-0 items-center gap-1 sm:min-w-40'>
+      <div className='flex min-w-0 shrink-0 items-center gap-1 sm:min-w-40'>
         <SystemBrand variant='inline' />
       </div>
 

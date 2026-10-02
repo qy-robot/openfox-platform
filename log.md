@@ -641,3 +641,5 @@
 - Evidence: baseline UI regressions passed before cleanup; navigation/auth 25 tests and theme regressions 3 passed; typecheck, changed-file lint/format and build passed. Independent review found no remaining blockers after Reset repair. Local desktop/mobile screenshot acceptance underway; final immutable release gate still pending. No dependency, server, schema or authorization change; production not published at this stage.
 
 - Final responsive inspection found the desktop link strip crowded the search control at 1024px. Use the existing navigation dropdown below 1280px; keep the full strip on wider desktops. This is a visual breakpoint correction, with keyboard/menu behavior retained. The first frozen build is superseded before deployment.
+
+- Mobile bounding-box acceptance additionally found the old brand size container collapsed to its padding width after navigation was split. Removed the unused size container so the logo owns its intrinsic width and no longer overlaps the dropdown; full brand remains visible above the small-screen breakpoint.
