@@ -17,7 +17,12 @@ func desktopDashboardScopeAllowed(c *gin.Context, session *model.UserSession) bo
 	case "GET /api/user/self", "GET /api/user/models", "GET /api/teams/self", "POST /api/desktop/relay-token", "DELETE /api/desktop/session":
 		return true
 	default:
-		return false
+		switch c.Request.Method + " " + c.FullPath() {
+		case "GET /api/desktop/skills/:id/access", "POST /api/desktop/skills/:id/claim", "POST /api/desktop/skills/:id/download":
+			return true
+		default:
+			return false
+		}
 	}
 }
 

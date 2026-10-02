@@ -17,4 +17,7 @@ func setDesktopRouter(api *gin.RouterGroup) {
 	desktop.POST("/device/authorization", middleware.UserAuth(), middleware.SessionCookieOriginGuard(), middleware.UserCriticalRateLimit("desktop-approval"), controller.ApproveDesktopDevice)
 	desktop.POST("/relay-token", middleware.UserAuth(), middleware.UserCriticalRateLimit("desktop-credential"), controller.CreateDesktopRelayToken)
 	desktop.DELETE("/session", middleware.UserAuth(), controller.DeleteDesktopSession)
+	desktop.GET("/skills/:id/access", middleware.UserAuth(), controller.GetDesktopSkillAccess)
+	desktop.POST("/skills/:id/claim", middleware.UserAuth(), middleware.UserCriticalRateLimit("desktop-skill-claim"), controller.ClaimDesktopSkill)
+	desktop.POST("/skills/:id/download", middleware.UserAuth(), middleware.UserCriticalRateLimit("desktop-skill-download"), controller.DownloadDesktopSkill)
 }
