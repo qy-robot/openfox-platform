@@ -65,7 +65,7 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
   return (
     <>
       {/* 移动端下拉菜单 */}
-      <div className='lg:hidden'>
+      <div className='xl:hidden'>
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger
             aria-label={t('Toggle navigation menu')}
@@ -130,7 +130,7 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
 
       {/* 桌面端水平导航 */}
       <nav
-        className={cn('hidden items-center gap-1 lg:flex', className)}
+        className={cn('hidden items-center gap-1 xl:flex', className)}
         {...props}
       >
         {normalizedLinks.map(({ title, href, isActive, disabled, external }) =>

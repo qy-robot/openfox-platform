@@ -121,7 +121,7 @@ export function AppHeader({
       ) : null}
 
       {showTopNav && rightContent == null && (
-        <div className='flex min-w-0 flex-1 items-center justify-start lg:justify-center'>
+        <div className='flex min-w-0 flex-1 items-center justify-start xl:justify-center'>
           <TopNav links={links} />
         </div>
       )}
