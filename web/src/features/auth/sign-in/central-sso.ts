@@ -20,6 +20,13 @@ type PendingSSO = {
   returnTo: string
 }
 
+// Effect re-entry may await the same exchange, but settled codes remain single-use.
+let callbackFlight: {
+  code: string
+  state: string
+  promise: Promise<string>
+} | null = null
+
 export type CentralSSOOptions = {
   reauthenticate?: boolean
   signal?: AbortSignal
@@ -82,6 +89,24 @@ export async function startCentralSSO(
 }
 
 export async function finishCentralSSO(
+  code: string,
+  state: string,
+  signal?: AbortSignal
+): Promise<string> {
+  signal?.throwIfAborted()
+  if (callbackFlight?.code === code && callbackFlight.state === state) {
+    return callbackFlight.promise
+  }
+  const promise = exchangeCentralCallback(code, state, signal)
+  callbackFlight = { code, state, promise }
+  try {
+    return await promise
+  } finally {
+    if (callbackFlight?.promise === promise) callbackFlight = null
+  }
+}
+
+async function exchangeCentralCallback(
   code: string,
   state: string,
   signal?: AbortSignal

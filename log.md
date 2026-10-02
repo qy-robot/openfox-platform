@@ -4,6 +4,9 @@
 
 ## 当前状态
 
+- 2026-10-02T13:38:43+08:00 | Codex | OAuth callback re-entry repair。
+  - Branch `codex/oauth-quality-20261002`, baseline `37e93d7e`. Independent review found overlapping callback handlers consuming PKCE twice. Added a failing regression first, then shared only the in-flight exchange; settled callbacks still reject replay. Callback UI derives incomplete errors and ignores stale effect results. Targeted Web 3 files / 16 tests, typecheck and scoped oxlint passed; controller OAuth targeted tests passed. Full immutable release gates and production acceptance pending. No schema/configuration changes.
+
 - 2026-09-26T00:34:00+08:00 | Codex | SaaS 工作区第二版平台 Web 已上线 `platform-3dd54dce7d6e-6bb123720edc`，发布源码 `3dd54dce7d6ed058783097de8ff4257b075032ef`，二进制 SHA256 `45871808bc64fb6b9b6afee1d7c95ba6b06d60f09839b3b99377d9474ce86a48`。部署工具回报 active/healthy/public_healthy 且运行哈希一致，官网与 AI 站静态资源和 CSS 哈希已核对；真实员工登录后的平台表单操作尚未验收。发布记录组件分支待推送。
 
 - 2026-09-26T00:06:00+08:00 | Codex | 2026-09-25 的 OpenFox 第一版 UI 已上线：`platform-8925057cb3c1-8aab7915fcb0`，二进制 SHA256 `dcd0d8258b7af6003f4af6b74cb9a440d7dceb77037d349bf1f4f0664ca7cec9`，平台部署工具状态 active/healthy/public_healthy 且运行哈希相等。新 SaaS 布局候选 `732755f40` 已快进合入本地 `main`，待推送与根 gitlink 更新；当前生产尚未包含该候选。
@@ -614,3 +617,8 @@
 - 已完成：`central-account-sign-in.tsx` 重写为跳转启动器——挂载即经 `/api/account/sso/start` 取授权 URL（responseMode 留空即标准 redirect），校验为 `https`/回环、路径 `/v1/oauth/authorize`、无 `response_mode` 后整页 `assign`；显式登出标记抑制自动跳转、保留「前往账号中心」按钮；`reauth` 强制重登与 60 秒防环机制保留。`central-sso.ts` 删除 `finishCentralSSOResult`、`cancelCentralSSO` 与 `responseMode:'json'` 硬编码；回调页 `/account/callback` 与换码端点不变。`user-auth-form.tsx` 删除中央模式专用 `passwordOnly`/`onPasswordSubmit`/`forgotPasswordUrl`，恢复上游原生形态（`account_auth_enabled=false` 自用模式不受影响）；删除 `user-auth-form-central.test.tsx`。后端 `CentralAccountSSOStart` 的 responseMode 白名单收紧为 空 或 `web_message`，拒绝 `json`。i18n 七语言新增「正在跳转账号中心」一条，复用既有「前往账号中心」「使用 OpenFox 账号登录」，`i18nsync` missing/extras 为 0。
 - 验证：`bun run typecheck` 通过；全量 Vitest 164 文件 1814/1814 通过（重写 `central-account-sign-in.test.tsx` 覆盖自动跳转、reauth、登出抑制、非法授权 URL 拒绝）；改动文件 oxlint 0 error、oxfmt 通过；`bun run build` 成功；`go test ./controller/...` 通过。与账号中心、工作台联调：`test-account-federation-local.py` 14 场景全过（两客户端均走 302 redirect 换码）；真实浏览器验收——AI 站 `/sign-in` 自动跳账号中心登录页（continue 带完整授权参数）、登录后经授权回跳进入管理员控制台、显式登出后停留登录页不被自动拉回且重登需重新输密。
 - 未完成 / 限制：未部署生产；按 D25 发布顺序 platform+console 先行、account 后发（删除 json 模式与登录 CORS）即可零中断。`central-sso-callback.tsx` 的 oxlint `set-state-in-effect` 为改动前既有基线问题，未在本轮范围。
+
+### 2026-10-02T13:38:43+08:00 | Codex | OAuth callback re-entry repair
+
+- 2026-10-02T13:38:43+08:00 | Codex | OAuth callback re-entry repair。
+  - Branch `codex/oauth-quality-20261002`, baseline `37e93d7e`. Independent review found overlapping callback handlers consuming PKCE twice. Added a failing regression first, then shared only the in-flight exchange; settled callbacks still reject replay. Callback UI derives incomplete errors and ignores stale effect results. Targeted Web 3 files / 16 tests, typecheck and scoped oxlint passed; controller OAuth targeted tests passed. Full immutable release gates and production acceptance pending. No schema/configuration changes.

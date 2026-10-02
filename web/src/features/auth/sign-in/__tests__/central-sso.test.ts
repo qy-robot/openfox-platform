@@ -73,6 +73,33 @@ describe('central account SSO callback', () => {
     expect(api.post).not.toHaveBeenCalled()
   })
 
+  it('exchanges the same callback once across overlapping effects and rejects a later replay', async () => {
+    const { isAuthBundle } = await import('@/lib/api')
+    sessionStorage.setItem(
+      'robocoding:account-sso',
+      JSON.stringify({
+        verifier: 'verifier',
+        state: 'expected',
+        returnTo: '/dashboard',
+      })
+    )
+    vi.mocked(api.post).mockResolvedValue({
+      data: { data: { access_token: 'token' } },
+    })
+    vi.mocked(isAuthBundle).mockReturnValue(true)
+
+    const first = finishCentralSSO('one-time-code', 'expected')
+    const second = finishCentralSSO('one-time-code', 'expected')
+    await expect(Promise.all([first, second])).resolves.toEqual([
+      '/dashboard',
+      '/dashboard',
+    ])
+    expect(api.post).toHaveBeenCalledTimes(1)
+    await expect(finishCentralSSO('one-time-code', 'expected')).rejects.toThrow(
+      'missing or expired'
+    )
+  })
+
   it('rejects protocol-relative and cross-origin return locations', () => {
     expect(resolveCentralSSOReturnTo('//evil.example')).toBe('/dashboard')
     expect(resolveCentralSSOReturnTo('https://evil.example/account')).toBe(

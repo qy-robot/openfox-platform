@@ -23,22 +23,34 @@ export function CentralSSOCallback(props: { code?: string; state?: string }) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!props.code || !props.state) {
-      setError(t('The account callback is incomplete.'))
-      return
-    }
+    if (!props.code || !props.state) return
+    let active = true
     void finishCentralSSO(props.code, props.state)
-      .then((returnTo) => navigate({ href: returnTo, replace: true }))
-      .catch((reason) =>
-        setError(
-          getServerErrorMessage(reason, t('Unable to finish account sign in'))
-        )
-      )
+      .then((returnTo) => {
+        if (active) return navigate({ href: returnTo, replace: true })
+      })
+      .catch((reason) => {
+        if (active) {
+          setError(
+            getServerErrorMessage(reason, t('Unable to finish account sign in'))
+          )
+        }
+      })
+    return () => {
+      active = false
+    }
   }, [navigate, props.code, props.state, t])
 
-  if (error) {
+  const callbackError =
+    !props.code || !props.state
+      ? t('The account callback is incomplete.')
+      : error
+  if (callbackError) {
     return (
-      <ErrorState title={t('Account sign in failed')} description={error} />
+      <ErrorState
+        title={t('Account sign in failed')}
+        description={callbackError}
+      />
     )
   }
   return <LoadingState message={t('Finishing account sign in...')} />

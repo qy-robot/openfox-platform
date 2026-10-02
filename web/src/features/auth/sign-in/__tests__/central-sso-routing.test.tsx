@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-router'
 import { cleanup, render, screen } from '@testing-library/react'
 import type { AxiosAdapter } from 'axios'
+import { StrictMode } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 
@@ -103,7 +104,11 @@ it('keeps the exchanged token while routing from the callback to the workbench',
     }),
   })
 
-  render(<RouterProvider router={router} />)
+  render(
+    <StrictMode>
+      <RouterProvider router={router} />
+    </StrictMode>
+  )
 
   expect(await screen.findByText('Workbench destination')).toBeVisible()
   expect(router.state.location.href).toBe('/workbench/skills?draft=1')
