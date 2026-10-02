@@ -24,7 +24,13 @@ import {
   createRouter,
   RouterProvider,
 } from '@tanstack/react-router'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -138,11 +144,11 @@ describe('public header layout', () => {
       await screen.findByRole('dialog', { name: 'Sign in required' })
     ).toBeVisible()
     expect(trigger).toHaveAttribute('aria-expanded', 'false')
-    expect(document.body.style.overflow).toBe('')
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(
       screen.queryByRole('dialog', { name: 'Sign in required' })
     ).toBeNull()
+    await waitFor(() => expect(document.body.style.overflow).toBe(''))
   })
   it('renders a static full-width top bar without the floating capsule scroll state', async () => {
     const { container } = await renderHeader()
