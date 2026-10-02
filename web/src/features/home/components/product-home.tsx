@@ -60,23 +60,112 @@ export function ProductHome(props: { isAuthenticated: boolean }) {
       <section className='openfox-hero'>
         <div className='openfox-hero-shell'>
           <div className='openfox-hero-copy'>
-            <h1>{t('把模型接好，')}<em>{t('把事情做完。')}</em></h1>
-            <p className='openfox-hero-lede'>{t('把代码、模型、机器人技能和项目放在一起，专注把机器人跑起来。')}</p>
-            <div className='openfox-hero-actions'><Button className='openfox-button-primary' render={<Link to={consolePath} />}>{t('进入工作台')}<ArrowRight aria-hidden='true' /></Button><Button variant='outline' className='openfox-button-secondary' render={<Link to='/pricing' />}>{t('查看方案')}<ChevronRight aria-hidden='true' /></Button></div>
+            <h1>
+              {t('把模型接好，')}
+              <em>{t('把事情做完。')}</em>
+            </h1>
+            <p className='openfox-hero-lede'>
+              {t(
+                '把代码、模型、机器人技能和项目放在一起，专注把机器人跑起来。'
+              )}
+            </p>
+            <div className='openfox-hero-actions'>
+              <Button
+                className='openfox-button-primary'
+                render={<Link to={consolePath} />}
+              >
+                {t('进入工作台')}
+                <ArrowRight aria-hidden='true' />
+              </Button>
+              <Button
+                variant='outline'
+                className='openfox-button-secondary'
+                render={<Link to='/pricing' />}
+              >
+                {t('查看方案')}
+                <ChevronRight aria-hidden='true' />
+              </Button>
+            </div>
           </div>
           <div className='openfox-model-shelf' aria-label={t('机器人项目预览')}>
-            <div className='openfox-model-cards'>{roboticsCards.map(({ title, description, icon: Icon }, index) => <article key={title} className={`openfox-model-card${index === 0 ? ' is-featured' : ''}`}><span className={`openfox-model-icon model-dot-${index}`} aria-hidden='true'><Icon /></span><h3>{t(title)}</h3><p>{t(description)}</p></article>)}</div>
+            <div className='openfox-model-cards'>
+              {roboticsCards.map(
+                ({ title, description, icon: Icon }, index) => (
+                  <article
+                    key={title}
+                    className={`openfox-model-card${index === 0 ? ' is-featured' : ''}`}
+                  >
+                    <span
+                      className={`openfox-model-icon model-dot-${index}`}
+                      aria-hidden='true'
+                    >
+                      <Icon />
+                    </span>
+                    <h3>{t(title)}</h3>
+                    <p>{t(description)}</p>
+                  </article>
+                )
+              )}
+            </div>
           </div>
         </div>
         <div className='openfox-hero-grid' aria-hidden='true' />
       </section>
 
-      <section className='openfox-proof'><div className='openfox-proof-inner'><span>{t('适合')}</span><div className='openfox-proof-logos'><b>{t('产品团队')}</b><b>{t('机器人实验室')}</b><b>{t('AI 开发者')}</b><b>{t('平台工程师')}</b></div></div></section>
+      <section className='openfox-proof'>
+        <div className='openfox-proof-inner'>
+          <span>{t('适合')}</span>
+          <div className='openfox-proof-logos'>
+            <b>{t('产品团队')}</b>
+            <b>{t('机器人实验室')}</b>
+            <b>{t('AI 开发者')}</b>
+            <b>{t('平台工程师')}</b>
+          </div>
+        </div>
+      </section>
 
-      <section className='openfox-capabilities' aria-labelledby='openfox-capabilities-title'><div className='openfox-section-intro'><h2 id='openfox-capabilities-title'>{t('少一点折腾，')}<br /><em>{t('多一点进展。')}</em></h2><p>{t('把模型、技能和协作放在同一个地方。')}</p></div><div className='openfox-capability-list'>{capabilities.map(({ number, icon: Icon }, index) => <article key={number} className='openfox-capability'><span className='openfox-capability-number'>{number}</span><div className='openfox-capability-icon'><Icon aria-hidden='true' /></div><div><h3>{t(capabilityCopy[index][0])}</h3><p>{t(capabilityCopy[index][1])}</p></div><ArrowRight aria-hidden='true' /></article>)}</div></section>
+      <section
+        className='openfox-capabilities'
+        aria-labelledby='openfox-capabilities-title'
+      >
+        <div className='openfox-section-intro'>
+          <h2 id='openfox-capabilities-title'>
+            {t('少一点折腾，')}
+            <br />
+            <em>{t('多一点进展。')}</em>
+          </h2>
+          <p>{t('把模型、技能和协作放在同一个地方。')}</p>
+        </div>
+        <div className='openfox-capability-list'>
+          {capabilities.map(({ number, icon: Icon }, index) => (
+            <article key={number} className='openfox-capability'>
+              <span className='openfox-capability-number'>{number}</span>
+              <div className='openfox-capability-icon'>
+                <Icon aria-hidden='true' />
+              </div>
+              <div>
+                <h3>{t(capabilityCopy[index][0])}</h3>
+                <p>{t(capabilityCopy[index][1])}</p>
+              </div>
+              <ArrowRight aria-hidden='true' />
+            </article>
+          ))}
+        </div>
+      </section>
 
-
-      <section className='openfox-cta'><div className='openfox-cta-mark'><Sparkles aria-hidden='true' /></div><h2>{t('现在就开始。')}</h2><p>{t('把手上的项目接进来，先跑起来。')}</p><Button className='openfox-button-primary' render={<Link to={consolePath} />}>{t('进入 OpenFox')} <ArrowRight aria-hidden='true' /></Button></section>
+      <section className='openfox-cta'>
+        <div className='openfox-cta-mark'>
+          <Sparkles aria-hidden='true' />
+        </div>
+        <h2>{t('现在就开始。')}</h2>
+        <p>{t('把手上的项目接进来，先跑起来。')}</p>
+        <Button
+          className='openfox-button-primary'
+          render={<Link to={consolePath} />}
+        >
+          {t('进入 OpenFox')} <ArrowRight aria-hidden='true' />
+        </Button>
+      </section>
     </main>
   )
 }

@@ -67,7 +67,7 @@ export function SystemBrand(props: SystemBrandProps) {
             className='size-full object-contain'
           />
         </div>
-        <span className='max-w-[12rem] truncate text-lg font-semibold tracking-[-0.04em]'>
+        <span className='hidden max-w-[10rem] truncate text-base font-semibold tracking-tight sm:inline'>
           {name}
         </span>
       </Link>

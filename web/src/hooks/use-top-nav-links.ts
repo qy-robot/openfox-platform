@@ -21,7 +21,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useStatus } from '@/hooks/use-status'
 import { parseHeaderNavModulesFromStatus } from '@/lib/nav-modules'
-import { AI_STATION_URL, CONSOLE_URL } from '@/lib/product-links'
+import { CONSOLE_URL } from '@/lib/product-links'
 import { useAuthStore } from '@/stores/auth-store'
 
 export type TopNavLink = {
@@ -78,12 +78,6 @@ export function useTopNavLinks(): TopNavLink[] {
   links.push({
     title: t('Workbench'),
     href: CONSOLE_URL,
-    external: true,
-  })
-
-  links.push({
-    title: t('AI Station'),
-    href: AI_STATION_URL,
     external: true,
   })
 

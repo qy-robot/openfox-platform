@@ -25,6 +25,7 @@ import {
   useState,
 } from 'react'
 
+import { useStatus } from '@/hooks/use-status'
 import { getCookie, removeCookie, setCookie } from '@/lib/cookies'
 import {
   CONTENT_LAYOUT_VALUES,
@@ -68,6 +69,7 @@ function applyAttribute(name: string, value: string | null) {
 type ThemeCustomizationContextType = {
   defaults: ThemeCustomization
   customization: ThemeCustomization
+  isPresetLocked: boolean
   setPreset: (preset: ThemePreset) => void
   setFont: (font: ThemeFont) => void
   setRadius: (radius: ThemeRadius) => void
@@ -83,6 +85,7 @@ type ThemeCustomizationContextType = {
 const FALLBACK_CONTEXT: ThemeCustomizationContextType = {
   defaults: DEFAULT_THEME_CUSTOMIZATION,
   customization: DEFAULT_THEME_CUSTOMIZATION,
+  isPresetLocked: false,
   setPreset: () => {},
   setFont: () => {},
   setRadius: () => {},
@@ -97,6 +100,8 @@ const ThemeCustomizationContext =
 export function ThemeCustomizationProvider(props: {
   children: React.ReactNode
 }) {
+  const { status } = useStatus()
+  const isPresetLocked = status?.account_auth_enabled === true
   const [preset, _setPreset] = useState<ThemePreset>(() =>
     readCookie<ThemePreset>(
       THEME_COOKIE_KEYS.preset,
@@ -133,14 +138,20 @@ export function ThemeCustomizationProvider(props: {
     )
   )
 
+  const effectivePreset = isPresetLocked
+    ? DEFAULT_THEME_CUSTOMIZATION.preset
+    : preset
+
   // Mirror state to the <body> via data-* attributes so theme-presets.css can
   // override CSS variables at the right cascade layer.
   useEffect(() => {
     applyAttribute(
       'data-theme-preset',
-      preset === DEFAULT_THEME_CUSTOMIZATION.preset ? null : preset
+      effectivePreset === DEFAULT_THEME_CUSTOMIZATION.preset
+        ? null
+        : effectivePreset
     )
-  }, [preset])
+  }, [effectivePreset])
 
   // Font is the one axis where we resolve before writing the attribute:
   // the persisted preference may be `default`, but CSS works in terms of
@@ -149,8 +160,8 @@ export function ThemeCustomizationProvider(props: {
   // stylesheet to one simple `[data-theme-font='serif']` selector and lets
   // future presets opt into typography via `PRESET_DEFAULT_FONT` alone.
   useEffect(() => {
-    applyAttribute('data-theme-font', resolveThemeFont(font, preset))
-  }, [font, preset])
+    applyAttribute('data-theme-font', resolveThemeFont(font, effectivePreset))
+  }, [font, effectivePreset])
 
   useEffect(() => {
     applyAttribute(
@@ -170,14 +181,18 @@ export function ThemeCustomizationProvider(props: {
     applyAttribute('data-theme-content-layout', contentLayout)
   }, [contentLayout])
 
-  const setPreset = useCallback((value: ThemePreset) => {
-    _setPreset(value)
-    if (value === DEFAULT_THEME_CUSTOMIZATION.preset) {
-      removeCookie(THEME_COOKIE_KEYS.preset)
-    } else {
-      setCookie(THEME_COOKIE_KEYS.preset, value, COOKIE_MAX_AGE)
-    }
-  }, [])
+  const setPreset = useCallback(
+    (value: ThemePreset) => {
+      if (isPresetLocked) return
+      _setPreset(value)
+      if (value === DEFAULT_THEME_CUSTOMIZATION.preset) {
+        removeCookie(THEME_COOKIE_KEYS.preset)
+      } else {
+        setCookie(THEME_COOKIE_KEYS.preset, value, COOKIE_MAX_AGE)
+      }
+    },
+    [isPresetLocked]
+  )
 
   const setFont = useCallback((value: ThemeFont) => {
     _setFont(value)
@@ -216,17 +231,25 @@ export function ThemeCustomizationProvider(props: {
   }, [])
 
   const resetCustomization = useCallback(() => {
-    setPreset(DEFAULT_THEME_CUSTOMIZATION.preset)
+    _setPreset(DEFAULT_THEME_CUSTOMIZATION.preset)
+    removeCookie(THEME_COOKIE_KEYS.preset)
     setFont(DEFAULT_THEME_CUSTOMIZATION.font)
     setRadius(DEFAULT_THEME_CUSTOMIZATION.radius)
     setScale(DEFAULT_THEME_CUSTOMIZATION.scale)
     setContentLayout(DEFAULT_THEME_CUSTOMIZATION.contentLayout)
-  }, [setPreset, setFont, setRadius, setScale, setContentLayout])
+  }, [setFont, setRadius, setScale, setContentLayout])
 
   const value = useMemo<ThemeCustomizationContextType>(
     () => ({
       defaults: DEFAULT_THEME_CUSTOMIZATION,
-      customization: { preset, font, radius, scale, contentLayout },
+      customization: {
+        preset: effectivePreset,
+        font,
+        radius,
+        scale,
+        contentLayout,
+      },
+      isPresetLocked,
       setPreset,
       setFont,
       setRadius,
@@ -235,7 +258,8 @@ export function ThemeCustomizationProvider(props: {
       resetCustomization,
     }),
     [
-      preset,
+      effectivePreset,
+      isPresetLocked,
       font,
       radius,
       scale,

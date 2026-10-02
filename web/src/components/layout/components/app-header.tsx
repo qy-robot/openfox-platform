@@ -112,7 +112,7 @@ export function AppHeader({
 
   return (
     <Header>
-      <div className='@container/system-brand flex min-w-0 flex-1 items-center gap-1'>
+      <div className='@container/system-brand flex min-w-0 shrink-0 items-center gap-1 sm:min-w-40'>
         <SystemBrand variant='inline' />
       </div>
 
@@ -120,13 +120,14 @@ export function AppHeader({
         <div className='ms-2 flex items-center'>{leftContent}</div>
       ) : null}
 
+      {showTopNav && rightContent == null && (
+        <div className='flex min-w-0 flex-1 items-center justify-start lg:justify-center'>
+          <TopNav links={links} />
+        </div>
+      )}
+
       {rightContent ?? (
         <div className='ms-auto flex shrink-0 items-center gap-1 sm:gap-2'>
-          {showTopNav && (
-            <div className='me-1 hidden lg:block'>
-              <TopNav links={links} />
-            </div>
-          )}
           {showSearch && (
             <Search className='w-8 flex-none [&>span]:hidden sm:[&>span]:inline' />
           )}

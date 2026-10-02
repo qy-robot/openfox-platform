@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 /* Navigation and content retain their existing behavior. */
 .openfox-app-header {
-  background: color-mix(in srgb, var(--card) 96%, var(--secondary));
+  background: var(--card);
 }
 
 .openfox-sidebar-content [data-slot='sidebar-menu-button'] {
@@ -83,9 +83,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
 
 .openfox-auth-scene {
-  background:
-    radial-gradient(circle at 14% 80%, #ffffffaa 0, transparent 38%),
-    linear-gradient(145deg, #e8f4f8 0%, #f1f9fb 56%, #e3f1f6 100%);
+  background: var(--secondary);
 }
 
 .openfox-auth-layout [data-slot='form-label'],
@@ -106,7 +104,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   width: min(72vw, 52rem);
   height: 32rem;
   transform: rotate(-24deg);
-  border: 1.5px solid #a9d0e1;
+  border: 1.5px solid var(--input);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -120,16 +118,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   opacity: 0.84;
   mix-blend-mode: multiply;
   pointer-events: none;
-}
-
-.dark .openfox-auth-scene {
-  background:
-    radial-gradient(circle at 14% 80%, #284763 0, transparent 38%),
-    linear-gradient(145deg, #19364d 0%, #122c42 100%);
-}
-
-.dark .openfox-auth-arc {
-  border-color: #3d647c;
 }
 
 .dark .openfox-auth-mark {

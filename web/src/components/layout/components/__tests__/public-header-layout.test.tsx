@@ -24,7 +24,8 @@ import {
   createRouter,
   RouterProvider,
 } from '@tanstack/react-router'
-import { cleanup, render } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { api } from '@/lib/api'
@@ -33,6 +34,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { PublicHeader } from '../public-header'
 
 beforeEach(() => {
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
   vi.stubGlobal('localStorage', {
     getItem: () => null,
     setItem: () => undefined,
@@ -50,11 +52,12 @@ afterEach(() => {
   useAuthStore.getState().auth.reset()
 })
 
-async function renderHeader() {
+async function renderHeader(status: Record<string, unknown> = {}) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
-  client.setQueryData(['status'], {})
+  client.setQueryData(['status'], status)
+  client.setQueryData(['notice'], { success: true, data: '' })
 
   function Probe() {
     return <PublicHeader />
@@ -79,6 +82,68 @@ async function renderHeader() {
 }
 
 describe('public header layout', () => {
+  it('identifies the current page in desktop and mobile navigation', async () => {
+    await renderHeader()
+    const homeLinks = screen.getAllByRole('link', {
+      name: 'Home',
+      hidden: true,
+    })
+    expect(homeLinks).toHaveLength(2)
+    for (const link of homeLinks) {
+      expect(link).toHaveAttribute('aria-current', 'page')
+    }
+  })
+
+  it('opens the mobile navigation and restores scrolling when a link closes it', async () => {
+    const user = userEvent.setup()
+    await renderHeader()
+    const trigger = screen.getByRole('button', {
+      name: 'Toggle navigation menu',
+    })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    await user.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    expect(document.body.style.overflow).toBe('hidden')
+    const mobile = document.querySelector<HTMLElement>(
+      '#public-mobile-navigation'
+    )
+    if (!mobile) {
+      throw new Error('Mobile navigation missing')
+    }
+    expect(mobile).toHaveAttribute('aria-hidden', 'false')
+    await user.click(within(mobile).getByRole('link', { name: 'Home' }))
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    expect(document.body.style.overflow).toBe('')
+  })
+
+  it('keeps a protected mobile destination behind the existing sign-in prompt', async () => {
+    const user = userEvent.setup()
+    await renderHeader({
+      HeaderNavModules: JSON.stringify({
+        pricing: { enabled: true, requireAuth: true },
+      }),
+    })
+    const trigger = screen.getByRole('button', {
+      name: 'Toggle navigation menu',
+    })
+    await user.click(trigger)
+    const mobile = document.querySelector<HTMLElement>(
+      '#public-mobile-navigation'
+    )
+    if (!mobile) {
+      throw new Error('Mobile navigation missing')
+    }
+    await user.click(within(mobile).getByRole('link', { name: 'Model Square' }))
+    expect(
+      await screen.findByRole('dialog', { name: 'Sign in required' })
+    ).toBeVisible()
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    expect(document.body.style.overflow).toBe('')
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(
+      screen.queryByRole('dialog', { name: 'Sign in required' })
+    ).toBeNull()
+  })
   it('renders a static full-width top bar without the floating capsule scroll state', async () => {
     const { container } = await renderHeader()
 

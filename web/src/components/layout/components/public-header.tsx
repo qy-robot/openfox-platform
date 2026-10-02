@@ -26,6 +26,7 @@ import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useSystemConfig } from '@/hooks/use-system-config'
@@ -111,7 +112,7 @@ export function PublicHeader(props: PublicHeaderProps) {
   let authContent = (
     <Button
       size='sm'
-      className='h-10 rounded-lg px-3.5 text-base font-medium'
+      className='h-9 rounded-lg px-4 text-sm font-semibold'
       render={<Link to='/sign-in' />}
     >
       {t('Sign in')}
@@ -192,14 +193,14 @@ export function PublicHeader(props: PublicHeaderProps) {
     <>
       <header className='robo-public-header pointer-events-none fixed inset-x-0 top-0 z-50'>
         <div className='robo-public-header-inner pointer-events-auto'>
-          <nav className='robo-public-nav flex items-center justify-between gap-2'>
+          <nav className='robo-public-nav flex items-center justify-between gap-3'>
             {/* Logo */}
-            <div className='@container/system-brand flex min-w-0 flex-1 items-center gap-1 lg:min-w-36'>
+            <div className='@container/system-brand flex min-w-0 flex-1 items-center gap-1 lg:min-w-36 lg:flex-none'>
               <Link
                 to={homeUrl}
-                className='group flex min-w-0 items-center gap-2.5'
+                className='group focus-visible:ring-ring flex min-w-0 items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2'
               >
-                <div className='flex size-7 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
+                <div className='border-border bg-card flex size-8 shrink-0 items-center justify-center rounded-lg border p-0.5'>
                   {logoContent}
                 </div>
                 <span
@@ -216,7 +217,7 @@ export function PublicHeader(props: PublicHeaderProps) {
             </div>
 
             {/* Desktop nav */}
-            <div className='hidden min-w-0 items-center gap-0.5 lg:flex'>
+            <div className='hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex'>
               {links.map((link) => {
                 const isActive = pathname === link.href
                 if (link.external) {
@@ -231,7 +232,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                       tabIndex={link.disabled ? -1 : undefined}
                       onClick={(event) => handleNavLinkClick(event, link)}
                       className={cn(
-                        'text-muted-foreground hover:text-foreground min-w-0 truncate rounded-lg px-3 py-1.5 text-base font-medium transition-colors duration-200',
+                        'text-muted-foreground hover:bg-accent hover:text-accent-foreground min-w-0 truncate rounded-lg px-2.5 py-2 text-sm font-medium transition-colors',
                         link.disabled && 'pointer-events-none opacity-50'
                       )}
                     >
@@ -245,12 +246,13 @@ export function PublicHeader(props: PublicHeaderProps) {
                     to={link.href}
                     title={t(link.title)}
                     disabled={link.disabled}
+                    aria-current={isActive ? 'page' : undefined}
                     onClick={(event) => handleNavLinkClick(event, link)}
                     className={cn(
-                      'min-w-0 truncate rounded-lg px-3 py-1.5 text-base font-medium transition-colors duration-200',
+                      'hover:bg-accent hover:text-accent-foreground min-w-0 truncate rounded-lg px-2.5 py-2 text-sm font-medium transition-colors',
                       isActive
-                        ? 'text-foreground'
-                        : 'text-muted-foreground hover:text-foreground',
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground',
                       link.disabled && 'pointer-events-none opacity-50'
                     )}
                   >
@@ -258,13 +260,9 @@ export function PublicHeader(props: PublicHeaderProps) {
                   </Link>
                 )
               })}
+            </div>
 
-              {(showLanguageSwitcher ||
-                showThemeSwitch ||
-                showNotifications) && (
-                <div className='bg-border/40 mx-2 h-4 w-px' />
-              )}
-
+            <div className='hidden shrink-0 items-center gap-1 lg:flex'>
               {showLanguageSwitcher && <LanguageSwitcher />}
               {showThemeSwitch && <ThemeSwitch />}
               {showNotifications && (
@@ -282,7 +280,7 @@ export function PublicHeader(props: PublicHeaderProps) {
 
               {showAuthButtons && (
                 <>
-                  <div className='bg-border/40 mx-1 h-4 w-px' />
+                  <Separator orientation='vertical' className='mx-2 h-5' />
                   {authContent}
                 </>
               )}
@@ -379,6 +377,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                   key={`${link.title}:${link.href}`}
                   to={link.href}
                   disabled={link.disabled}
+                  aria-current={isActive ? 'page' : undefined}
                   onClick={(event) => handleNavLinkClick(event, link, true)}
                   className={linkClassName}
                   style={transitionStyle}
@@ -399,13 +398,15 @@ export function PublicHeader(props: PublicHeaderProps) {
             style={{ transitionDelay: mobileOpen ? '250ms' : '0ms' }}
           >
             {showAuthButtons && (
-              <Link
-                to={isAuthenticated ? '/dashboard' : '/sign-in'}
+              <Button
+                render={
+                  <Link to={isAuthenticated ? '/dashboard' : '/sign-in'} />
+                }
                 onClick={() => setMobileOpen(false)}
-                className='bg-foreground text-background inline-flex h-10 items-center justify-center rounded-lg text-base font-medium transition-opacity hover:opacity-90 active:opacity-80'
+                className='h-11 w-full rounded-lg text-base font-semibold'
               >
                 {isAuthenticated ? t('Go to Dashboard') : t('Sign in')}
-              </Link>
+              </Button>
             )}
           </div>
         </div>

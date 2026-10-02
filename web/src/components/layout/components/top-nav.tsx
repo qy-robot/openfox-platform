@@ -16,14 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link } from '@tanstack/react-router'
+import { Link, useRouterState } from '@tanstack/react-router'
 import { Menu } from 'lucide-react'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -40,16 +42,24 @@ type TopNavProps = React.HTMLAttributes<HTMLElement> & {
  * 在大屏幕显示水平导航，在小屏幕显示下拉菜单
  */
 export function TopNav({ className, links, ...props }: TopNavProps) {
+  const { t } = useTranslation()
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
   // 规范化链接，确保所有可选属性都有默认值
   const normalizedLinks = useMemo(
     () =>
       links.map((link) => ({
-        isActive: false,
         disabled: false,
         external: false,
         ...link,
+        isActive:
+          link.isActive ??
+          (!link.external &&
+            (pathname === link.href ||
+              (link.href !== '/' && pathname.startsWith(`${link.href}/`)))),
       })),
-    [links]
+    [links, pathname]
   )
 
   return (
@@ -58,6 +68,7 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
       <div className='lg:hidden'>
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger
+            aria-label={t('Toggle navigation menu')}
             render={
               <Button
                 size='icon'
@@ -69,34 +80,50 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
             <Menu />
           </DropdownMenuTrigger>
           <DropdownMenuContent side='bottom' align='start'>
-            {normalizedLinks.map(
-              ({ title, href, isActive, disabled, external }) => (
-                <DropdownMenuItem
-                  key={`${title}-${href}`}
-                  className='py-2 text-base'
-                  render={
-                    external ? (
-                      <a
-                        href={href}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className={!isActive ? 'text-muted-foreground' : ''}
+            <DropdownMenuGroup>
+              {normalizedLinks.map(
+                ({ title, href, isActive, disabled, external }) => {
+                  if (disabled) {
+                    return (
+                      <DropdownMenuItem
+                        key={`${title}-${href}`}
+                        disabled
+                        className='py-2 text-sm'
                       >
                         {title}
-                      </a>
-                    ) : (
-                      <Link
-                        to={href}
-                        className={!isActive ? 'text-muted-foreground' : ''}
-                        disabled={disabled}
-                      >
-                        {title}
-                      </Link>
+                      </DropdownMenuItem>
                     )
                   }
-                />
-              )
-            )}
+                  return (
+                    <DropdownMenuItem
+                      key={`${title}-${href}`}
+                      className='py-2 text-sm'
+                      render={
+                        external ? (
+                          <a
+                            href={href}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            aria-current={isActive ? 'page' : undefined}
+                            className={!isActive ? 'text-muted-foreground' : ''}
+                          >
+                            {title}
+                          </a>
+                        ) : (
+                          <Link
+                            to={href}
+                            className={!isActive ? 'text-muted-foreground' : ''}
+                            aria-current={isActive ? 'page' : undefined}
+                          >
+                            {title}
+                          </Link>
+                        )
+                      }
+                    />
+                  )
+                }
+              )}
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -113,7 +140,16 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
               href={href}
               target='_blank'
               rel='noopener noreferrer'
-              className={`hover:bg-accent hover:text-accent-foreground rounded-xl px-3 py-2 text-base font-medium transition-colors ${isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}
+              aria-current={isActive ? 'page' : undefined}
+              aria-disabled={disabled || undefined}
+              tabIndex={disabled ? -1 : undefined}
+              className={cn(
+                'hover:bg-accent hover:text-accent-foreground rounded-lg px-2.5 py-2 text-sm font-medium whitespace-nowrap transition-colors',
+                isActive
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground',
+                disabled && 'pointer-events-none opacity-50'
+              )}
             >
               {title}
             </a>
@@ -122,7 +158,14 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
               key={`${title}-${href}`}
               to={href}
               disabled={disabled}
-              className={`hover:bg-accent hover:text-accent-foreground rounded-xl px-3 py-2 text-base font-medium transition-colors ${isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}
+              aria-current={isActive ? 'page' : undefined}
+              className={cn(
+                'hover:bg-accent hover:text-accent-foreground rounded-lg px-2.5 py-2 text-sm font-medium whitespace-nowrap transition-colors',
+                isActive
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground',
+                disabled && 'opacity-50'
+              )}
             >
               {title}
             </Link>

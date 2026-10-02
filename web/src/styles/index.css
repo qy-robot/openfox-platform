@@ -30,6 +30,7 @@ For commercial licensing, please contact support@quantumnous.com
 @import './theme.css';
 @import './theme-presets.css';
 @import './openfox.css';
+@import './openfox-home.css';
 
 /* Shiki dual themes: token colors follow dark theme (pre background stays `bg-background` on the block) */
 @layer components {
@@ -570,7 +571,6 @@ For commercial licensing, please contact support@quantumnous.com
   [data-slot='table'] tr {
     transition: background-color 120ms ease;
   }
-
 }
 
 /* Tabular numbers for data-heavy contexts */
@@ -687,433 +687,20 @@ For commercial licensing, please contact support@quantumnous.com
   }
 }
 
-/* OpenFox public product surface: editorial, high-contrast, and calm. */
-.robo-home {
-  --robo-ink: #111111;
-  --robo-paper: #f7f7f5;
-  --robo-line: color-mix(in srgb, var(--foreground) 13%, transparent);
-  background: var(--robo-paper);
-  color: var(--robo-ink);
-}
-
-.dark .robo-home {
-  --robo-ink: #f4f4f0;
-  --robo-paper: #111111;
-  --robo-line: color-mix(in srgb, var(--foreground) 17%, transparent);
-}
-
-.robo-home-hero {
-  position: relative;
-  isolation: isolate;
-  min-height: min(860px, 100svh);
-  overflow: hidden;
-  border-bottom: 1px solid var(--robo-line);
-}
-
-.robo-home-hero-inner {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  width: min(100% - 3rem, 1100px);
-  min-height: min(860px, 100svh);
-  margin: 0 auto;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 8rem 0 7rem;
-  text-align: center;
-}
-
-.robo-home-hero-glow {
-  position: absolute;
-  z-index: -1;
-  top: 19%;
-  left: 50%;
-  width: min(72vw, 900px);
-  height: min(55vw, 620px);
-  transform: translateX(-50%);
-  background: radial-gradient(ellipse, color-mix(in srgb, #b9abff 23%, transparent), transparent 68%);
-  filter: blur(24px);
-  opacity: 0.78;
-  pointer-events: none;
-}
-
-.robo-home-kicker,
-.robo-home-eyebrow {
-  color: color-mix(in srgb, var(--robo-ink) 55%, transparent);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.robo-home-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  margin-bottom: 1.65rem;
-}
-
-.robo-home-kicker-mark {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 999px;
-  background: #6d5ce7;
-  box-shadow: 0 0 0 0.28rem color-mix(in srgb, #6d5ce7 14%, transparent);
-}
-
-.robo-home-hero h1 {
-  max-width: 900px;
-  margin: 0;
-  font-size: clamp(3.5rem, 8vw, 7rem);
-  font-weight: 500;
-  letter-spacing: -0.075em;
-  line-height: 0.98;
-}
-
-.robo-home-hero h1 em {
-  color: #6d5ce7;
-  font-style: normal;
-}
-
-.robo-home-lede {
-  max-width: 35rem;
-  margin: 2rem auto 0;
-  color: color-mix(in srgb, var(--robo-ink) 62%, transparent);
-  font-size: 1.05rem;
-  line-height: 1.85;
-}
-
-.robo-home-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-top: 2rem;
-}
-
-.robo-home-primary-action,
-.robo-home-secondary-action,
-.robo-home-cta-action {
-  height: 3rem;
-  border-radius: 999px;
-  padding: 0 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.robo-home-primary-action {
-  background: var(--robo-ink);
-  color: var(--robo-paper);
-}
-
-.robo-home-primary-action:hover,
-.robo-home-cta-action:hover {
-  background: color-mix(in srgb, var(--robo-ink) 82%, #6d5ce7);
-}
-
-.robo-home-secondary-action {
-  border-color: var(--robo-line);
-  background: color-mix(in srgb, var(--robo-paper) 72%, transparent);
-  color: var(--robo-ink);
-}
-
-.robo-home-hero-note {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.55rem;
-  margin-top: 1.5rem;
-  color: color-mix(in srgb, var(--robo-ink) 42%, transparent);
-  font-size: 0.72rem;
-}
-
-.robo-home-orbit {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: -1;
-  width: min(100vw, 1000px);
-  height: min(100vw, 1000px);
-  transform: translate(-50%, -50%) rotate(-12deg);
-  border: 1px solid color-mix(in srgb, #6d5ce7 14%, transparent);
-  border-radius: 50%;
-  opacity: 0.75;
-}
-
-.robo-home-orbit::before,
-.robo-home-orbit::after {
-  position: absolute;
-  inset: 8%;
-  border: 1px solid color-mix(in srgb, #6d5ce7 10%, transparent);
-  border-radius: 50%;
-  content: '';
-}
-
-.robo-home-orbit::after {
-  inset: 23%;
-}
-
-.robo-home-orbit-core {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 7rem;
-  height: 7rem;
-  transform: translate(-50%, -50%);
-  border: 1px solid color-mix(in srgb, #6d5ce7 32%, transparent);
-  border-radius: 50%;
-  background: color-mix(in srgb, #6d5ce7 7%, transparent);
-  box-shadow: 0 0 5rem color-mix(in srgb, #6d5ce7 17%, transparent);
-}
-
-.robo-home-orbit-line {
-  position: absolute;
-  left: 50%;
-  width: 1px;
-  height: 100%;
-  background: color-mix(in srgb, #6d5ce7 10%, transparent);
-}
-
-.robo-home-orbit-line-one { transform: rotate(60deg); }
-.robo-home-orbit-line-two { transform: rotate(-60deg); }
-
-.robo-home-orbit-dot {
-  position: absolute;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: #6d5ce7;
-  box-shadow: 0 0 1rem color-mix(in srgb, #6d5ce7 80%, transparent);
-}
-
-.robo-home-orbit-dot-one { top: 16%; left: 23%; }
-.robo-home-orbit-dot-two { right: 14%; bottom: 22%; }
-
-.robo-home-highlights,
-.robo-home-workflow {
-  width: min(100% - 3rem, 1100px);
-  margin: 0 auto;
-}
-
-.robo-home-highlights {
-  padding: 7rem 0 8rem;
-}
-
-.robo-home-section-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 2rem;
-  margin-bottom: 3rem;
-}
-
-.robo-home-section-heading h2,
-.robo-home-workflow h2,
-.robo-home-cta h2 {
-  margin: 0;
-  font-size: clamp(2.2rem, 4vw, 4.2rem);
-  font-weight: 500;
-  letter-spacing: -0.065em;
-  line-height: 1;
-  text-wrap: balance;
-}
-
-.robo-home-highlight-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  border-top: 1px solid var(--robo-line);
-}
-
-.robo-home-highlight {
-  position: relative;
-  min-height: 19rem;
-  padding: 1.5rem 1.5rem 2rem 0;
-  border-right: 1px solid var(--robo-line);
-}
-
-.robo-home-highlight + .robo-home-highlight { padding-left: 1.5rem; }
-.robo-home-highlight:last-child { border-right: 0; }
-
-.robo-home-highlight-topline {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: color-mix(in srgb, var(--robo-ink) 48%, transparent);
-  font-size: 0.75rem;
-}
-
-.robo-home-highlight-topline svg { width: 1rem; height: 1rem; }
-
-.robo-home-highlight h3 {
-  margin-top: 4.5rem;
-  font-size: 1.2rem;
-  font-weight: 600;
-  letter-spacing: -0.025em;
-}
-
-.robo-home-highlight p {
-  max-width: 17rem;
-  margin-top: 0.75rem;
-  color: color-mix(in srgb, var(--robo-ink) 57%, transparent);
-  font-size: 0.9rem;
-  line-height: 1.7;
-}
-
-.robo-home-highlight-arrow {
-  position: absolute;
-  right: 1.5rem;
-  bottom: 1.5rem;
-  color: #6d5ce7;
-}
-
-.robo-home-highlight-arrow svg { width: 1rem; height: 1rem; }
-
-.robo-home-workflow {
-  display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: 6rem;
-  padding: 0 0 9rem;
-}
-
-.robo-home-workflow-intro > p:not(.robo-home-eyebrow) {
-  max-width: 23rem;
-  margin-top: 1.5rem;
-  color: color-mix(in srgb, var(--robo-ink) 57%, transparent);
-  font-size: 0.95rem;
-  line-height: 1.8;
-}
-
-.robo-home-text-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  margin-top: 1.5rem;
-  color: var(--robo-ink);
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.robo-home-text-link:hover { color: #6d5ce7; }
-.robo-home-text-link svg { width: 1rem; height: 1rem; }
-
-.robo-home-workflow-list { border-top: 1px solid var(--robo-line); }
-
-.robo-home-workflow-step {
-  display: grid;
-  grid-template-columns: 3.25rem 1fr 1rem;
-  align-items: start;
-  gap: 1rem;
-  padding: 1.4rem 0;
-  border-bottom: 1px solid var(--robo-line);
-}
-
-.robo-home-step-number {
-  color: #6d5ce7;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.robo-home-workflow-step h3 { font-size: 1rem; font-weight: 600; }
-.robo-home-workflow-step p {
-  margin-top: 0.4rem;
-  color: color-mix(in srgb, var(--robo-ink) 55%, transparent);
-  font-size: 0.875rem;
-  line-height: 1.7;
-}
-
-.robo-home-workflow-step > svg { width: 1rem; height: 1rem; color: #6d5ce7; }
-
-.robo-home-cta {
-  position: relative;
-  min-height: 32rem;
-  overflow: hidden;
-  background: #101010;
-  color: #f7f7f5;
-}
-
-.robo-home-cta-grid {
-  position: absolute;
-  inset: 0;
-  opacity: 0.6;
-  background-image: linear-gradient(color-mix(in srgb, #fff 7%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, #fff 7%, transparent) 1px, transparent 1px);
-  background-position: center;
-  background-size: 8rem 8rem;
-  mask-image: radial-gradient(ellipse at center, black 5%, transparent 70%);
-}
-
-.robo-home-cta-content {
-  position: relative;
-  display: flex;
-  min-height: 32rem;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 5rem 1.5rem;
-  text-align: center;
-}
-
-.robo-home-cta-mark {
-  display: grid;
-  width: 3.75rem;
-  height: 3.75rem;
-  place-items: center;
-  margin-bottom: 1.75rem;
-  border: 1px solid color-mix(in srgb, #fff 22%, transparent);
-  border-radius: 50%;
-  color: #fff;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.robo-home-cta h2 { max-width: 40rem; }
-.robo-home-cta p { margin-top: 1rem; color: color-mix(in srgb, #fff 65%, transparent); }
-
-.robo-home--cjk .robo-home-hero h1 {
-  max-width: 720px;
-  font-size: clamp(2.4rem, 4.5vw, 4rem);
-  letter-spacing: -0.045em;
-  line-height: 1.22;
-  text-wrap: balance;
-}
-
-.robo-home--cjk .robo-home-section-heading h2,
-.robo-home--cjk .robo-home-workflow h2,
-.robo-home--cjk .robo-home-cta h2 {
-  font-size: clamp(1.8rem, 2.8vw, 2.7rem);
-  letter-spacing: -0.045em;
-  line-height: 1.24;
-  word-break: keep-all;
-  text-wrap: balance;
-}
-
-@media (min-width: 768px) {
-  .robo-home--cjk .robo-home-workflow h2 {
-    white-space: nowrap;
-  }
-}
-
-.robo-home--cjk .robo-home-highlight h3,
-.robo-home--cjk .robo-home-workflow-step h3 {
-  letter-spacing: -0.035em;
-}
-
 .robo-public-layout {
-  --robo-public-ink: #111;
-  --robo-public-paper: #f7f7f5;
-  --robo-public-line: color-mix(in srgb, var(--robo-public-ink) 13%, transparent);
+  --robo-public-ink: var(--foreground);
+  --robo-public-paper: var(--background);
+  --robo-public-line: color-mix(
+    in srgb,
+    var(--robo-public-ink) 13%,
+    transparent
+  );
   background: var(--robo-public-paper);
   color: var(--robo-public-ink);
 }
 
-.dark .robo-public-layout {
-  --robo-public-ink: #f4f4f0;
-  --robo-public-paper: #111;
-  --robo-public-line: color-mix(in srgb, var(--robo-public-ink) 17%, transparent);
-}
-
 /* The public header is a standard full-width top bar: flush to the top edge,
-   hairline bottom border, translucent paper surface; geometry never changes
+   hairline bottom border, white panel surface; geometry never changes
    on scroll. */
 .robo-public-header-inner {
   width: 100%;
@@ -1121,13 +708,13 @@ For commercial licensing, please contact support@quantumnous.com
   border: 0;
   border-bottom: 1px solid var(--robo-public-line);
   border-radius: 0;
-  background: color-mix(in srgb, var(--robo-public-paper) 86%, transparent);
+  background: var(--card);
   box-shadow: none;
-  backdrop-filter: blur(14px) saturate(1.1);
+  backdrop-filter: none;
 }
 
 .robo-public-nav {
-  min-height: 3.5rem;
+  min-height: var(--app-header-height);
   padding: 0 1rem;
   border: 0;
   background: transparent;
@@ -1141,35 +728,14 @@ For commercial licensing, please contact support@quantumnous.com
   }
 }
 
-.robo-public-header .text-muted-foreground {
-  color: color-mix(in srgb, var(--robo-public-ink) 52%, transparent);
-}
-
-.robo-public-header a:hover,
-.robo-public-header button:hover {
-  color: var(--robo-public-ink);
-}
-
-.robo-public-header [data-slot='button'][data-size='sm'] {
-  height: 2.25rem;
-  border-radius: 999px;
-  background: var(--robo-public-ink);
-  color: var(--robo-public-paper);
-}
-
 .robo-public-layout > main:not(.robo-home):not(.robo-download) {
   color: var(--robo-public-ink);
 }
 
 .robo-public-layout [data-slot='card'] {
   border-color: var(--robo-public-line);
-  border-radius: 0.25rem;
-  background: color-mix(in srgb, var(--robo-public-paper) 88%, var(--robo-public-ink));
-  box-shadow: none;
-}
-
-.robo-public-layout [data-slot='button']:not([data-variant='ghost']) {
-  border-radius: 999px;
+  border-radius: var(--radius);
+  background: var(--card);
   box-shadow: none;
 }
 
@@ -1180,35 +746,30 @@ For commercial licensing, please contact support@quantumnous.com
 }
 
 .robo-public-footer .text-muted-foreground {
-  color: color-mix(in srgb, var(--robo-public-ink) 55%, transparent);
+  color: var(--muted-foreground);
 }
 
 .robo-public-footer a:hover {
-  color: #6d5ce7;
+  color: var(--primary);
 }
 
-.robo-home-cta-action {
-  margin-top: 2rem;
-  background: #fff;
-  color: #101010;
+.robo-footer {
+  background: var(--background) !important;
 }
-
-.robo-footer { background: var(--robo-paper) !important; }
 
 .robo-download {
-  --robo-download-paper: var(--robo-paper, #f7f7f5);
-  --robo-download-ink: var(--robo-ink, #111);
+  --robo-download-paper: var(--background);
+  --robo-download-ink: var(--foreground);
   background: var(--robo-download-paper);
   color: var(--robo-download-ink);
 }
-
-.dark .robo-download { --robo-download-paper: #111; --robo-download-ink: #f7f7f5; }
 
 .robo-download-hero {
   position: relative;
   min-height: 35rem;
   overflow: hidden;
-  border-bottom: 1px solid color-mix(in srgb, var(--robo-download-ink) 13%, transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--robo-download-ink) 13%, transparent);
 }
 
 .robo-download-hero-inner {
@@ -1229,7 +790,16 @@ For commercial licensing, please contact support@quantumnous.com
   position: absolute;
   inset: 0;
   opacity: 0.55;
-  background-image: linear-gradient(color-mix(in srgb, var(--robo-download-ink) 6%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--robo-download-ink) 6%, transparent) 1px, transparent 1px);
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--robo-download-ink) 6%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--robo-download-ink) 6%, transparent) 1px,
+      transparent 1px
+    );
   background-position: center;
   background-size: 8rem 8rem;
   mask-image: radial-gradient(ellipse at center, black 8%, transparent 72%);
@@ -1242,7 +812,11 @@ For commercial licensing, please contact support@quantumnous.com
   width: min(70vw, 850px);
   height: 22rem;
   transform: translateX(-50%);
-  background: radial-gradient(ellipse, color-mix(in srgb, #b9abff 20%, transparent), transparent 70%);
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--primary) 12%, transparent),
+    transparent 70%
+  );
   content: '';
   filter: blur(26px);
 }
@@ -1256,8 +830,17 @@ For commercial licensing, please contact support@quantumnous.com
   text-transform: uppercase;
 }
 
-.robo-download-kicker { display: inline-flex; align-items: center; gap: 0.55rem; }
-.robo-download-kicker span { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: #6d5ce7; }
+.robo-download-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.robo-download-kicker span {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--primary);
+}
 
 .robo-download-hero h1 {
   margin: 1.5rem 0 0;
@@ -1267,8 +850,16 @@ For commercial licensing, please contact support@quantumnous.com
   line-height: 0.98;
 }
 
-.robo-download-hero h1 em { color: #6d5ce7; font-style: normal; }
-.robo-download-lede { max-width: 30rem; margin-top: 1.75rem; color: color-mix(in srgb, var(--robo-download-ink) 58%, transparent); line-height: 1.8; }
+.robo-download-hero h1 em {
+  color: var(--primary);
+  font-style: normal;
+}
+.robo-download-lede {
+  max-width: 30rem;
+  margin-top: 1.75rem;
+  color: color-mix(in srgb, var(--robo-download-ink) 58%, transparent);
+  line-height: 1.8;
+}
 
 .robo-download-hero-meta {
   display: flex;
@@ -1279,7 +870,10 @@ For commercial licensing, please contact support@quantumnous.com
   font-size: 0.8rem;
 }
 
-.robo-download-hero-meta strong { color: var(--robo-download-ink); font-weight: 600; }
+.robo-download-hero-meta strong {
+  color: var(--robo-download-ink);
+  font-weight: 600;
+}
 
 .robo-download-builds,
 .robo-download-release {
@@ -1287,7 +881,9 @@ For commercial licensing, please contact support@quantumnous.com
   margin: 0 auto;
 }
 
-.robo-download-builds { padding: 7rem 0 8rem; }
+.robo-download-builds {
+  padding: 7rem 0 8rem;
+}
 
 .robo-download-section-heading {
   display: flex;
@@ -1307,30 +903,75 @@ For commercial licensing, please contact support@quantumnous.com
   line-height: 1;
 }
 
-.robo-download-section-heading > p { max-width: 16rem; color: color-mix(in srgb, var(--robo-download-ink) 52%, transparent); font-size: 0.9rem; line-height: 1.7; }
-.robo-download-card-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid color-mix(in srgb, var(--robo-download-ink) 14%, transparent); }
+.robo-download-section-heading > p {
+  max-width: 16rem;
+  color: color-mix(in srgb, var(--robo-download-ink) 52%, transparent);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.robo-download-card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid
+    color-mix(in srgb, var(--robo-download-ink) 14%, transparent);
+}
 
 .robo-download-card {
   min-height: 22rem;
   border: 0;
-  border-right: 1px solid color-mix(in srgb, var(--robo-download-ink) 14%, transparent);
+  border-right: 1px solid
+    color-mix(in srgb, var(--robo-download-ink) 14%, transparent);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
   transition: background 220ms ease;
 }
 
-.robo-download-card:hover { background: color-mix(in srgb, #6d5ce7 5%, transparent); }
-.robo-download-card:last-child { border-right: 0; }
-.robo-download-card-line { background: #6d5ce7; opacity: 0.65; }
-.robo-download-card-header { padding: 1.5rem 1.25rem 0; }
-.robo-download-platform-icon { border: 1px solid color-mix(in srgb, var(--robo-download-ink) 16%, transparent); border-radius: 50%; color: #6d5ce7; }
-.robo-download-card [data-slot='card-content'] { padding: 1.25rem; }
-.robo-download-card [data-slot='card-title'] { margin-top: 0.4rem; font-weight: 600; }
-.robo-download-card [data-slot='badge'] { border-radius: 999px; background: color-mix(in srgb, #6d5ce7 12%, transparent); color: #6d5ce7; }
-.robo-download-card-action { border-radius: 999px; background: var(--robo-download-ink); color: var(--robo-download-paper); }
-.robo-download-card-action:hover { background: #6d5ce7; }
-.robo-download-error, .robo-download-loading { border-top: 1px solid color-mix(in srgb, var(--robo-download-ink) 14%, transparent); color: color-mix(in srgb, var(--robo-download-ink) 58%, transparent); }
+.robo-download-card:hover {
+  background: color-mix(in srgb, var(--primary) 5%, transparent);
+}
+.robo-download-card:last-child {
+  border-right: 0;
+}
+.robo-download-card-line {
+  background: var(--primary);
+  opacity: 0.65;
+}
+.robo-download-card-header {
+  padding: 1.5rem 1.25rem 0;
+}
+.robo-download-platform-icon {
+  border: 1px solid
+    color-mix(in srgb, var(--robo-download-ink) 16%, transparent);
+  border-radius: 50%;
+  color: var(--primary);
+}
+.robo-download-card [data-slot='card-content'] {
+  padding: 1.25rem;
+}
+.robo-download-card [data-slot='card-title'] {
+  margin-top: 0.4rem;
+  font-weight: 600;
+}
+.robo-download-card [data-slot='badge'] {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+.robo-download-card-action {
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.robo-download-card-action:hover {
+  background: var(--primary);
+}
+.robo-download-error,
+.robo-download-loading {
+  border-top: 1px solid
+    color-mix(in srgb, var(--robo-download-ink) 14%, transparent);
+  color: color-mix(in srgb, var(--robo-download-ink) 58%, transparent);
+}
 
 .robo-download-release {
   display: grid;
@@ -1339,294 +980,183 @@ For commercial licensing, please contact support@quantumnous.com
   padding: 0 0 8rem;
 }
 
-.robo-download-release-copy > p { max-width: 28rem; margin-top: 1.25rem; color: color-mix(in srgb, var(--robo-download-ink) 57%, transparent); line-height: 1.8; }
-.robo-download-release-copy > a { display: inline-flex; align-items: center; gap: 0.45rem; margin-top: 1.5rem; color: var(--robo-download-ink); font-size: 0.875rem; font-weight: 600; }
-.robo-download-release-copy > a:hover { color: #6d5ce7; }
-.robo-download-release-copy > a svg { width: 1rem; height: 1rem; }
-.robo-download-changelog { padding: 0 0 1.5rem; border-bottom: 1px solid color-mix(in srgb, var(--robo-download-ink) 14%, transparent); }
-.robo-download-changelog h2 { margin-bottom: 0.65rem; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
-.robo-download-changelog p { color: color-mix(in srgb, var(--robo-download-ink) 57%, transparent); line-height: 1.8; }
+.robo-download-release-copy > p {
+  max-width: 28rem;
+  margin-top: 1.25rem;
+  color: color-mix(in srgb, var(--robo-download-ink) 57%, transparent);
+  line-height: 1.8;
+}
+.robo-download-release-copy > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 1.5rem;
+  color: var(--robo-download-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.robo-download-release-copy > a:hover {
+  color: var(--primary);
+}
+.robo-download-release-copy > a svg {
+  width: 1rem;
+  height: 1rem;
+}
+.robo-download-changelog {
+  padding: 0 0 1.5rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--robo-download-ink) 14%, transparent);
+}
+.robo-download-changelog h2 {
+  margin-bottom: 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.robo-download-changelog p {
+  color: color-mix(in srgb, var(--robo-download-ink) 57%, transparent);
+  line-height: 1.8;
+}
 
-.robo-download-cta { position: relative; display: flex; min-height: 24rem; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; background: #101010; color: #f7f7f5; text-align: center; }
-.robo-download-cta-glow { position: absolute; width: 30rem; height: 18rem; border-radius: 50%; background: color-mix(in srgb, #6d5ce7 28%, transparent); filter: blur(80px); }
-.robo-download-cta > svg { position: relative; width: 1.5rem; height: 1.5rem; color: #6d5ce7; }
-.robo-download-cta h2, .robo-download-cta p { position: relative; }
-.robo-download-cta p { margin-top: 0.75rem; color: color-mix(in srgb, #fff 62%, transparent); }
+.robo-download-cta {
+  position: relative;
+  display: flex;
+  min-height: 24rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--card);
+  color: var(--foreground);
+  text-align: center;
+}
+.robo-download-cta-glow {
+  position: absolute;
+  width: 30rem;
+  height: 18rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 28%, transparent);
+  filter: blur(80px);
+}
+.robo-download-cta > svg {
+  position: relative;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--primary);
+}
+.robo-download-cta h2,
+.robo-download-cta p {
+  position: relative;
+}
+.robo-download-cta p {
+  margin-top: 0.75rem;
+  color: var(--muted-foreground);
+}
 
 @media (max-width: 900px) {
-  .robo-download-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .robo-download-card:nth-child(2) { border-right: 0; }
-  .robo-download-card:nth-child(-n + 2) { border-bottom: 1px solid color-mix(in srgb, var(--robo-download-ink) 14%, transparent); }
-}
-
-@media (max-width: 767px) {
-  .robo-download-hero-inner, .robo-download-builds, .robo-download-release { width: min(100% - 2rem, 1100px); }
-  .robo-download-hero h1 { font-size: clamp(3.3rem, 16vw, 5.2rem); }
-  .robo-download-section-heading { display: block; }
-  .robo-download-section-heading > p { margin-top: 1.25rem; }
-  .robo-download-builds { padding: 5rem 0 6rem; }
-  .robo-download-card-grid { grid-template-columns: 1fr; }
-  .robo-download-card, .robo-download-card:nth-child(2) { border-right: 0; border-bottom: 1px solid color-mix(in srgb, var(--robo-download-ink) 14%, transparent); }
-  .robo-download-card:last-child { border-bottom: 0; }
-  .robo-download-release { display: block; padding-bottom: 6rem; }
-  .robo-download-release-copy { margin-top: 2.5rem; }
-}
-
-@media (max-width: 767px) {
-  .robo-home-hero-inner,
-  .robo-home-highlights,
-  .robo-home-workflow { width: min(100% - 2rem, 1100px); }
-  .robo-home-hero-inner { padding-top: 7rem; }
-  .robo-home-hero h1 { font-size: clamp(3.3rem, 16vw, 5.2rem); }
-  .robo-home-lede { font-size: 0.95rem; }
-  .robo-home-section-heading { display: block; }
-  .robo-home-section-heading h2 { margin-top: 1rem; }
-  .robo-home-highlights { padding: 5rem 0 6rem; }
-  .robo-home-highlight-grid { grid-template-columns: 1fr; }
-  .robo-home-highlight,
-  .robo-home-highlight + .robo-home-highlight {
-    min-height: 15rem;
-    padding: 1.25rem 0;
-    border-right: 0;
-    border-bottom: 1px solid var(--robo-line);
+  .robo-download-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .robo-home-highlight:last-child { border-bottom: 0; }
-  .robo-home-highlight h3 { margin-top: 2.5rem; }
-  .robo-home-workflow { display: block; padding-bottom: 6rem; }
-  .robo-home-workflow-list { margin-top: 3rem; }
-  .robo-home-hero-note { max-width: 17rem; }
+  .robo-download-card:nth-child(2) {
+    border-right: 0;
+  }
+  .robo-download-card:nth-child(-n + 2) {
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--robo-download-ink) 14%, transparent);
+  }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .robo-home-orbit { transform: translate(-50%, -50%); }
+@media (max-width: 767px) {
+  .robo-download-hero-inner,
+  .robo-download-builds,
+  .robo-download-release {
+    width: min(100% - 2rem, 1100px);
+  }
+  .robo-download-hero h1 {
+    font-size: clamp(3.3rem, 16vw, 5.2rem);
+  }
+  .robo-download-section-heading {
+    display: block;
+  }
+  .robo-download-section-heading > p {
+    margin-top: 1.25rem;
+  }
+  .robo-download-builds {
+    padding: 5rem 0 6rem;
+  }
+  .robo-download-card-grid {
+    grid-template-columns: 1fr;
+  }
+  .robo-download-card,
+  .robo-download-card:nth-child(2) {
+    border-right: 0;
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--robo-download-ink) 14%, transparent);
+  }
+  .robo-download-card:last-child {
+    border-bottom: 0;
+  }
+  .robo-download-release {
+    display: block;
+    padding-bottom: 6rem;
+  }
+  .robo-download-release-copy {
+    margin-top: 2.5rem;
+  }
 }
-
-/* The public surface uses a quiet blue-white palette. Keep the existing orbit
- * and glow motion, but remove the black/purple emphasis from the first pass. */
-.robo-home,
-.robo-download {
-  --robo-accent: #3b82f6;
-  --robo-ink: #10233f;
-  --robo-paper: #f7fbff;
-  --robo-download-ink: #10233f;
-  --robo-download-paper: #f7fbff;
-  background: var(--robo-paper);
-  color: var(--robo-ink);
-}
-
-.dark .robo-home,
-.dark .robo-download {
-  --robo-ink: #e7f2ff;
-  --robo-paper: #0d1b2a;
-  --robo-download-ink: #e7f2ff;
-  --robo-download-paper: #0d1b2a;
-}
-
-.robo-home-hero-glow,
-.robo-download-hero::after {
-  background: radial-gradient(ellipse, color-mix(in srgb, #8fc7ff 28%, transparent), transparent 70%);
-}
-
-.robo-home-kicker-mark,
-.robo-home-orbit-dot,
-.robo-download-kicker span {
-  background: var(--robo-accent);
-}
-
-.robo-home-hero h1 em,
-.robo-home-highlight-arrow,
-.robo-home-step-number,
-.robo-home-workflow-step > svg,
-.robo-home-text-link:hover,
-.robo-download-hero h1 em,
-.robo-download-platform-icon,
-.robo-download-cta > svg,
-.robo-download-release-copy > a:hover {
-  color: var(--robo-accent);
-}
-
-.robo-home-orbit,
-.robo-home-orbit::before,
-.robo-home-orbit::after,
-.robo-home-orbit-core {
-  border-color: color-mix(in srgb, var(--robo-accent) 25%, transparent);
-}
-
-.robo-home-orbit-line {
-  background: color-mix(in srgb, var(--robo-accent) 14%, transparent);
-}
-
-.robo-home-primary-action:hover,
-.robo-home-cta-action:hover,
-.robo-download-card-action:hover {
-  background: var(--robo-accent);
-}
-
-.robo-home-cta,
-.robo-download-cta {
-  background: #12315a;
-  color: #f7fbff;
-}
-
-.robo-download-card:hover {
-  background: color-mix(in srgb, var(--robo-accent) 6%, transparent);
-}
-
-.robo-download-card-line {
-  background: var(--robo-accent);
-}
-
-.robo-download-card [data-slot='badge'] {
-  background: color-mix(in srgb, var(--robo-accent) 12%, transparent);
-  color: var(--robo-accent);
-}
-
-.robo-download-cta-glow {
-  background: color-mix(in srgb, var(--robo-accent) 30%, transparent);
-}
-
-.robo-auth-layout {
-  background: #fff;
-  color: #10233f;
-}
-
-.robo-auth-layout aside {
-  background:
-    radial-gradient(circle at 75% 25%, rgb(143 199 255 / 38%), transparent 35%),
-    #eef7ff;
-}
-
-.robo-auth-layout .text-primary,
-.robo-auth-layout a:hover {
-  color: #2f76dc;
-}
-
-.robo-auth-layout input,
-.robo-auth-layout [data-slot='input'] {
-  border-color: #cfe2f8;
-  background: #fbfdff;
-}
-
-.robo-auth-layout [data-slot='button']:not([data-variant='ghost']) {
-  border-radius: 999px;
-  background: #2f76dc;
-  color: #fff;
-  box-shadow: none;
-}
-
-.dark .robo-auth-layout {
-  background: #0d1b2a;
-  color: #e7f2ff;
-}
-
-.dark .robo-auth-layout aside {
-  background: #102842;
-}
-
-/* OpenFox SaaS landing surface: evidence-led, restrained, and product-first. */
-.openfox-home { --fox-ink: #132235; --fox-muted: #5d6b7d; --fox-line: #dce5ee; --fox-paper: #f7faff; --fox-blue: #2563eb; background: var(--fox-paper); color: var(--fox-ink); }
-.dark .openfox-home { --fox-ink: #edf5ff; --fox-muted: #9eafc3; --fox-line: #24374c; --fox-paper: #0b1522; --fox-blue: #68a0ff; }
-.openfox-hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--fox-line); }
-.openfox-hero-shell { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, .9fr) minmax(34rem, 1.1fr); gap: clamp(2rem, 5vw, 6rem); align-items: center; width: min(100% - 3rem, 1240px); min-height: 680px; margin: 0 auto; padding: 8rem 0 5rem; }
-.openfox-hero-grid { position: absolute; inset: 0; opacity: .55; background-image: linear-gradient(color-mix(in srgb, var(--fox-ink) 5%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--fox-ink) 5%, transparent) 1px, transparent 1px); background-size: 5rem 5rem; mask-image: radial-gradient(ellipse 70% 75% at 62% 45%, black 15%, transparent 80%); }
-.openfox-hero-copy { position: relative; z-index: 2; }
-.openfox-hero h1 { max-width: 630px; margin: 1.4rem 0 1.5rem; font-size: clamp(3.4rem, 6.7vw, 6.6rem); font-weight: 550; letter-spacing: -.075em; line-height: .96; }
-.openfox-hero h1 em, .openfox-section-intro h2 em { color: var(--fox-blue); font-style: normal; }
-.openfox-hero-lede { max-width: 490px; color: var(--fox-muted); font-size: 1.08rem; line-height: 1.75; }
-.openfox-hero-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
-.openfox-button-primary, .openfox-button-secondary { min-height: 3rem; border-radius: .5rem; padding: 0 1.25rem; font-size: 1rem; font-weight: 650; }
-.openfox-button-primary { background: var(--fox-ink); color: var(--fox-paper); }
-.openfox-button-primary:hover { background: var(--fox-blue); }
-.openfox-button-secondary { border-color: var(--fox-line); color: var(--fox-ink); }
-.openfox-button-primary svg, .openfox-button-secondary svg { width: 1rem; height: 1rem; }
-.openfox-product-card { position: relative; z-index: 2; overflow: hidden; border: 1px solid color-mix(in srgb, var(--fox-ink) 16%, transparent); border-radius: .9rem; background: color-mix(in srgb, var(--fox-paper) 89%, #fff); box-shadow: 0 28px 80px rgb(30 79 124 / 16%), 0 6px 20px rgb(30 79 124 / 8%); transform: perspective(1400px) rotateY(-4deg) rotateX(2deg); }
-.dark .openfox-product-card { background: #101f31; box-shadow: 0 28px 80px rgb(0 0 0 / 32%); }
-.openfox-product-card-topbar { display: flex; align-items: center; gap: .8rem; height: 2.9rem; padding: 0 .95rem; border-bottom: 1px solid var(--fox-line); color: var(--fox-muted); font-size: .68rem; }
-.openfox-window-dots { display: flex; gap: .3rem; margin-right: auto; }.openfox-window-dots i { width: .42rem; height: .42rem; border-radius: 50%; background: #cad4df; }.openfox-window-dots i:first-child { background: #f18b7c; }.openfox-window-dots i:nth-child(2) { background: #e5bd67; }.openfox-window-dots i:nth-child(3) { background: #72c693; }
-.openfox-live-label { display: flex; align-items: center; gap: .32rem; color: #2c9562; font-weight: 700; }.openfox-live-label span, .openfox-status-pill span { width: .36rem; height: .36rem; border-radius: 50%; background: currentColor; }
-.openfox-product-card-body { display: grid; grid-template-columns: 8.6rem 1fr; min-height: 365px; }.openfox-product-sidebar { padding: 1.05rem .65rem; border-right: 1px solid var(--fox-line); }.openfox-sidebar-brand { display: flex; align-items: center; gap: .42rem; margin: 0 .45rem 1.4rem; font-size: .72rem; font-weight: 700; }.openfox-sidebar-brand img { width: 1.2rem; height: 1.2rem; }.openfox-sidebar-item { display: flex; align-items: center; gap: .5rem; margin: .22rem 0; padding: .58rem .48rem; border-radius: .35rem; color: var(--fox-muted); font-size: .68rem; }.openfox-sidebar-item svg { width: .85rem; height: .85rem; }.openfox-sidebar-item.is-active { background: color-mix(in srgb, var(--fox-blue) 10%, transparent); color: var(--fox-blue); font-weight: 650; }
-.openfox-product-main { min-width: 0; padding: 1.2rem 1.2rem 1rem; }.openfox-product-heading { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }.openfox-product-kicker { color: var(--fox-muted); font-size: .54rem; font-weight: 700; letter-spacing: .12em; }.openfox-product-heading h2 { margin-top: .25rem; font-size: 1.15rem; letter-spacing: -.03em; }.openfox-status-pill { display: inline-flex; align-items: center; gap: .35rem; color: #2c9562; font-size: .62rem; font-weight: 700; }.openfox-metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .55rem; margin-top: 1.25rem; }.openfox-metric-grid > div { padding: .68rem; border: 1px solid var(--fox-line); border-radius: .4rem; }.openfox-metric-grid span, .openfox-metric-grid small { display: block; color: var(--fox-muted); font-size: .54rem; }.openfox-metric-grid strong { display: block; margin: .38rem 0 .16rem; font-size: .95rem; letter-spacing: -.03em; }.openfox-metric-grid small { color: #2c9562; }.openfox-chart-card { margin-top: .65rem; padding: .8rem; border: 1px solid var(--fox-line); border-radius: .4rem; }.openfox-chart-title, .openfox-chart-axis { display: flex; justify-content: space-between; color: var(--fox-muted); font-size: .55rem; }.openfox-chart-title span:first-child { color: var(--fox-ink); font-weight: 700; }.openfox-chart { display: flex; align-items: end; gap: .42rem; height: 94px; margin: .8rem 0 .45rem; padding: 0 .25rem; border-bottom: 1px solid var(--fox-line); background: repeating-linear-gradient(to bottom, transparent 0, transparent 30px, color-mix(in srgb, var(--fox-line) 65%, transparent) 31px); }.openfox-chart span { flex: 1; min-width: .25rem; border-radius: .18rem .18rem 0 0; background: linear-gradient(180deg, #73a8ff, var(--fox-blue)); }.openfox-chart span:nth-child(1) { height: 30%; }.openfox-chart span:nth-child(2) { height: 42%; }.openfox-chart span:nth-child(3) { height: 36%; }.openfox-chart span:nth-child(4) { height: 58%; }.openfox-chart span:nth-child(5) { height: 44%; }.openfox-chart span:nth-child(6) { height: 72%; }.openfox-chart span:nth-child(7) { height: 65%; }.openfox-chart span:nth-child(8) { height: 82%; }.openfox-chart span:nth-child(9) { height: 66%; }.openfox-chart span:nth-child(10) { height: 90%; }.openfox-chart span:nth-child(11) { height: 78%; }.openfox-chart span:nth-child(12) { height: 96%; }.openfox-model-row { display: flex; flex-wrap: wrap; gap: .35rem .8rem; margin-top: .8rem; }.openfox-model-row > span { display: flex; align-items: center; gap: .25rem; color: var(--fox-muted); font-size: .56rem; }.openfox-model-row b { color: var(--fox-ink); font-weight: 700; }.model-dot { width: .35rem; height: .35rem; border-radius: 50%; background: var(--fox-blue); }.model-dot-1 { background: #8e72df; }.model-dot-2 { background: #53b389; }.model-dot-3 { background: #df8d58; }.model-dot-4 { background: #d3aa4d; }
-.openfox-proof { border-bottom: 1px solid var(--fox-line); }.openfox-proof-inner { display: flex; align-items: center; justify-content: space-between; gap: 2rem; width: min(100% - 3rem, 1240px); margin: 0 auto; padding: 1.35rem 0; color: var(--fox-muted); font-size: .875rem; }.openfox-proof-logos { display: flex; flex-wrap: wrap; gap: 1.8rem; color: color-mix(in srgb, var(--fox-ink) 75%, transparent); font-size: 1rem; letter-spacing: -.02em; }.openfox-proof-logos b { font-weight: 650; }
-.openfox-capabilities { display: grid; grid-template-columns: .85fr 1.15fr; gap: clamp(3rem, 8vw, 9rem); width: min(100% - 3rem, 1080px); margin: 0 auto; padding: 8rem 0; }.openfox-section-intro h2 { margin: 0 0 1.2rem; font-size: clamp(2.3rem, 4vw, 4rem); font-weight: 550; letter-spacing: -.07em; line-height: 1.03; }.openfox-section-intro p { max-width: 310px; color: var(--fox-muted); font-size: 1.125rem; line-height: 1.65; }.openfox-capability-list { border-top: 1px solid var(--fox-line); }.openfox-capability { display: grid; grid-template-columns: 2rem 2.75rem 1fr 1.1rem; align-items: start; gap: 1rem; padding: 1.65rem 0; border-bottom: 1px solid var(--fox-line); }.openfox-capability-number { color: var(--fox-blue); font-size: .875rem; font-weight: 700; }.openfox-capability-icon { display: grid; width: 2.55rem; height: 2.55rem; place-items: center; border: 1px solid var(--fox-line); border-radius: .45rem; color: var(--fox-blue); }.openfox-capability-icon svg, .openfox-capability > svg { width: 1rem; height: 1rem; }.openfox-capability h3 { font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em; }.openfox-capability p { max-width: 390px; margin-top: .45rem; color: var(--fox-muted); font-size: 1rem; line-height: 1.55; }.openfox-capability > svg { align-self: center; color: var(--fox-muted); }
-.openfox-cta { display: flex; min-height: 390px; flex-direction: column; align-items: center; justify-content: center; padding: 5rem 1.5rem; background: #12315a; color: #f5faff; text-align: center; }.openfox-cta-mark { display: grid; width: 2.6rem; height: 2.6rem; place-items: center; margin-bottom: 1.35rem; border: 1px solid rgb(255 255 255 / 28%); border-radius: 50%; color: #9bc5ff; }.openfox-cta-mark svg { width: 1rem; height: 1rem; }.openfox-cta h2 { font-size: clamp(2.3rem, 5vw, 4.5rem); font-weight: 550; letter-spacing: -.07em; line-height: 1; }.openfox-cta p { margin: 1rem 0 1.8rem; color: rgb(245 250 255 / 80%); font-size: 1.125rem; }.openfox-cta .openfox-button-primary { background: #f4f9ff; color: #12315a; }.openfox-cta .openfox-button-primary:hover { background: #8fc1ff; }
-.openfox-home--cjk .openfox-hero h1, .openfox-home--cjk .openfox-section-intro h2 { letter-spacing: -.04em; line-height: 1.2; }
-@media (max-width: 900px) { .openfox-hero-shell, .openfox-capabilities { grid-template-columns: 1fr; }.openfox-hero-shell { padding-top: 7rem; }.openfox-product-card { max-width: 700px; transform: none; }.openfox-capabilities { gap: 3rem; } }
-@media (max-width: 640px) { .openfox-hero-shell, .openfox-proof-inner, .openfox-capabilities { width: min(100% - 2rem, 1080px); }.openfox-hero-shell { min-height: 0; padding: 7rem 0 3.5rem; }.openfox-hero h1 { font-size: clamp(3.25rem, 16vw, 5.2rem); }.openfox-hero-lede { font-size: .98rem; }.openfox-product-card-body { grid-template-columns: 1fr; }.openfox-product-sidebar { display: none; }.openfox-product-main { padding: 1rem; }.openfox-metric-grid { gap: .4rem; }.openfox-metric-grid strong { font-size: .8rem; }.openfox-proof-inner { display: block; padding: 1.25rem 0; }.openfox-proof-logos { gap: .8rem 1.2rem; margin-top: .8rem; }.openfox-capabilities { padding: 5rem 0; }.openfox-capability { grid-template-columns: 1.5rem 2.55rem 1fr; gap: .75rem; }.openfox-capability > svg { display: none; }.openfox-cta { min-height: 330px; } }
-
-/* The top bar is persistent and flat; no scroll-driven geometry or shadow. */
-
-/* Quiet hero composition: a smaller statement, a useful command bar, and real cards. */
-.openfox-hero-shell { display: block; min-height: 0; padding: 9rem 0 5rem; text-align: center; }
-.openfox-hero-copy { max-width: 760px; margin: 0 auto; }
-.openfox-hero h1 { max-width: none; margin: 0 0 1rem; font-size: clamp(2.15rem, 4.2vw, 4rem); letter-spacing: -.065em; line-height: 1.06; white-space: nowrap; }
-.openfox-hero-lede { max-width: 520px; margin: 0 auto; font-size: clamp(1rem, 1.7vw, 1.125rem); line-height: 1.7; }
-.openfox-hero-actions { justify-content: center; margin-top: 1.65rem; }
-.openfox-model-shelf { position: relative; z-index: 2; width: min(100%, 1060px); margin: 4.5rem auto 0; }
-.openfox-model-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem; text-align: left; }
-.openfox-model-card { min-height: 11rem; padding: 1.25rem 1.3rem 1.1rem; border: 1px solid color-mix(in srgb, var(--fox-ink) 9%, transparent); border-radius: 1rem; background: color-mix(in srgb, var(--fox-paper) 84%, #fff); box-shadow: 0 12px 32px rgb(74 107 153 / 7%); }
-.dark .openfox-model-card { background: #112238; }
-.openfox-model-icon { display: grid; width: 2rem; height: 2rem; place-items: center; margin-bottom: 1rem; border-radius: 50%; background: var(--fox-ink); color: var(--fox-paper); font-size: .9rem; font-style: normal; }
-.openfox-model-icon svg { width: 1rem; height: 1rem; }
-.openfox-model-icon.model-dot-1 { background: #7763b8; }.openfox-model-icon.model-dot-2 { background: #3d9870; }
-.openfox-model-card h3 { font-size: 1.25rem; font-weight: 700; letter-spacing: -.025em; }.openfox-model-card p { margin-top: .55rem; color: var(--fox-muted); font-size: 1rem; line-height: 1.55; }
-@media (max-width: 900px) { .openfox-model-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }.openfox-model-card { padding: 1rem; } }
-@media (max-width: 640px) { .openfox-hero-shell { padding-top: 7rem; }.openfox-hero h1 { font-size: clamp(1.75rem, 8.2vw, 3rem); line-height: 1.18; white-space: normal; }.openfox-hero h1 em { display: block; }.openfox-model-shelf { margin-top: 3rem; }.openfox-model-cards { grid-template-columns: 1fr; }.openfox-model-card { min-height: 0; }.openfox-model-card p { min-height: 0; } }
-
-/* Reference-inspired catalog styling: neutral surfaces, one clear featured card. */
-.openfox-hero h1 em { color: var(--fox-ink); }
-.openfox-hero-grid { opacity: .16; mask-image: linear-gradient(to bottom, black, transparent 78%); }
-.openfox-model-card { border-color: color-mix(in srgb, var(--fox-ink) 6%, transparent); background: color-mix(in srgb, var(--fox-paper) 86%, #fff); box-shadow: 0 10px 26px rgb(33 53 80 / 5%); }
-.openfox-model-card.is-featured { border-color: transparent; background: linear-gradient(145deg, #0daed1 0%, #2879e8 100%); color: #fff; box-shadow: 0 18px 36px rgb(25 119 208 / 18%); }
-.dark .openfox-model-card.is-featured { background: linear-gradient(145deg, #087d9d 0%, #2459b5 100%); }
-.openfox-model-card.is-featured p { color: rgb(255 255 255 / 82%); }
-.openfox-model-card.is-featured .openfox-model-icon { background: rgb(0 34 75 / 72%); }
-
-/* Restore a soft center wash while keeping the hero's grid quiet and structural. */
-.openfox-hero::before { position: absolute; inset: 0; pointer-events: none; content: ''; background: radial-gradient(ellipse 58% 54% at 50% 28%, rgb(185 215 255 / 46%), transparent 72%), radial-gradient(ellipse 44% 38% at 50% 36%, rgb(229 218 255 / 28%), transparent 76%); }
-.openfox-hero-grid { opacity: .08; }
-.dark .openfox-hero::before { background: radial-gradient(ellipse 58% 54% at 50% 28%, rgb(70 132 218 / 24%), transparent 72%), radial-gradient(ellipse 44% 38% at 50% 36%, rgb(112 91 194 / 16%), transparent 76%); }
-.dark .openfox-hero-grid { opacity: .12; }
-
-/* ----------------------------------------------------------------------------
-   Public surface restyle: one quiet blue-tinted family — a faint blue bloom at
-   the top, white hairline cards, dark icon circles, pill actions, and no
-   nested color accents. Later cascade position overrides the legacy blocks.
-   -------------------------------------------------------------------------- */
-
-/* A faint blue bloom behind the top of every public surface. */
-.robo-public-layout,
-.openfox-home,
-.robo-download {
-  background-image: radial-gradient(ellipse 85% 34rem at 50% -8rem, rgb(147 197 253 / 26%), transparent 72%);
-  background-repeat: no-repeat;
-}
-.dark .robo-public-layout,
-.dark .openfox-home,
-.dark .robo-download {
-  background-image: radial-gradient(ellipse 85% 34rem at 50% -8rem, rgb(37 99 235 / 15%), transparent 72%);
-}
-
-/* Home hero: blue-only wash, pill actions, equal cards with ink icon circles. */
-.openfox-hero::before { background: radial-gradient(ellipse 58% 54% at 50% 28%, rgb(191 219 254 / 40%), transparent 72%); }
-.dark .openfox-hero::before { background: radial-gradient(ellipse 58% 54% at 50% 28%, rgb(37 99 235 / 20%), transparent 72%); }
-.openfox-button-primary, .openfox-button-secondary { border-radius: 999px; }
-.openfox-model-icon.model-dot-1, .openfox-model-icon.model-dot-2 { background: var(--fox-ink); }
-.openfox-model-card.is-featured { border-color: color-mix(in srgb, var(--fox-blue) 26%, transparent); background: color-mix(in srgb, var(--fox-paper) 86%, #fff); color: inherit; box-shadow: 0 10px 26px rgb(33 53 80 / 5%); }
-.dark .openfox-model-card.is-featured { background: #112238; }
-.openfox-model-card.is-featured p { color: var(--fox-muted); }
-.openfox-model-card.is-featured .openfox-model-icon { background: var(--fox-ink); }
 
 /* Download hero: calmer headline scale and a version chip. */
-.robo-download-hero h1 { font-size: clamp(3.2rem, 6.5vw, 5.6rem); }
-.robo-download-hero-meta { padding: 0.45rem 1rem; border: 1px solid color-mix(in srgb, var(--robo-download-ink) 12%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--robo-download-paper) 76%, #fff); }
+.robo-download-hero h1 {
+  font-size: clamp(3.2rem, 6.5vw, 5.6rem);
+}
+.robo-download-hero-meta {
+  padding: 0.45rem 1rem;
+  border: 1px solid
+    color-mix(in srgb, var(--robo-download-ink) 12%, transparent);
+  border-radius: 999px;
+  background: var(--card);
+}
 
 /* Download cards: floating white tiles instead of a bordered table strip.
    Scope under .robo-download to out-rank the generic [data-slot='card'] skin. */
-.robo-download-card-grid { gap: 1rem; border-top: 0; }
+.robo-download-card-grid {
+  gap: 1rem;
+  border-top: 0;
+}
 .robo-download .robo-download-card,
-.robo-download .robo-download-card:last-child { min-height: 21rem; border: 1px solid color-mix(in srgb, var(--robo-download-ink) 10%, transparent); border-radius: 1rem; background: color-mix(in srgb, var(--robo-download-paper) 86%, #fff); box-shadow: 0 10px 28px rgb(30 79 124 / 6%); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
-.robo-download .robo-download-card:hover { border-color: color-mix(in srgb, var(--robo-accent) 34%, transparent); background: color-mix(in srgb, var(--robo-download-paper) 60%, #fff); transform: translateY(-2px); box-shadow: 0 16px 36px rgb(30 79 124 / 10%); }
-.robo-download-card-line { display: none; }
-.robo-download-platform-icon { border: 0; background: var(--robo-download-ink); color: var(--robo-download-paper); }
-.robo-download-card [data-slot='badge'] { border: 1px solid color-mix(in srgb, var(--robo-download-ink) 14%, transparent); background: transparent; color: color-mix(in srgb, var(--robo-download-ink) 60%, transparent); }
-.robo-download-card-availability { border-color: color-mix(in srgb, var(--robo-download-ink) 16%, transparent); }
+.robo-download .robo-download-card:last-child {
+  min-height: 21rem;
+  border: 1px solid
+    color-mix(in srgb, var(--robo-download-ink) 10%, transparent);
+  border-radius: 1rem;
+  background: var(--card);
+  box-shadow: 0 10px 28px rgb(30 79 124 / 6%);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+.robo-download .robo-download-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 34%, transparent);
+  background: var(--card);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgb(30 79 124 / 10%);
+}
+.robo-download-card-line {
+  display: none;
+}
+.robo-download-platform-icon {
+  border: 0;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.robo-download-card [data-slot='badge'] {
+  border: 1px solid
+    color-mix(in srgb, var(--robo-download-ink) 14%, transparent);
+  background: transparent;
+  color: color-mix(in srgb, var(--robo-download-ink) 60%, transparent);
+}
+.robo-download-card-availability {
+  border-color: color-mix(in srgb, var(--robo-download-ink) 16%, transparent);
+}

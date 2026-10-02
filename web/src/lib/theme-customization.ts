@@ -27,7 +27,7 @@ export const THEME_PRESETS = [
   {
     value: 'default',
     name: 'OpenFox',
-    swatches: ['#f7fbfd', '#2876b9'],
+    swatches: ['#f6f9fd', '#ffffff', '#0075de'],
   },
   {
     // Inspired by Anthropic's official brand language: warm cream canvas
@@ -88,9 +88,9 @@ export type ContentLayout = 'full' | 'centered'
  * Font axis for the theme.
  *
  * - `default` — resolve at runtime from the active preset
- *   (see `PRESET_DEFAULT_FONT`). The shipped `default` and `anthropic`
- *   presets resolve to serif; other named color presets fall back to
- *   sans unless they list a different choice. Mirrors how
+ *   (see `PRESET_DEFAULT_FONT`). The shipped `default` preset resolves to
+ *   sans and `anthropic` resolves to serif; other named color presets fall
+ *   back to sans unless they list a different choice. Mirrors how
  *   `radius: 'default'` defers to a per-preset hint.
  * - `sans` — humanist sans (Public Sans), the project's UI fallback.
  * - `serif` — editorial serif (Lora + CJK fallbacks), the project's

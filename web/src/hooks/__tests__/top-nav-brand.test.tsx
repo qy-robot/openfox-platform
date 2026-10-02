@@ -40,6 +40,12 @@ afterEach(() => {
   state.user = null
 })
 describe('product navigation', () => {
+  it('keeps home and the workbench without a redundant AI Station self link', () => {
+    const links = renderHook(useTopNavLinks).result.current
+    expect(links).toContainEqual({ title: 'Home', href: '/' })
+    expect(links.some((link) => link.title === 'Workbench')).toBe(true)
+    expect(links.some((link) => link.title === 'AI Station')).toBe(false)
+  })
   it.each([true, false])(
     'keeps the public workbench entry separate when console is %s',
     (console) => {
