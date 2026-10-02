@@ -44,7 +44,9 @@ beforeEach(() => {
   vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(
     window.innerWidth
   )
-  vi.spyOn(document.body, 'clientWidth', 'get').mockReturnValue(window.innerWidth)
+  vi.spyOn(document.body, 'clientWidth', 'get').mockReturnValue(
+    window.innerWidth
+  )
   vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
   vi.stubGlobal('localStorage', {
     getItem: () => null,
