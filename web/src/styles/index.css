@@ -823,8 +823,8 @@ For commercial licensing, please contact support@quantumnous.com
 
 .robo-download-kicker,
 .robo-download-eyebrow {
-  color: color-mix(in srgb, var(--robo-download-ink) 54%, transparent);
-  font-size: 0.72rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -857,7 +857,7 @@ For commercial licensing, please contact support@quantumnous.com
 .robo-download-lede {
   max-width: 30rem;
   margin-top: 1.75rem;
-  color: color-mix(in srgb, var(--robo-download-ink) 58%, transparent);
+  color: var(--muted-foreground);
   line-height: 1.8;
 }
 
@@ -866,8 +866,8 @@ For commercial licensing, please contact support@quantumnous.com
   align-items: center;
   gap: 0.65rem;
   margin-top: 1.75rem;
-  color: color-mix(in srgb, var(--robo-download-ink) 47%, transparent);
-  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
 }
 
 .robo-download-hero-meta strong {
@@ -905,7 +905,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 .robo-download-section-heading > p {
   max-width: 16rem;
-  color: color-mix(in srgb, var(--robo-download-ink) 52%, transparent);
+  color: var(--muted-foreground);
   font-size: 0.9rem;
   line-height: 1.7;
 }
@@ -970,7 +970,7 @@ For commercial licensing, please contact support@quantumnous.com
 .robo-download-loading {
   border-top: 1px solid
     color-mix(in srgb, var(--robo-download-ink) 14%, transparent);
-  color: color-mix(in srgb, var(--robo-download-ink) 58%, transparent);
+  color: var(--muted-foreground);
 }
 
 .robo-download-release {
@@ -983,7 +983,7 @@ For commercial licensing, please contact support@quantumnous.com
 .robo-download-release-copy > p {
   max-width: 28rem;
   margin-top: 1.25rem;
-  color: color-mix(in srgb, var(--robo-download-ink) 57%, transparent);
+  color: var(--muted-foreground);
   line-height: 1.8;
 }
 .robo-download-release-copy > a {
@@ -1009,13 +1009,13 @@ For commercial licensing, please contact support@quantumnous.com
 }
 .robo-download-changelog h2 {
   margin-bottom: 0.65rem;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 .robo-download-changelog p {
-  color: color-mix(in srgb, var(--robo-download-ink) 57%, transparent);
+  color: var(--muted-foreground);
   line-height: 1.8;
 }
 
@@ -1155,8 +1155,8 @@ For commercial licensing, please contact support@quantumnous.com
   border: 1px solid
     color-mix(in srgb, var(--robo-download-ink) 14%, transparent);
   background: transparent;
-  color: color-mix(in srgb, var(--robo-download-ink) 60%, transparent);
+  color: var(--muted-foreground);
 }
 .robo-download-card-availability {
-  border-color: color-mix(in srgb, var(--robo-download-ink) 16%, transparent);
+  border-color: var(--muted-foreground);
 }

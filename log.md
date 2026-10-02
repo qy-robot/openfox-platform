@@ -643,3 +643,5 @@
 - Final responsive inspection found the desktop link strip crowded the search control at 1024px. Use the existing navigation dropdown below 1280px; keep the full strip on wider desktops. This is a visual breakpoint correction, with keyboard/menu behavior retained. The first frozen build is superseded before deployment.
 
 - Mobile bounding-box acceptance additionally found the old brand size container collapsed to its padding width after navigation was split. Removed the unused size container so the logo owns its intrinsic width and no longer overlaps the dropdown; full brand remains visible above the small-screen breakpoint.
+
+- Download-page auxiliary text now uses the shared muted-foreground token rather than translucent ink, and tiny metadata text is raised to 14px. This keeps the blue palette readable on both light and dark canvas; primary white-on-blue contrast is 4.57:1 and dark control contrast 6.98:1.
